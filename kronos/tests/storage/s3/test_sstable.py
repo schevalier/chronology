@@ -5,8 +5,8 @@ import unittest
 
 from boto.s3.connection import S3Connection
 
-from kronos.storage.backends.s3.sstable import create_sstable
-from kronos.storage.backends.s3.sstable import SSTable
+from kronos.storage.s3.sstable import create_sstable
+from kronos.storage.s3.sstable import SSTable
 
 AWS_ACCESS_KEY_ID = 'AKIAJ3OSEQKRDHH6VLSA'
 AWS_SECRET_ACCESS_KEY = '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'

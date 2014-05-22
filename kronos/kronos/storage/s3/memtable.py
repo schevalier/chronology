@@ -2,8 +2,8 @@ import leveldb
 import os
 import time
 
-from kronos.storage.backends.s3.constants import MAX_KEY
-from kronos.storage.backends.s3.constants import MIN_KEY
+from kronos.storage.s3.constants import MAX_KEY
+from kronos.storage.s3.constants import MIN_KEY
 
 # Analagous to MemTable in LevelDB but really an on-disk LevelDB store rather
 # than an in-memory store.

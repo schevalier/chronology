@@ -1,6 +1,6 @@
 import types
 
-from kronos.storage.backends import BaseStorage
+from kronos.storage import BaseStorage
 
 
 class S3Storage(BaseStorage):
