@@ -71,6 +71,16 @@ def test_cassandra():
   for test_suite in test_suites:
     runner.run(test_suite)
 
+@test_against('s3')
+def test_s3():
+  test_suites = unittest.defaultTestLoader.discover(
+    start_dir=os.path.join(os.path.dirname(__file__),
+                           'tests/storage/s3'),
+    pattern='test_*.py')
+  runner = unittest.TextTestRunner(verbosity=2)
+  for test_suite in test_suites:
+    runner.run(test_suite)
+
 @test_against('serving_mode_all', 'serving_mode_collector',
               'serving_mode_readonly')
 def test_conf():
