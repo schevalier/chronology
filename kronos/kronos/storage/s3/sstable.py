@@ -1,6 +1,7 @@
 import bisect
 import cStringIO
 import re
+import types
 import tempfile
 import uuid
 import zlib
@@ -10,13 +11,18 @@ from boto.s3.key import Key
 from kronos.utils.math import bytearray_to_hex
 from kronos.utils.math import hex_to_bytearray
 
+nop_types = types.StringTypes + (bytesarray, )
 
-def read_stream(stream, decompress=False):
-  pass
+def dumps(obj, compress=False):
+  _type = type(obj)
 
-def dumps(key, value, compress=False):
+  if isinstance(_type, nop_types):
+    value = obj
+  elif _type == dict:
+  
   if compress:
-    value = zlib.compress(value)
+    string = zlib.compress(string)
+  
   return ''.join([chr(len(key)), key, chr(len(value)), value])
 
 
