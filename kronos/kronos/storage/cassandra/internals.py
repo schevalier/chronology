@@ -17,11 +17,12 @@ from kronos.common.cache import InMemoryLRUCache
 from kronos.conf.constants import ResultOrder
 from kronos.conf.constants import ID_FIELD
 from kronos.conf.constants import TIMESTAMP_FIELD
+from kronos.core.exceptions import InvalidTimeUUIDComparison
 from kronos.storage.cassandra.errors import CassandraStorageError
 from kronos.storage.cassandra.errors import InvalidStreamComparison
-from kronos.storage.cassandra.errors import InvalidTimeUUIDComparison
 from kronos.utils.math import round_down
-from kronos.utils.math import uuid_to_kronos_time
+from kronos.utils.uuid import TimeUUID
+
 
 # Since the Datastax driver doesn't let us pass kwargs to session.prepare
 # we'll just go ahead and monkey patch it to work for us.
@@ -32,47 +33,6 @@ def patched_prepare(self, query, **kwargs):
     setattr(stmt, key, value)
   return stmt
 Session.prepare = patched_prepare
-
-
-class TimeUUID(UUID):
-  """
-  Override Python's UUID comparator so that time is the first parameter used
-  for sorting. This is the comparator behavior for `timeuuid` types in
-  Cassandra.
-  """
-  def __init__(self, *args, **kwargs):
-    """
-    `order`[kwarg]: Whether to return the results in
-             ResultOrder.ASCENDING or ResultOrder.DESCENDING
-             time-order.
-    """
-    # TODO(marcua): Couldn't get `order` to be a named arg (because of
-    # subclassing?).  I don't like the next line.
-    order = kwargs.pop('order', ResultOrder.ASCENDING)
-    super(TimeUUID, self).__init__(*args, **kwargs)
-
-    self._kronos_time = uuid_to_kronos_time(self)
-    self._cmp_multiplier = ResultOrder.get_multiplier(order)
-    
-  def __setattr__(self, name, value):
-    # Override UUID's __setattr__ method to make it mutable.
-    super(UUID, self).__setattr__(name, value)
-
-  def __cmp__(self, other):
-    if other is None:
-      return 1
-    if isinstance(other, StringTypes):
-      try:
-        other = UUID(other)
-      except (ValueError, AttributeError):
-        return 1
-    if isinstance(other, StreamEvent):
-      other = other.id
-    if isinstance(other, UUID):
-      return self._cmp_multiplier * cmp((self.time, self.bytes),
-                                        (other.time, other.bytes))
-    raise InvalidTimeUUIDComparison('Compared TimeUUID to type {0}'
-                                    .format(type(other)))
 
 
 class StreamEvent(object):
@@ -94,7 +54,7 @@ class StreamEvent(object):
     if isinstance(other, StreamEvent):
       return cmp(self.id, other.id)
     if isinstance(other, UUID) or isinstance(other, StringTypes):
-      return cmp(self.id, TimeUUID(str(other)))
+      return cmp(self.id, TimeUUID(other))
     raise InvalidTimeUUIDComparison('Compared TimeUUID to type {0}'
                                     .format(type(other)))
 
@@ -259,8 +219,8 @@ class Stream(object):
       shard_idx[shard_time] = (shard + 1) % self.shards # Round robin.
 
   def iterator(self, start_id, end_id, order, limit):
-    start_id = TimeUUID(str(start_id), order=order)
-    end_id = TimeUUID(str(end_id), order=order)
+    start_id = TimeUUID(start_id, order=order)
+    end_id = TimeUUID(end_id, order=order)
     
     shards = self.get_overlapping_shards(start_id._kronos_time,
                                          end_id._kronos_time)
@@ -339,11 +299,11 @@ class Stream(object):
           event = heapq.heappop(event_heap)
           # Note: in ResultOrder.DESCENDING conditions below, we flip `<` for
           # `>` and `>=` for `<=` UUID comparator logic is flipped.
-          if ((order == ResultOrder.ASCENDING and end_id < event) or
-              (order == ResultOrder.DESCENDING and start_id < event)):
+          if ((order == ResultOrder.ASCENDING and event > end_id) or
+              (order == ResultOrder.DESCENDING and event > start_id)):
             raise StopIteration
-          elif ((order == ResultOrder.ASCENDING and start_id <= event) or
-                (order == ResultOrder.DESCENDING and end_id <= event)):
+          elif ((order == ResultOrder.ASCENDING and event >= start_id) or
+                (order == ResultOrder.DESCENDING and event >= end_id)):
             limit -= 1
             yield event
 
@@ -364,8 +324,8 @@ class Stream(object):
       self.delete_cql = self.session.prepare(Stream.DELETE_CQL,
                                              _routing_key='key')
     
-    start_id = TimeUUID(str(start_id))
-    end_id = TimeUUID(str(end_id))
+    start_id = TimeUUID(start_id)
+    end_id = TimeUUID(end_id)
     shards = self.get_overlapping_shards(start_id._kronos_time,
                                          end_id._kronos_time)
     num_deleted = 0

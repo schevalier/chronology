@@ -7,7 +7,7 @@ from kronos.conf.constants import ID_FIELD
 from kronos.conf.constants import ResultOrder
 from kronos.storage.base import BaseStorage
 from kronos.utils.math import uuid_from_kronos_time
-from kronos.utils.math import UUIDType
+from kronos.utils.uuid import UUIDType
 
 
 class Event(dict):

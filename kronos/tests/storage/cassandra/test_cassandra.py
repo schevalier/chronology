@@ -8,8 +8,8 @@ from kronos.storage.cassandra.internals import StreamShard
 from kronos.utils.math import kronos_time_to_time
 from kronos.utils.math import round_down
 from kronos.utils.math import time_to_kronos_time
-from kronos.utils.math import UUIDType
 from kronos.utils.math import uuid_from_kronos_time
+from kronos.utils.uuid import UUIDType
 from tests.server import KronosServerTestCase
 
 

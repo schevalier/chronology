@@ -19,5 +19,8 @@ class InvalidStreamName(Exception):
 class ImproperlyConfigured(Exception):
   pass
 
+class InvalidTimeUUIDComparison(Exception):
+  pass
+
 class NamespaceMissing(Exception):
   pass

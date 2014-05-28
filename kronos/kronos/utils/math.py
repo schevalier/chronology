@@ -1,15 +1,17 @@
+from __future__ import absolute_import
+
 import binascii
 
 from datetime import datetime
 from dateutil.tz import tzutc
-from uuid import (uuid4, UUID)
+from uuid import UUID
+from uuid import uuid4
+
+from kronos.utils.uuid import TimeUUID
+from kronos.utils.uuid import UUIDType
+
 
 # Kronos time is the number of 100ns intervals since the UTC epoch.
-
-class UUIDType(object):
-  LOWEST = 'lowest'
-  HIGHEST = 'highest'
-  RANDOM = 'random'
 
 def time_to_kronos_time(time):
   """
@@ -36,6 +38,8 @@ def uuid_to_kronos_time(uuid):
   if not isinstance(uuid, UUID):
     raise Exception("Expected type UUID")
   return uuid.time - 0x01b21dd213814000L
+
+uuid_to_time = lambda _id: kronos_time_to_time(uuid_to_kronos_time(_id))
 
 def uuid_from_kronos_time(time, _type=UUIDType.RANDOM):
   """
@@ -65,13 +69,15 @@ def uuid_from_kronos_time(time, _type=UUIDType.RANDOM):
     clock_seq_low = randomuuid.clock_seq_low
     clock_seq_hi_variant = randomuuid.clock_seq_hi_variant
     node = randomuuid.node
-  return UUID(fields = (time_low,
-                        time_mid,
-                        time_hi_version,
-                        clock_seq_hi_variant,
-                        clock_seq_low,
-                        node),
-              version = 1)
+  return TimeUUID(fields=(time_low,
+                          time_mid,
+                          time_hi_version,
+                          clock_seq_hi_variant,
+                          clock_seq_low,
+                          node))
+
+uuid_from_time =  lambda time, _type=UUIDType.RANDOM: uuid_from_kronos_time(
+  time_to_kronos_time(time), _type)
 
 def round_down(value, base):
   """

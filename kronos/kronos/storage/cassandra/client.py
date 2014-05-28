@@ -10,7 +10,7 @@ from kronos.storage.cassandra.internals import Namespace
 from kronos.storage.cassandra.internals import Stream
 from kronos.utils.math import time_to_kronos_time
 from kronos.utils.math import uuid_from_kronos_time
-from kronos.utils.math import UUIDType
+from kronos.utils.uuid import UUIDType
 
 log = logging.getLogger(__name__) 
 

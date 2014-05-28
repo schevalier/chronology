@@ -4,7 +4,7 @@ import uuid
 from kronos.conf.constants import ResultOrder
 from kronos.utils.math import uuid_from_kronos_time
 from kronos.utils.math import uuid_to_kronos_time
-from kronos.utils.math import UUIDType
+from kronos.utils.uuid import UUIDType
 
 
 class BaseStorage(object):
