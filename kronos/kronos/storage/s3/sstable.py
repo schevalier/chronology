@@ -11,7 +11,7 @@ from boto.s3.key import Key
 from kronos.utils.math import bytearray_to_hex
 from kronos.utils.math import hex_to_bytearray
 
-nop_types = types.StringTypes + (bytesarray, )
+nop_types = types.StringTypes + (bytearray, )
 
 def dumps(obj, compress=False):
   _type = type(obj)
@@ -19,7 +19,7 @@ def dumps(obj, compress=False):
   if isinstance(_type, nop_types):
     value = obj
   elif _type == dict:
-  
+    pass
   if compress:
     string = zlib.compress(string)
   

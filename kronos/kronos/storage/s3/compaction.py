@@ -1,2 +1,0 @@
-class Compactor(object):
-  pass

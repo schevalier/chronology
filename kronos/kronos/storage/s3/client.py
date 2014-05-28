@@ -1,16 +1,15 @@
 import types
 
-from kronos.storage import BaseStorage
+from kronos.storage.base import BaseStorage
 
 
 class S3Storage(BaseStorage):
   SETTINGS_VALIDATORS = {
-#    'aws_access_key_id': lambda x: isinstance(x, types.StringTypes),
-#    'aws_secret_access_key': lambda x: isinstance(x, types.StringTypes),
-#    'bucket_name': lambda x: isinstance(x, types.StringTypes),
-#    'flush_interval': lambda x: int(x) > 0,
-#    'local_dir': lambda x: isinstance(x, types.StringTypes),
-#    'time_width': lambda x: int(x) > 0
+    'aws_access_key_id': lambda x: isinstance(x, types.StringTypes),
+    'aws_secret_access_key': lambda x: isinstance(x, types.StringTypes),
+    'bucket_name': lambda x: isinstance(x, types.StringTypes),
+    'flush_interval': lambda x: int(x) > 0,
+    'local_dir': lambda x: isinstance(x, types.StringTypes)
   }
   
   def __init__(self, name, **settings):
