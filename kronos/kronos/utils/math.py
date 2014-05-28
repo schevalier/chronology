@@ -85,9 +85,3 @@ def round_down(value, base):
   Expects `value` and `base` to be non-negative.
   """
   return int(value - (value % base))
-
-def bytearray_to_hex(_bytearray):
-  return binascii.hexlify(_bytearray)
-
-def hex_to_bytearray(_hex):
-  return bytearray(_hex.decode('hex'))
