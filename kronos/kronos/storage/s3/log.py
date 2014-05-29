@@ -38,26 +38,26 @@ class Log(object):
     if not os.path.exists(dir_path):
       os.makedirs(dir_path)
     self.path = '%s/%s' % (dir_path.rstrip('/'), db_name)
-    self.db = leveldb.LevelDB(self.path)
+    self._db = leveldb.LevelDB(self.path)
 
   def destroy(self):
-    del self.db
-    return leveldb.DestroyDB(self.path)
+    del self._db
+    leveldb.DestroyDB(self.path)
 
   def insert(self, stream, event):
-    self.db.Put(_generate_key(stream, event[ID_FIELD]), json.dumps(event))
+    self._db.Put(_generate_key(stream, event[ID_FIELD]), json.dumps(event))
 
   def stream_iterator(self, stream, start_id=START_KEY, end_id=END_KEY):
     return (json.loads(value) for key, value in
-            self.db.RangeIter(_generate_key(stream, start_id),
-                              _generate_key(stream, end_id)))
+            self._db.RangeIter(_generate_key(stream, start_id),
+                               _generate_key(stream, end_id)))
 
   def iterator(self):
     """ Iterates over all events stored in the log. Events are yielded in
     lexicographical order of the stream, and within each stream events are
     yielded in ID sorted order. """
     return ((key[:-SIZE_OF_ID_BYTES], json.loads(value))
-            for key, value in self.db.RangeIter(START_KEY, END_KEY))
+            for key, value in self._db.RangeIter(START_KEY, END_KEY))
 
   def size(self):
     """ Returns size of log in bytes. """
