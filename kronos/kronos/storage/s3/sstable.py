@@ -1,69 +1,60 @@
 import bisect
 import cStringIO
-import re
-import types
 import tempfile
+import types
 import uuid
-import zlib
 
 from boto.s3.key import Key
 
-from kronos.utils.math import bytearray_to_hex
-from kronos.utils.math import hex_to_bytearray
 
-nop_types = types.StringTypes + (bytearray, )
+# Index file size would be approximately (2048 / 2) * (2 + 4 + 16) bytes = 22kb.
+INDEX_BLOCK_SIZE = 1024 * 1024 * 4 # 2mb
+MIN_SIZE = 1024 * 1024 * 1024 # 1gb
+MAX_SIZE = 1024 * 1024 * 1024 * 2 # 2gb
+LENGTH_BITMASK = 0x7fff # 31 LSBs.
+DELETION_MARKER_BITMASK = 0xffff ^ LENGTH_BITMASK
 
-def dumps(obj, compress=False):
-  _type = type(obj)
 
-  if isinstance(_type, nop_types):
-    value = obj
-  elif _type == dict:
-    pass
-  if compress:
-    string = zlib.compress(string)
+def _serialize(value, include_footer=True, is_deletion_marker=False):
+  value = str(value)
+  if len(value) > LENGTH_BITMASK:
+    raise ValueError
+  header = len(value) | (DELETION_MARKER_BITMASK if is_deletion_marker else 0)
+  return '%d%d%s' % (header, len(value), header if include_footer else '')
+
+class Reader(object):
+  class Type:
+    STRING = 0
+    FILE = 1
   
-  return ''.join([chr(len(key)), key, chr(len(value)), value])
+  def __init__(self, obj, _type, reverse):
+    self.reverse = reverse
+    self.obj = obj
+    self.type = _type
+    self.cursor = 0
 
+  @classmethod
+  def from_string(cls, s, reverse=False):
+    return cls(s, Reader.Type.STRING, reverse)
 
-def generate_key(start_key, end_key, level, version, extension, key_prefix):
-  start_key = bytearray_to_hex(start_key)
-  end_key = bytearray_to_hex(end_key)
-  key =  'L-%d:V-%d:%s:%s.%s' % (level, version, start_key, end_key,
-                                 extension)
-  key_prefix = key_prefix.replace(':', '')
-  if key_prefix:
-    key = '%s:%s' % (key_prefix, key)
-  return key
+  @classmethod
+  def from_file(cls, f, reverse=False):
+    return cls(f, Reader.Type.FILE, reverse)
 
-class FileWrapper(object):
-  def read(self, size=None):
-    pass
+  def reset(self):
+    if self.type == Reader.Type.FILE:
+      self.obj.seek(0)
+    self.cursor = 0
 
-class SSTableEntry(object):
-  def __init__(self, key, value):
-    self.key = key
-    self.value = value
-
-
-class SSTableSerializer(object):
-  @staticmethod
-  def read(self, n=-1):
-    while True:
-      key_size = ord(self.buffer.read(1))
-      key = bytearray(self.read(key_size))
-      val_size = ord(read(1))
-      value = read(val_size)
-      if decompress:
-        value = zlib.decompress(value)
-      yield key, value
-
-  def write(self, entry):
-    key_len = chr(len(entry.key))
-    val = zlib.compress(entry.val) if self.compress else entry.val
-    val_len = chr(len(val))
-    self.stream.write(''.join([key_len, entry.key, key_len,
-                               val_len, val, val_len]))
+  def read(self, n):
+    if self._type == Reader.Type.STRING:
+      if self.reverse:
+        pass
+      else:
+        yield self.obj[self.cursor: self.cursor + n]
+    elif self._type == Reader.Type.FILE:
+      pass
+    self.cursor += (-1 if self.reverse else 1) * n
 
 
 class SSTableError(Exception):
@@ -73,11 +64,9 @@ class SSTableError(Exception):
 class SSTableIndex(object):
   def __init__(self, sstable):
     self.sstable = sstable
-    self.key = '%sidx' % sstable.key[:-3] # Change extension.
-    self.idx = {'keys': [], 'offsets': []}
-
-    if not sstable.size:
-      return
+    self.key = sstable.key.rstrip('.sst') + '.idx'
+    self.idx = {'keys': [],
+                'offsets': []}
 
     data = sstable.bucket.get_key(self.key).get_contents_as_string()
     for line in data.split('\n'):
@@ -110,9 +99,6 @@ class SSTableIndex(object):
 
 
 class SSTable(object):
-  KEY_REGEX = re.compile('((?P<prefix>.+):)?L-(?P<level>\d+):'
-                         'V-(?P<version>\d+):(?P<start_key>.+):'
-                         '(?P<end_key>.+)')
   # Index file size would be approximately (4096 / 4) * (4 + 16) bytes = 20kb.
   INDEX_BLOCK_SIZE = 1024 * 1024 * 4 # 4mb
   SIZE_THRESHOLD = 1024 * 1024 * 1024 * 4 # 4gb
