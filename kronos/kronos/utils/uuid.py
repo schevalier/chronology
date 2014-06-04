@@ -6,6 +6,9 @@ from uuid import UUID
 
 from kronos.conf.constants import ResultOrder
 from kronos.core.exceptions import InvalidTimeUUIDComparison
+from kronos.utils.math import uuid_from_kronos_time
+
+UUID_TIME_OFFSET = 0x01b21dd213814000L
 
 
 class UUIDType(object):
@@ -47,6 +50,7 @@ class TimeUUID(UUID):
   def to_lexicographic_str(self):
     from kronos.utils.math import uuid_to_time
     dt = datetime.utcfromtimestamp(uuid_to_time(self))
+    # TODO(usmanm): Ugly hack. Fix this by appending all zeros.
     if dt.microsecond == 0:
       dt = dt.replace(microsecond=1)
     return '%s%s' % (dt, self.bytes)
@@ -64,3 +68,8 @@ class TimeUUID(UUID):
                                         (other.time, other.bytes))
     raise InvalidTimeUUIDComparison('Compared TimeUUID to type {0}'
                                     .format(type(other)))
+
+
+LOWEST_UUID = uuid_from_kronos_time(0 - UUID_TIME_OFFSET, UUIDType.LOWEST)
+HIGHEST_UUID = uuid_from_kronos_time(2**60 - 1 - UUID_TIME_OFFSET,
+                                     UUIDType.HIGHEST)

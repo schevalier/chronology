@@ -1,15 +1,9 @@
 from __future__ import absolute_import
 
-import binascii
-
 from datetime import datetime
 from dateutil.tz import tzutc
 from uuid import UUID
 from uuid import uuid4
-
-from kronos.utils.uuid import TimeUUID
-from kronos.utils.uuid import UUIDType
-
 
 # Kronos time is the number of 100ns intervals since the UTC epoch.
 
@@ -41,18 +35,23 @@ def uuid_to_kronos_time(uuid):
 
 uuid_to_time = lambda _id: kronos_time_to_time(uuid_to_kronos_time(_id))
 
-def uuid_from_kronos_time(time, _type=UUIDType.RANDOM):
+def uuid_from_kronos_time(time, _type=None):
   """
   Generate a UUID with the specified time.
   If `lowest` is true, return the lexicographically first UUID for the specified
   time.
   """
+  from kronos.utils.uuid import TimeUUID
+  from kronos.utils.uuid import UUIDType
+  from kronos.utils.uuid import UUID_TIME_OFFSET
   # Bit-flipping logic from uuid1 implementation described in:
   # http://stackoverflow.com/questions/7153844/uuid1-from-utc-timestamp-in-python
   # except we use a random UUID to seed the clock sequence to minimize the
   # probability of two calls to this function with the same time getting the
   # same ID.
-  timestamp = int(time) + 0x01b21dd213814000L
+  if _type is None:
+    _type = UUIDType.RANDOM
+  timestamp = int(time) + UUID_TIME_OFFSET
   time_low = timestamp & 0xffffffffL
   time_mid = (timestamp >> 32L) & 0xffffL
   time_hi_version = (timestamp >> 48L) & 0x0fffL
@@ -76,7 +75,7 @@ def uuid_from_kronos_time(time, _type=UUIDType.RANDOM):
                           clock_seq_low,
                           node))
 
-uuid_from_time =  lambda time, _type=UUIDType.RANDOM: uuid_from_kronos_time(
+uuid_from_time =  lambda time, _type=None: uuid_from_kronos_time(
   time_to_kronos_time(time), _type)
 
 def round_down(value, base):

@@ -7,8 +7,8 @@ import subprocess
 import sys
 import unittest
 
-import gevent.monkey; gevent.monkey.patch_all()
-import geventhttpclient.httplib; geventhttpclient.httplib.patch()
+#import gevent.monkey; gevent.monkey.patch_all()
+#import geventhttpclient.httplib; geventhttpclient.httplib.patch()
 
 from argparse import ArgumentParser
 
@@ -103,7 +103,6 @@ def run_test(test_name):
   test_function = getattr(sys.modules[__name__], 'test_%s' % test_name)
   test_function()
 
-
 if __name__ == '__main__':
   parser = ArgumentParser(description='Kronos test runner.')
   parser.add_argument('tests', nargs='+', help='tests to run')
@@ -117,6 +116,7 @@ if __name__ == '__main__':
     run_test('common')
     run_test('cassandra')
     run_test('conf')
+    run_test('s3')
   else:
     for test in args.tests:
       run_test(test)

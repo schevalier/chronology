@@ -1,11 +1,11 @@
-import json
 import leveldb
 import os
 import time
 import types
 import uuid
 
-from kronos.conf.constants import ID_FIELD
+from kronos.storage.s3.record import DeleteRecord
+from kronos.storage.s3.record import Record
 from kronos.utils.uuid import TimeUUID
 
 
@@ -44,11 +44,23 @@ class Log(object):
     del self._db
     leveldb.DestroyDB(self.path)
 
-  def insert(self, stream, event):
-    self._db.Put(_generate_key(stream, event[ID_FIELD]), json.dumps(event))
+  def insert(self, stream, record):
+    self._db.Put(_generate_key(stream, record.id), record.marshall())
 
+  def get(self, stream, _id):
+    record = self._db.Get(_generate_key(stream, _id))
+    if record:
+      return Record.unmarshall(record)
+
+  def delete(self, stream, start_id=START_KEY, end_id=END_KEY):
+    for key in self._db.RangeIter(_generate_key(stream, start_id),
+                                  _generate_key(stream, end_id),
+                                  include_value=False):
+      self._db.Delete(key)
+    self.insert(stream, DeleteRecord(start_id, end_id))
+    
   def stream_iterator(self, stream, start_id=START_KEY, end_id=END_KEY):
-    return (json.loads(value) for key, value in
+    return (Record.unmarshall(value) for key, value in
             self._db.RangeIter(_generate_key(stream, start_id),
                                _generate_key(stream, end_id)))
 
@@ -56,7 +68,7 @@ class Log(object):
     """ Iterates over all events stored in the log. Events are yielded in
     lexicographical order of the stream, and within each stream events are
     yielded in ID sorted order. """
-    return ((key[:-SIZE_OF_ID_BYTES], json.loads(value))
+    return ((key[:-SIZE_OF_ID_BYTES], Record.unmarshall(value))
             for key, value in self._db.RangeIter(START_KEY, END_KEY))
 
   def size(self):

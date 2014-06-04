@@ -1,4 +1,4 @@
-boto==2.27.0
+boto==2.29.1
 cassandra-driver==2.0.0b1
 greenlet==0.4.2
 gevent==1.0

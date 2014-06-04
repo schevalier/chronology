@@ -1,146 +1,128 @@
 import bisect
-import cStringIO
+import cPickle
+import itertools
+import json
+import os
 import tempfile
-import types
-import uuid
+import zlib
 
 from boto.s3.key import Key
 
-
-# Index file size would be approximately (2048 / 2) * (2 + 4 + 16) bytes = 22kb.
-INDEX_BLOCK_SIZE = 1024 * 1024 * 4 # 2mb
-MIN_SIZE = 1024 * 1024 * 1024 # 1gb
-MAX_SIZE = 1024 * 1024 * 1024 * 2 # 2gb
-LENGTH_BITMASK = 0x7fff # 31 LSBs.
-DELETION_MARKER_BITMASK = 0xffff ^ LENGTH_BITMASK
-
-
-def _serialize(value, include_footer=True, is_deletion_marker=False):
-  value = str(value)
-  if len(value) > LENGTH_BITMASK:
-    raise ValueError
-  header = len(value) | (DELETION_MARKER_BITMASK if is_deletion_marker else 0)
-  return '%d%d%s' % (header, len(value), header if include_footer else '')
-
-class Reader(object):
-  class Type:
-    STRING = 0
-    FILE = 1
-  
-  def __init__(self, obj, _type, reverse):
-    self.reverse = reverse
-    self.obj = obj
-    self.type = _type
-    self.cursor = 0
-
-  @classmethod
-  def from_string(cls, s, reverse=False):
-    return cls(s, Reader.Type.STRING, reverse)
-
-  @classmethod
-  def from_file(cls, f, reverse=False):
-    return cls(f, Reader.Type.FILE, reverse)
-
-  def reset(self):
-    if self.type == Reader.Type.FILE:
-      self.obj.seek(0)
-    self.cursor = 0
-
-  def read(self, n):
-    if self._type == Reader.Type.STRING:
-      if self.reverse:
-        pass
-      else:
-        yield self.obj[self.cursor: self.cursor + n]
-    elif self._type == Reader.Type.FILE:
-      pass
-    self.cursor += (-1 if self.reverse else 1) * n
+from kronos.storage.s3.errors import SSTableError
+from kronos.storage.s3.errors import SSTableMalformed
+from kronos.storage.s3.errors import SSTableMissing
+from kronos.storage.s3.record import COMPRESS_FACTOR
+from kronos.storage.s3.record import IndexRecord
+from kronos.storage.s3.record import RecordType
+from kronos.utils.uuid import HIGHEST_UUID
+from kronos.utils.uuid import LOWEST_UUID
+from kronos.utils.uuid import TimeUUID
 
 
-class SSTableError(Exception):
-  pass
+def marshall(records):
+  return zlib.compress(cPickle.dumps(records, cPickle.HIGHEST_PROTOCOL), 9)
+
+def unmarshall(dump):
+  return cPickle.loads(zlib.decompress(dump))
 
 
 class SSTableIndex(object):
   def __init__(self, sstable):
     self.sstable = sstable
-    self.key = sstable.key.rstrip('.sst') + '.idx'
-    self.idx = {'keys': [],
-                'offsets': []}
+    self.key = sstable.bucket.get_key(sstable.key.name.rstrip('.sst') + '.idx')
+    if self.key is None:
+      raise SSTableMalformed('.idx file missing.')
 
-    data = sstable.bucket.get_key(self.key).get_contents_as_string()
-    for line in data.split('\n'):
-      if not line:
-        break
-      key, offset = loads(line)
-      # Index is stored in sorted order, so no need to sort it again.
-      self.idx['keys'].append(bytearray(key))
-      self.idx['offsets'].append(int(offset))
+    self.records = unmarshall(self.key.get_contents_as_string())
+    assert self.is_consistent()
 
-  @staticmethod
-  def generate_key(start_key, end_key, level, version, key_prefix=''):
-    return generate_key(start_key, end_key, level, version, 'idx', key_prefix)
+  def is_consistent(self):
+    return (all(record.type == RecordType.INDEX for record in self.records) and
+            self.records == sorted(self.records))
   
-  def get_offsets(self, start_key, end_key):
-    if start_key is None:
-      min_bytes = 0
+  def get_data_range(self, start_id, end_id):
+    # TODO(usmanm): Fugly hack.
+    start_id = IndexRecord(start_id, None, None)
+    end_id = IndexRecord(end_id, None, None)
+
+    i = bisect.bisect_left(self.records, start_id)
+    if i != 0:
+      i -= 1
+    start_bytes = self.records[i].offset
+    i = bisect.bisect_right(self.records, end_id)
+    if i == len(self.records):
+      end_bytes = self.sstable.size
     else:
-      i = bisect.bisect_left(self.idx['keys'], start_key)
-      min_bytes = self.idx['offsets'][i]
-    if end_key is None:
-      max_bytes = self.sstable.size
+      end_bytes = self.records[i].offset
+    return (start_bytes, end_bytes)
+
+  def get_block_offsets(self, start_id, end_id, reverse):
+    """ Yields a sequence of (start_bytes, end_bytes) tuples for all
+    compressed blocks contained events for [start_id, end_id] """
+    # TODO(usmanm): Fugly hack.
+    start_id = IndexRecord(start_id, None, None)
+    end_id = IndexRecord(end_id, None, None)
+
+    start_idx = bisect.bisect_left(self.records, start_id)
+    if start_idx != 0:
+      start_idx -= 1
+    end_idx = bisect.bisect_right(self.records, end_id)
+    if reverse:
+      it = xrange(end_idx - 1, start_idx - 1, -1)
     else:
-      i = bisect.bisect_right(self.idx['keys'], end_key)
-      if i == len(self.idx['keys']):
-        max_bytes = self.sstable.size
+      it = xrange(start_idx, end_idx)
+    for i in it:
+      if i == len(self.records) - 1:
+        end_bytes = self.sstable.size
       else:
-        max_bytes = self.idx['offsets'][i]
-    return (min_bytes, max_bytes)
+        end_bytes = self.records[i + 1].offset
+      yield (self.records[i].offset, end_bytes)
 
 
 class SSTable(object):
-  # Index file size would be approximately (4096 / 4) * (4 + 16) bytes = 20kb.
-  INDEX_BLOCK_SIZE = 1024 * 1024 * 4 # 4mb
-  SIZE_THRESHOLD = 1024 * 1024 * 1024 * 4 # 4gb
+  INDEX_BLOCK_SIZE = 1024 * 1024 * 2 # 2mb
+  MIN_SIZE = 1024 * 1024 * 1024 * 1 # 1gb
+  MAX_SIZE = 1024 * 1024 * 1024 * 2 # 2gb
+  VERSION = 1
+  METADATA_KEYS = ('start_id',
+                   'end_id',
+                   'has_delete',
+                   'ancestors',
+                   'siblings',
+                   'version',
+                   'level',
+                   'num_records')
   
-  def __init__(self, bucket, start_key, end_key, level, version, key_prefix=''):
-    self.level = level
-    self.bucket = bucket
-    self.start_key = start_key
-    self.end_key = end_key
+  def __init__(self, bucket, key):
+    self.bucket = bucket    
+    self.key = bucket.get_key(key)
+
+    if self.key is None:
+      raise SSTableMissing('%s:%s' % (bucket.name, key))
     
-    self.key = SSTable.generate_key(start_key, end_key, level, version,
-                                    key_prefix)
-
-    self.size = getattr(bucket.get_key(self.key), 'size', 0)
+    self.size = self.key.size
+    for key in SSTable.METADATA_KEYS:
+      metadata = self.key.get_metadata(key)
+      if metadata is None:
+        raise SSTableMalformed('`%s` missing.')
+      setattr(self, key, json.loads(metadata))
+    
     self.index = SSTableIndex(self)
-
-  @staticmethod
-  def generate_key(start_key, end_key, level, version, key_prefix=''):
-    return generate_key(start_key, end_key, level, version, 'sst', key_prefix)
-  
-  @classmethod
-  def from_key(cls, bucket, key):
-    if key.endswith('.sst') or key.endswith('.idx'):
-      key = key[:-4]
-    match = cls.KEY_REGEX.match(key)
-    if not match:
-      raise KeyError
-    return cls(bucket,
-               hex_to_bytearray(match.group('start_key')),
-               hex_to_bytearray(match.group('end_key')),
-               int(match.group('level')),
-               int(match.group('version')),
-               key_prefix=match.group('prefix') or '')
-  
-  def iterator(self, start_key=None, end_key=None, reverse=False):
-    min_byte, max_byte = self.index.get_offsets(start_key, end_key)
+    
+  def iterator(self, start_id=LOWEST_UUID, end_id=HIGHEST_UUID, reverse=False):
+    min_byte, max_byte = self.index.get_data_range(start_id, end_id)
 
     response = self.bucket.connection.make_request(
       'GET',
       bucket=self.bucket.name,
       key=self.key,
-      headers={'Range': 'bytes=%d-%d' % (min_byte, max_byte)}
+      headers={
+        'Range': 'bytes=%d-%d' % (
+          min_byte,
+          # S3 returns data inclusive of max_byte
+          max_byte if max_byte == self.size else max_byte - 1
+          )
+        }
       )
 
     size = 0
@@ -156,77 +138,126 @@ class SSTable(object):
       # Ensure that the expected size of the data was downloaded.
       assert size == max_byte - min_byte
 
-      tmp_file.seek(0, 2 if reverse else 0)
-      event_buffer = []
+      tmp_file.seek(0)
+      records = []
 
-      def get_kv():
-        global event_buffer
-        event_str = ''.join(event_buffer)
-        event_buffer = []
-        return loads(event_str.rstrip('\n'), decompress=True)
-      
-      while size:
-        read_size = min(8192, size)
-        size -= read_size
-        
+      for start_offset, end_offset in self.index.get_block_offsets(start_id,
+                                                                   end_id,
+                                                                   reverse):
+        if min_byte:
+          start_offset -= min_byte
+          end_offset -= min_byte
+        if tmp_file.tell() != start_offset:
+          tmp_file.seek(start_offset)
+        block_data = tmp_file.read(end_offset - start_offset)
+        records.extend(unmarshall(block_data))
         if reverse:
-          tmp_file.seek(-read_size, 2)
-          data = tmp_file.read(read_size)
-          # Seek to the point till where we have read.
-          tmp_file.seek(-read_size, 2)
-          if '\n' in data:
-            data, last_chunk = data.split('\n')
-            event_buffer.insert(0, last_chunk)
-            yield get_kv()
-          event_buffer.insert(0, data)
-        else:
-          data = tmp_file.read(read_size)
-          if '\n' in data:
-            last_chunk, data = data.split('\n')
-            event_buffer.append(last_chunk)
-            yield get_kv()
-          event_buffer.append(data)
+          records.reverse()
+        while records:
+          record = records.pop(0)
+          if record < start_id:
+            if reverse:
+              break
+            else:
+              continue
+          elif record > end_id:
+            if reverse:
+              continue
+            else:
+              break
+          yield record
+        records[:] = []
 
-def create_sstable(bucket, level, version, data, key_prefix=''):
-  index = []
-  size = 0
-  index_block = 0
-  start_key = None
-  end_key = None
 
-  tmp_key = uuid.uuid4()
-
-  # Create temporary data file and upload it to S3.
-  with tempfile.TemporaryFile() as tmp_file:
-    for key, value in data:
-      if size >= SSTable.SIZE_THRESHOLD:
-        break
-      if start_key is None:
-        start_key = key
-      index_block = size / SSTable.INDEX_BLOCK_SIZE
-      if index_block == len(index):
-        index.append((key, size))
-      line = dumps(key, value, compress=True)
-      tmp_file.write(line)
-      size += len(line)
-      end_key = key
-
-    Key(bucket, '%s.sst' % tmp_key).set_contents_from_file(tmp_file,
-                                                           rewind=True)
+def create_sstable(records, bucket, directory='', level=0,
+                   version=SSTable.VERSION, siblings=None, ancestors=None):
+  class State(object):
+    def __init__(self):
+      self.reset()
       
+    def reset(self):
+      self.has_delete = False
+      self.size = 0
+      self.start_id = None
+      self.end_id = LOWEST_UUID
+      self.records = []
+
+  siblings = siblings or []
+  ancestors = ancestors or []
+  remaining_records = records
+  num_records = 0
+  block_state = State()
+  sst_state = State()
+  tmp_file = tempfile.NamedTemporaryFile(delete=False)
+
+  def flush_index_block():
+    if sst_state.start_id is None:
+      sst_state.start_id = block_state.start_id
+    sst_state.end_id = max(sst_state.end_id, block_state.end_id)
+    sst_state.has_delete |= block_state.has_delete
+    string = marshall(block_state.records)
+    tmp_file.write(string)
+    sst_state.records.append(IndexRecord(block_state.start_id,
+                                         sst_state.size, # offset
+                                         block_state.has_delete))
+    sst_state.size += len(string)
+    block_state.reset()
+
+  for record in records:
+    end_id = record.end_id if record.type == RecordType.DELETE else record.id
+    block_state.end_id = max(block_state.end_id, TimeUUID(end_id))
+
+    # Should we start a new index block?
+    if block_state.size > SSTable.INDEX_BLOCK_SIZE:
+      flush_index_block()
+
+    if sst_state.size >= SSTable.MIN_SIZE:
+      # The current record must be consumed again, since it wasn't
+      # added to the record list.
+      remaining_records = itertools.chain((record, ), remaining_records)
+      break
+
+    if block_state.start_id is None:
+      block_state.start_id = record.id
+    block_state.size += (record.size * COMPRESS_FACTOR)
+    block_state.has_delete |= (record.type == RecordType.DELETE)
+    block_state.records.append(record)
+    num_records += 1
+  else:
+    # `records` are exhausted, flush the last index block state.
+    if block_state.records:
+      flush_index_block()
+
+  tmp_file.close()
+
+  if directory:
+    key_prefix = '%s/%s' % (directory.rstrip('/'), sst_state.start_id)
+  else:
+    key_prefix = sst_state.start_id
+
   # Upload index file.
-  index_str = cStringIO.StringIO()
-  map(lambda d: index_str.write(dumps(*d)), index)
-  Key(bucket, '%s.idx' % tmp_key).set_contents_from_string(index_str.getvalue())
-  index_str.close()
+  index_key = Key(bucket, '%s.idx' % key_prefix)
+  index_data = marshall(sst_state.records)
+  num_bytes = index_key.set_contents_from_string(index_data)
+  assert num_bytes == len(index_data)
 
-  # Copy over to canonical keys.
-  sst_key = SSTable.generate_key(start_key, end_key, level, version, key_prefix)
-  idx_key = SSTableIndex.generate_key(start_key, end_key, level, version,
-                                      key_prefix)
-  bucket.copy_key(sst_key, bucket.name, '%s.sst' % tmp_key)
-  bucket.copy_key(idx_key, bucket.name, '%s.idx' % tmp_key)
-  bucket.delete_key('%s.sst' % tmp_key)
-  bucket.delete_key('%s.idx' % tmp_key)
+  # Upload data file.
+  sst_key = Key(bucket, '%s.sst' % key_prefix)
+  if sst_key.exists():
+    raise SSTableError
+  sst_state.end_id = str(sst_state.end_id)
+  for key in SSTable.METADATA_KEYS:
+    if hasattr(sst_state, key):
+      value = getattr(sst_state, key)
+    elif key in create_sstable.func_code.co_varnames:
+      value = locals()[key]
+    else:
+      raise KeyError(key)
+    sst_key.set_metadata(key, json.dumps(value))
+  num_bytes = sst_key.set_contents_from_filename(tmp_file.name)
+  assert num_bytes == sst_state.size
 
-  return SSTable.from_key(bucket, sst_key)
+  # Clean up temp file.
+  os.unlink(tmp_file.name)
+
+  return (sst_key, remaining_records)
