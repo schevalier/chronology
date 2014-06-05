@@ -39,34 +39,37 @@ class SSTableIndex(object):
   def is_consistent(self):
     return (all(record.type == RecordType.INDEX for record in self.records) and
             self.records == sorted(self.records))
-  
-  def get_data_range(self, start_id, end_id):
-    # TODO(usmanm): Fugly hack.
-    start_id = IndexRecord(start_id, None, None)
-    end_id = IndexRecord(end_id, None, None)
 
-    i = bisect.bisect_left(self.records, start_id)
-    if i != 0:
+  def _get_start_idx(self, _id):
+    _id = IndexRecord(_id, None, None)
+    i = bisect.bisect_left(self.records, _id)
+    assert i >= 0
+    if i != 0 and self.records[i] != _id:
       i -= 1
-    start_bytes = self.records[i].offset
-    i = bisect.bisect_right(self.records, end_id)
-    if i == len(self.records):
+    return i
+
+  def _get_end_idx(self, _id):
+    _id = IndexRecord(_id, None, None)
+    i = bisect.bisect_right(self.records, _id)
+    assert i <= len(self.records)
+    if i != len(self.records) and self.records[i] == _id:
+      i += 1
+    return i
+  
+  def data_offsets(self, start_id, end_id):
+    start_bytes = self.records[self._get_start_idx(start_id)].offset
+    end_idx = self._get_end_idx(end_id)
+    if end_idx == len(self.records):
       end_bytes = self.sstable.size
     else:
-      end_bytes = self.records[i].offset
+      end_bytes = self.records[end_idx].offset
     return (start_bytes, end_bytes)
 
-  def get_block_offsets(self, start_id, end_id, reverse):
+  def block_offsets(self, start_id, end_id, reverse):
     """ Yields a sequence of (start_bytes, end_bytes) tuples for all
     compressed blocks contained events for [start_id, end_id] """
-    # TODO(usmanm): Fugly hack.
-    start_id = IndexRecord(start_id, None, None)
-    end_id = IndexRecord(end_id, None, None)
-
-    start_idx = bisect.bisect_left(self.records, start_id)
-    if start_idx != 0:
-      start_idx -= 1
-    end_idx = bisect.bisect_right(self.records, end_id)
+    start_idx = self._get_start_idx(start_id)
+    end_idx = self._get_end_idx(end_id)
     if reverse:
       it = xrange(end_idx - 1, start_idx - 1, -1)
     else:
@@ -77,6 +80,11 @@ class SSTableIndex(object):
       else:
         end_bytes = self.records[i + 1].offset
       yield (self.records[i].offset, end_bytes)
+
+  def has_delete(self, start_id, end_id):
+    start_idx = self._get_start_idx(start_id)
+    end_idx = self._get_end_idx(end_id)
+    return any(self.records[i].has_delete for i in xrange(start_idx, end_idx))
 
 
 class SSTable(object):
@@ -108,9 +116,12 @@ class SSTable(object):
       setattr(self, key, json.loads(metadata))
     
     self.index = SSTableIndex(self)
+
+  def contains_delete(self, start_id=LOWEST_UUID, end_id=HIGHEST_UUID):
+    return self.index.has_delete(start_id, end_id)
     
   def iterator(self, start_id=LOWEST_UUID, end_id=HIGHEST_UUID, reverse=False):
-    min_byte, max_byte = self.index.get_data_range(start_id, end_id)
+    min_byte, max_byte = self.index.data_offsets(start_id, end_id)
 
     response = self.bucket.connection.make_request(
       'GET',
@@ -141,9 +152,9 @@ class SSTable(object):
       tmp_file.seek(0)
       records = []
 
-      for start_offset, end_offset in self.index.get_block_offsets(start_id,
-                                                                   end_id,
-                                                                   reverse):
+      for start_offset, end_offset in self.index.block_offsets(start_id,
+                                                               end_id,
+                                                               reverse):
         if min_byte:
           start_offset -= min_byte
           end_offset -= min_byte
@@ -188,6 +199,7 @@ def create_sstable(records, bucket, directory='', level=0,
   num_records = 0
   block_state = State()
   sst_state = State()
+  max_delete = LOWEST_UUID
   tmp_file = tempfile.NamedTemporaryFile(delete=False)
 
   def flush_index_block():
@@ -218,9 +230,16 @@ def create_sstable(records, bucket, directory='', level=0,
       break
 
     if block_state.start_id is None:
-      block_state.start_id = record.id
+      block_state.start_id = TimeUUID(record.id)
     block_state.size += (record.size * COMPRESS_FACTOR)
-    block_state.has_delete |= (record.type == RecordType.DELETE)
+    if record.type == RecordType.DELETE:
+      max_delete = max(max_delete, block_state.end_id)
+      block_state.has_delete = True
+    elif block_state.end_id > max_delete:
+      max_delete = LOWEST_UUID # Reset delete marker.
+    else:
+      block_state.has_delete |= (block_state.start_id <= max_delete and
+                                 block_state.end_id <= max_delete)
     block_state.records.append(record)
     num_records += 1
   else:
@@ -245,7 +264,6 @@ def create_sstable(records, bucket, directory='', level=0,
   sst_key = Key(bucket, '%s.sst' % key_prefix)
   if sst_key.exists():
     raise SSTableError
-  sst_state.end_id = str(sst_state.end_id)
   for key in SSTable.METADATA_KEYS:
     if hasattr(sst_state, key):
       value = getattr(sst_state, key)
@@ -253,7 +271,11 @@ def create_sstable(records, bucket, directory='', level=0,
       value = locals()[key]
     else:
       raise KeyError(key)
-    sst_key.set_metadata(key, json.dumps(value))
+    try:
+      value = json.dumps(value)
+    except TypeError:
+      value = json.dumps(str(value))
+    sst_key.set_metadata(key, value)
   num_bytes = sst_key.set_contents_from_filename(tmp_file.name)
   assert num_bytes == sst_state.size
 
