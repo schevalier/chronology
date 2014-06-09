@@ -6,6 +6,8 @@ import uuid
 
 from kronos.storage.s3.record import DeleteRecord
 from kronos.storage.s3.record import Record
+from kronos.storage.s3.sstable import create_sstable
+from kronos.utils.math import time_to_kronos_time
 from kronos.utils.uuid import TimeUUID
 
 
@@ -32,12 +34,12 @@ def _generate_key(stream, id_or_bytes):
   return '%s%s' % (stream, get_bytes_from_id(id_or_bytes))
 
 
-class Log(object):  
+class LevelDBStore(object):  
   def __init__(self, dir_path, db_name=None):
-    db_name = db_name or str(int(time.time()))
+    self.db_name = db_name or str(time_to_kronos_time(time.time()))
     if not os.path.exists(dir_path):
       os.makedirs(dir_path)
-    self.path = '%s/%s' % (dir_path.rstrip('/'), db_name)
+    self.path = '%s/%s' % (dir_path.rstrip('/'), self.db_name)
     self._db = leveldb.LevelDB(self.path)
 
   def destroy(self):
@@ -78,3 +80,32 @@ class Log(object):
       for name in files:
         total_size += os.path.getsize(os.path.join(path, name))
     return total_size
+
+
+class MemTable(object):
+  def __init__(self, bucket, dir_path):
+    self.bucket = bucket
+    self.dir_path = dir_path
+
+    self.flush()
+    self.recover()
+
+  def push_store_to_s3(self, store):
+    sst_key, records = create_sstable(self.bucket, )
+
+  def flush(self):
+    old_store = getattr(self, 'current_store', None)
+    self.current_store = LevelDBStore(self.dir_path)
+    if old_store:
+      self.push_store_to_s3(old_store)
+      old_store.destroy()
+
+  def async_flush(self):
+    pass
+
+  def recover(self):
+    # TODO(usmanm): Do this.
+    pass
+
+  def async_recover(self):
+    pass

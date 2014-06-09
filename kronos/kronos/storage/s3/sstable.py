@@ -4,6 +4,7 @@ import itertools
 import json
 import os
 import tempfile
+import types
 import zlib
 
 from boto.s3.key import Key
@@ -19,6 +20,10 @@ from kronos.utils.uuid import LOWEST_UUID
 from kronos.utils.uuid import TimeUUID
 
 
+SST_KEY = 'sstables/{stream}/sst_{start_id}'
+IDX_KEY = 'sstables/{stream}/idx_{start_id}'
+
+
 def marshall(records):
   return zlib.compress(cPickle.dumps(records, cPickle.HIGHEST_PROTOCOL), 9)
 
@@ -29,9 +34,9 @@ def unmarshall(dump):
 class SSTableIndex(object):
   def __init__(self, sstable):
     self.sstable = sstable
-    self.key = sstable.bucket.get_key(sstable.key.name.rstrip('.sst') + '.idx')
+    self.key = sstable.bucket.get_key(sstable.key.name.replace('sst_', 'idx_'))
     if self.key is None:
-      raise SSTableMalformed('.idx file missing.')
+      raise SSTableMalformed('idx file missing.')
 
     self.records = unmarshall(self.key.get_contents_as_string())
     assert self.is_consistent()
@@ -97,25 +102,36 @@ class SSTable(object):
                    'has_delete',
                    'ancestors',
                    'siblings',
+                   'size',
                    'version',
                    'level',
+                   'memtable_id',
                    'num_records')
   
   def __init__(self, bucket, key):
-    self.bucket = bucket    
-    self.key = bucket.get_key(key)
+    self.bucket = bucket
+    if isinstance(key, types.StringTypes):
+      self.key = bucket.get_key(key)
+    else:
+      self.key = key
 
     if self.key is None:
-      raise SSTableMissing('%s:%s' % (bucket.name, key))
+      raise SSTableMissing('%s:%s does not exist.' % (bucket.name, key))
     
     self.size = self.key.size
     for key in SSTable.METADATA_KEYS:
       metadata = self.key.get_metadata(key)
       if metadata is None:
-        raise SSTableMalformed('`%s` missing.')
+        raise SSTableMalformed('`%s` metadata is missing.' % key)
       setattr(self, key, json.loads(metadata))
-    
-    self.index = SSTableIndex(self)
+    self.start_id = TimeUUID(self.start_id)
+    self.end_id = TimeUUID(self.end_id)
+
+  @property
+  def index(self):
+    if not hasattr(self, '_index'):
+      self._index = SSTableIndex(self)
+    return self._index
 
   def contains_delete(self, start_id=LOWEST_UUID, end_id=HIGHEST_UUID):
     return self.index.has_delete(start_id, end_id)
@@ -180,8 +196,8 @@ class SSTable(object):
         records[:] = []
 
 
-def create_sstable(records, bucket, directory='', level=0,
-                   version=SSTable.VERSION, siblings=None, ancestors=None):
+def create_sstable(bucket, stream, records, level=0, version=SSTable.VERSION,
+                   siblings=None, ancestors=None, memtable_id=None, split=True):
   class State(object):
     def __init__(self):
       self.reset()
@@ -223,7 +239,7 @@ def create_sstable(records, bucket, directory='', level=0,
     if block_state.size > SSTable.INDEX_BLOCK_SIZE:
       flush_index_block()
 
-    if sst_state.size >= SSTable.MIN_SIZE:
+    if split and sst_state.size >= SSTable.MIN_SIZE:
       # The current record must be consumed again, since it wasn't
       # added to the record list.
       remaining_records = itertools.chain((record, ), remaining_records)
@@ -249,21 +265,18 @@ def create_sstable(records, bucket, directory='', level=0,
 
   tmp_file.close()
 
-  if directory:
-    key_prefix = '%s/%s' % (directory.rstrip('/'), sst_state.start_id)
-  else:
-    key_prefix = sst_state.start_id
-
   # Upload index file.
-  index_key = Key(bucket, '%s.idx' % key_prefix)
+  index_key = Key(bucket, IDX_KEY.format(stream=stream,
+                                         start_id=str(sst_state.start_id)))
   index_data = marshall(sst_state.records)
   num_bytes = index_key.set_contents_from_string(index_data)
   assert num_bytes == len(index_data)
 
   # Upload data file.
-  sst_key = Key(bucket, '%s.sst' % key_prefix)
+  sst_key = Key(bucket, SST_KEY.format(stream=stream,
+                                       start_id=str(sst_state.start_id)))
   if sst_key.exists():
-    raise SSTableError
+    raise SSTableError('sst file already exists.')
   for key in SSTable.METADATA_KEYS:
     if hasattr(sst_state, key):
       value = getattr(sst_state, key)

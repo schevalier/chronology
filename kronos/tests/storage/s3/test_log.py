@@ -6,14 +6,14 @@ from collections import defaultdict
 from kronos.conf import settings
 from kronos.conf.constants import ID_FIELD
 from kronos.conf.constants import TIMESTAMP_FIELD
-from kronos.storage.s3.log import Log
+from kronos.storage.s3.log import LevelDBStore
 from kronos.storage.s3.record import RecordType
 from tests.storage.s3 import generate_records
 
 
-class TestLog(unittest.TestCase):
+class TestLevelDBStore(unittest.TestCase):
   def setUp(self):
-    self.log = Log(settings.storage.s3.local_dir)
+    self.log = LevelDBStore(settings.storage.s3.local_dir)
 
   def tearDown(self):
     self.log.destroy()
