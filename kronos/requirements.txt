@@ -5,7 +5,7 @@ greenlet==0.4.2
 gevent==1.0
 geventhttpclient==1.0a
 leveldb==0.193
-werkzeug==0.9.4
+pycassa==1.11.0
 python-dateutil==2.2
 python-snappy==0.5
 requests==2.2.1
