@@ -1,5 +1,7 @@
 libevent-dev
 libleveldb-dev
+libsnappy1
+libsnappy-dev
 python-all-dev
 python-pip
 uwsgi
