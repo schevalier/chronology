@@ -28,7 +28,7 @@ class Manifest(object):
         sstable = SSTable(self.bucket, key.name)
         sstables[stream][(sstable.start_id, sstable.end_id)] = sstable
     for stream in sstables:
-      itrees[stream] = SortedSet(sstables[stream].iterkeys(),
+      itrees[stream] = SortedSet(sstables[stream],
                                  updator=OverlappingIntervalsUpdator)
     self.sstables = sstables
     self.itrees = itrees

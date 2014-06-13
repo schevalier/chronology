@@ -46,6 +46,12 @@ class SSTableIndex(object):
             self.records == sorted(self.records))
 
   def _get_start_idx(self, _id):
+    # TODO(usmanm): Investigate the following that happened only once while
+    # running the test cases. Some weird off by one error.
+    # _get_start_idx
+    # if i != 0 and self.records[i] != _id:
+    #  IndexError: list index out of range
+      
     _id = IndexRecord(_id, None, None)
     i = bisect.bisect_left(self.records, _id)
     assert i >= 0
@@ -106,6 +112,7 @@ class SSTable(object):
                    'version',
                    'level',
                    'memtable_id',
+                   'is_ready',
                    'num_records')
   
   def __init__(self, bucket, key):
@@ -207,6 +214,7 @@ def create_sstable(bucket, stream, records, level=0, version=SSTable.VERSION,
       self.size = 0
       self.start_id = None
       self.end_id = LOWEST_UUID
+      self.is_ready = False
       self.records = []
 
   siblings = siblings or []

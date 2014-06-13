@@ -31,7 +31,6 @@ class TestManifest(S3TestCase):
                         interval)),
               manifest.sstables['test_overlapping_ssts'])),
       ranges)
-    self.assertEqual(len(manifest.all_sst_keys), 4)
 
   def test_overlapping_ssts_and_stream_isolation(self):
     streams = ('test_overlapping_ssts1', 'test_overlapping_ssts2')
@@ -46,7 +45,6 @@ class TestManifest(S3TestCase):
                      generate_records(start_time=1400, n=101)) # [1400, 2400]
 
     manifest = Manifest(self.bucket)
-    self.assertEqual(len(manifest.all_sst_keys), 8)
 
     for stream in streams:
       tests = [(150, 300, 2), (400, 600, 3), (100, 1500, 4), (2000, 2100, 1)]

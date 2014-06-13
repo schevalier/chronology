@@ -1,3 +1,4 @@
+import itertools
 import leveldb
 import os
 import time
@@ -7,8 +8,8 @@ import uuid
 from kronos.storage.s3.record import DeleteRecord
 from kronos.storage.s3.record import Record
 from kronos.storage.s3.sstable import create_sstable
-from kronos.utils.math import time_to_kronos_time
 from kronos.utils.uuid import TimeUUID
+from kronos.utils.math import uuid_from_time
 
 
 SIZE_OF_ID_BYTES = 26 + 16 # 26 for str(datetime) + 16 for uuid.bytes
@@ -35,16 +36,16 @@ def _generate_key(stream, id_or_bytes):
 
 
 class LevelDBStore(object):  
-  def __init__(self, dir_path, db_name=None):
-    self.db_name = db_name or str(time_to_kronos_time(time.time()))
+  def __init__(self, dir_path, _id=None):
+    self._id = _id or str(uuid_from_time(time.time()))
     if not os.path.exists(dir_path):
       os.makedirs(dir_path)
-    self.path = '%s/%s' % (dir_path.rstrip('/'), self.db_name)
-    self._db = leveldb.LevelDB(self.path)
+    self._path = '%s/%s' % (dir_path.rstrip('/'), self._id)
+    self._db = leveldb.LevelDB(self._path)
 
   def destroy(self):
     del self._db
-    leveldb.DestroyDB(self.path)
+    leveldb.DestroyDB(self._path)
 
   def insert(self, stream, record):
     self._db.Put(_generate_key(stream, record.id), record.marshall())
@@ -66,12 +67,39 @@ class LevelDBStore(object):
             self._db.RangeIter(_generate_key(stream, start_id),
                                _generate_key(stream, end_id)))
 
-  def iterator(self):
-    """ Iterates over all events stored in the log. Events are yielded in
-    lexicographical order of the stream, and within each stream events are
-    yielded in ID sorted order. """
-    return ((key[:-SIZE_OF_ID_BYTES], Record.unmarshall(value))
-            for key, value in self._db.RangeIter(START_KEY, END_KEY))
+  def stream_iterators(self):
+    """ Returns an iterator of (stream, iterator) tuples, where the iterator in
+    the tuple will yield all events for that partcular stream. Streams are
+    yielded in lexicographic order.
+
+    NOTE: If you call next() on this function the previous (if any) stream
+    iterator is no longer valid.
+    """
+    current_stream = None
+    # Wrap in a list. Issue caused by non availability of the `nonlocal`
+    # keyword in Python 2.7
+    global_iterator = [
+      ((key[:-SIZE_OF_ID_BYTES], Record.unmarshall(value))
+       for key, value in self._db.RangeIter(START_KEY, END_KEY))
+      ]
+
+    def stream_iterator(current_stream):
+      for stream, event in global_iterator[0]:
+        if stream != current_stream:
+          global_iterator[0] = itertools.chain([(stream, event)],
+                                               global_iterator[0])
+          raise StopIteration
+        yield event
+
+    while True:
+      # Poll to see what the stream name is.
+      stream, event = global_iterator[0].next()
+      while current_stream and stream == current_stream:
+        stream, event = global_iterator[0].next()
+      current_stream = stream
+      global_iterator[0] = itertools.chain([(stream, event)],
+                                           global_iterator[0])
+      yield (stream, stream_iterator(current_stream))
 
   def size(self):
     """ Returns size of log in bytes. """
@@ -90,18 +118,24 @@ class MemTable(object):
     self.flush()
     self.recover()
 
-  def push_store_to_s3(self, store):
-    sst_key, records = create_sstable(self.bucket, )
-
   def flush(self):
     old_store = getattr(self, 'current_store', None)
     self.current_store = LevelDBStore(self.dir_path)
     if old_store:
-      self.push_store_to_s3(old_store)
-      old_store.destroy()
+      self.async_push_store_to_s3(old_store)
 
-  def async_flush(self):
-    pass
+
+  def push_store_to_s3(self, store):
+    sst_keys = []
+    for stream, records in store.stream_iterators():
+      sst_key, _ = create_sstable(self.bucket, stream, records, level=0,
+                                  memtable_id=store._id, split=False)
+      sst_keys.append(sst_key)
+    
+    store.destroy()
+
+  def async_push_store_to_s3(self):
+    self.push_store_to_s3()
 
   def recover(self):
     # TODO(usmanm): Do this.

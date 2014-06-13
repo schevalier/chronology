@@ -1,8 +1,6 @@
 import json
 import unittest
 
-from collections import defaultdict
-
 from kronos.conf import settings
 from kronos.conf.constants import ID_FIELD
 from kronos.conf.constants import TIMESTAMP_FIELD
@@ -47,29 +45,30 @@ class TestLevelDBStore(unittest.TestCase):
       set(record[TIMESTAMP_FIELD] for record in records[30:70]))
     self.assert_sorted(records_from_log)
 
-  def test_iterator(self):
+  def test_stream_iterators(self):
     records = list(generate_records(n=100))
-    streams = {'lol', 'cat'}
+    streams = ['lol', 'cat', 'foo', 'bar']
     for stream in streams:
       for record in records:
         self.log.insert(stream, record)
-    
-    records_from_log = list(self.log.iterator())
-    self.assertEqual(len(records_from_log), 200)
-    stream_records = defaultdict(list)
-    last_stream = ''
-    for stream, record in records_from_log:
-      self.assertTrue(last_stream <= stream)
-      stream_records[stream].append(record)
-      last_stream = stream
-    self.assertEqual(len(stream_records), 2)
-    self.assertEqual(set(stream_records), streams)
+
+    # Assert that streams are returned in lexicographic order.
+    self.assertTrue(sorted(stream),
+                    map(lambda s: s[0], self.log.stream_iterators()))
+
+    # Test that each stream has the right number of events.
+    stream_records = {}
+    for stream, iterator in self.log.stream_iterators():
+      stream_records[stream] = list(iterator)
+    self.assertEqual(len(stream_records), 4)
+    self.assertEqual(set(stream_records), set(streams))
     for records in stream_records.itervalues():
       self.assertEqual(len(records), 100)
       self.assert_sorted(records)
     stream_records = [map(lambda e: json.dumps(e.dict, sort_keys=True), records)
                       for records in stream_records.itervalues()]
-    self.assertEqual(stream_records[0], stream_records[1])
+    # All events of all streams are equal.
+    self.assertEqual(stream_records, stream_records[::-1])
 
   def test_delete(self):
     records = list(generate_records(n=100))
