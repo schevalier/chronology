@@ -1,7 +1,6 @@
 Banyan==0.1.5
 boto==2.29.1
 cassandra-driver==2.0.0b1
-futures==2.1.6
 greenlet==0.4.2
 gevent==1.0
 geventhttpclient==1.0a
