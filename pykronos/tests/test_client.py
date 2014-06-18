@@ -82,7 +82,7 @@ class KronosClientTest(unittest.TestCase):
     response = self.client.delete(self.stream,
                                   mid_time,
                                   kronos_time_now())
-    self.assertEqual(response, {'memory': 2})
+    self.assertEqual(response[self.stream], {'memory': 2})
 
     events = list(self.client.get(self.stream,
                                   self.start_time,
@@ -98,12 +98,11 @@ class KronosClientTest(unittest.TestCase):
 
     time.sleep(self.sleep_time)
 
-    streams = dict(list(self.client.get_streams()))
+    streams = set(self.client.get_streams())
 
     for i in xrange(10):
       stream = '%s_%s' % (self.stream, i)
       self.assertTrue(stream in streams)
-      self.assertEqual(streams[stream], [str(i)])
 
   @kronos_client_test
   def test_log_function(self):
