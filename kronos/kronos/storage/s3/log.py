@@ -116,14 +116,19 @@ class MemTable(object):
     self.dir_path = dir_path
 
     self.flush()
-    self.recover()
+    self.async_recover()
 
-  def flush(self):
+  def flush(self, async=True):
+    """
+    Flush the existing LevelDB store (if any) and start a new one.
+    """
     old_store = getattr(self, 'current_store', None)
     self.current_store = LevelDBStore(self.dir_path)
     if old_store:
-      self.async_push_store_to_s3(old_store)
-
+      if async:
+        self.async_push_store_to_s3(old_store)
+      else:
+        self.push_store_to_s3(old_store)
 
   def push_store_to_s3(self, store):
     sst_keys = []
