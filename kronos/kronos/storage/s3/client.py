@@ -31,3 +31,6 @@ class S3Storage(BaseStorage):
 
   def _streams(self, namespace):
     pass
+
+  def _clear(self):
+    pass

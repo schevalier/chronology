@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import kronos.core.monkey; kronos.core.monkey.patch_all()
+#import kronos.core.monkey; kronos.core.monkey.patch_all()
 
 import functools
 import importlib
