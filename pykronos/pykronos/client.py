@@ -186,12 +186,12 @@ class KronosClient(object):
   def get(self, stream, start_time, end_time, start_id=None, limit=None,
           order=ResultOrder.ASCENDING, namespace=None, timeout=None):
     """
-    Queries a stream with name `stream` for all events between
-    `start_time` and `end_time`.  An optional `start_id` allows the
-    client to restart from a failure, specifying the last ID they
-    read.  An optional `limit` limits the maximum number of
-    events returned.  An optional `order` requests results in `ASCENDING`
-    or `DESCENDING` order.
+    Queries a stream with name `stream` for all events between `start_time` and
+    `end_time` (both inclusive).  An optional `start_id` allows the client to
+    restart from a failure, specifying the last ID they read; all events that
+    happened after that ID will be returned. An optional `limit` limits the
+    maximum number of events returned.  An optional `order` requests results in
+    `ASCENDING` or `DESCENDING` order.
     """
     if isinstance(start_time, types.StringTypes):
       start_time = parse(start_time)
@@ -253,8 +253,9 @@ class KronosClient(object):
   def delete(self, stream, start_time, end_time, start_id=None, namespace=None):
     """
     Delete events in the stream with name `stream` that occurred between
-    `start_time` and `end_time`.  An optional `start_id` allows the
-    client to delete events starting from an ID rather than a timestamp.
+    `start_time` and `end_time` (both inclusive).  An optional `start_id` allows
+    the client to delete events starting from after an ID rather than starting
+    at a timestamp.
     """
     if isinstance(start_time, types.StringTypes):
       start_time = parse(start_time)

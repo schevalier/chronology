@@ -219,6 +219,14 @@ class TestKronosAPIs(KronosServerTestCase):
       self.assertEqual(num, {'num_deleted': 2})
     self.assertEqual(len(self.get(stream, 0, 4)), 0)
 
+    # Test inclusivity of `start_time` and `end_time`.
+    self.put(stream, event1 + event2 + event3)
+    self.assertEqual(len(self.get(stream, 0, 4)), 3)
+    response = self.delete(stream, 1, 2)
+    for num in response[stream].itervalues():
+      self.assertEqual(num, {'num_deleted': 3})
+    self.assertEqual(len(self.get(stream, 0, 4)), 0)
+
     # Test delete with `start_id`.
     self.put(stream, event2 + event3)
     start_id = self.get(stream, 0, 4, limit=1)[0][ID_FIELD]
