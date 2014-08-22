@@ -22,7 +22,7 @@ locally:
 ```bash
 git clone https://github.com/Locu/chronology.git
 cd chronology/kronos
-make installdeps
+sudo make installdeps
 python runserver.py --port 8151 --config settings.py.template --debug
 ```
 
@@ -51,6 +51,19 @@ minutes.
 
 If you wish to see a more detailed example of the Kronos API, check
 out the more detailed [pykronos example](../pykronos/).
+
+If you would like to run kronos as a daemon, run `setup.py` to
+install `kronosd`.
+```
+sudo python setup.py install
+```
+Configure your settings in `/etc/kronos/settings.py` and
+`/etc/kronos/uwsgi.ini`. Logs can be found in `/var/log/kronos`.
+When everything is configured to your liking, call
+```
+sudo /etc/init.d/kronos start
+```
+You can also call `stop`, `restart`, or `force-reload` on that command.
 
 ## Settings details
 
