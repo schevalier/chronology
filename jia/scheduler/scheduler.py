@@ -6,7 +6,7 @@ import gipc
 import traceback
 import sys
 
-from common.concurrent import GIPCExecutor
+from scheduler.common.concurrent import GIPCExecutor
 from heapq import heappush, heappop, heapify
 from jia.errors import PyCodeError
 from jia.utils import send_mail
