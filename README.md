@@ -15,7 +15,7 @@ This repository contains three loosely coupled projects:
 
 * [Jia](jia/) is a visualization, dashboarding, and data
   exploration tool.  It can speak with Kronos and Metis.  It answers
-  questions for humans, rather than for developers.
+  questions for humans, rather than just developers.
 
 ## Get running in 5 minutes
 
