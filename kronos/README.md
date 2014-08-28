@@ -67,7 +67,7 @@ You can also call `stop`, `restart`, or `force-reload` on that command.
 
 ## Settings details
 
-Take a look at [settings.py.template](settings.py.template).  We tried
+Take a look at [settings.py.template](kronos/conf/default_settings.py).  We tried
 to document all of the settings pretty thoroughly.  If anything is
 unclear, [file an issue](../../../issues?state=open) and we'll clarify!
 
