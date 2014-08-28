@@ -98,7 +98,6 @@ def _date_part(value, part):
     value = parse(value)
   else:
     value = kronos_time_to_datetime(value)
-  value = kronos_time_to_datetime(value)
   parts = {
     DatePart.Unit.SECOND: lambda dt: dt.second,
     DatePart.Unit.MINUTE: lambda dt: dt.minute,
