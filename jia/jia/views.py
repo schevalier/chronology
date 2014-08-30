@@ -168,8 +168,12 @@ def callsource(id=None):
   code = request_body.get('code')
   precompute = request_body.get('precompute')
   timeframe = request_body.get('timeframe')
-  bucket_width = get_seconds(precompute['bucket_width']['value'],
-                             precompute['bucket_width']['scale'])
+
+  if precompute['enabled']:
+    bucket_width = get_seconds(precompute['bucket_width']['value'],
+                               precompute['bucket_width']['scale'])
+  else:
+    bucket_width = None
 
   task = QueryCompute(code, timeframe, bucket_width=bucket_width)
   events = task.compute(use_cache=precompute['enabled'])

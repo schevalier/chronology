@@ -100,12 +100,12 @@ class QueryCompute(object):
       'unique_id': self._query
     }
 
-    bucket_width_timedelta = datetime.timedelta(seconds=bucket_width)
-    self._query_cache = QueryCache(self._cache_client, self._run_query,
-                                   bucket_width_timedelta,
-                                   app.config['CACHE_KRONOS_NAMESPACE'],
-                                   query_function_kwargs=unique)
-
+    if self._bucket_width:
+      bucket_width_timedelta = datetime.timedelta(seconds=bucket_width)
+      self._query_cache = QueryCache(self._cache_client, self._run_query,
+                                     bucket_width_timedelta,
+                                     app.config['CACHE_KRONOS_NAMESPACE'],
+                                     query_function_kwargs=unique)
 
 
   def _get_timeframe_bounds(self, timeframe, bucket_width):
