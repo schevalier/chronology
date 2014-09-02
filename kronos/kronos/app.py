@@ -1,4 +1,17 @@
+import errno
+import os
 import sys
+
+# uWSGI is started by root, but this process runs as the kronos user.
+# This casuses permissions issues on the python egg cache, so we need to
+# create our own to avoid that.
+_KRONOS_EGG_CACHE = os.path.join(os.environ['HOME'], '.kronos_egg_cache')
+try:
+  os.mkdir(_KRONOS_EGG_CACHE)
+except OSError as e:
+  if e.errno != errno.EEXIST:
+    raise e
+os.environ['PYTHON_EGG_CACHE'] = _KRONOS_EGG_CACHE
 
 # If running as service, we must call all these patch functions.
 if 'gevent.monkey' not in sys.modules:

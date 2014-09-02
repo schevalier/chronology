@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import errno
 import grp
 import os
 import pwd
@@ -25,7 +26,7 @@ def safe_mkdir(path):
   try:
     os.makedirs(path)
   except OSError as e:
-    if e.errno != 17:
+    if e.errno != errno.EEXIST:
       raise e
 
 def create_user_and_group():

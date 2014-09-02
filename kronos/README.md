@@ -59,7 +59,7 @@ sudo python setup.py install
 ```
 Configure your settings in `/etc/kronos/settings.py` and
 `/etc/kronos/uwsgi.ini`. Logs can be found in `/var/log/kronos`.
-When everything is configured to your liking, call
+When everything is configured to your liking, run 
 ```
 sudo /etc/init.d/kronos start
 ```
