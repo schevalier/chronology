@@ -37,7 +37,7 @@ storage = {
 }
 
 # Default namespace for clients that don't specify one on their requests.
-default_namespace = 'demo'
+default_namespace = 'kronos'
 
 # Maps namespace => { stream_prefix => { 
 #                      backends => {

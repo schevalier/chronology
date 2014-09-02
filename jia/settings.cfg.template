@@ -25,7 +25,7 @@ SCHEDULER_FAILURE_EMAILS = [
 
 # Kronos and metis pointers
 KRONOS_URL = 'http://localhost:8150'
-KRONOS_NAMESPACE = 'default'
+KRONOS_NAMESPACE = 'kronos'
 METIS_URL = 'http://localhost:8151'
 
 # This database persists all dashboards and settings
