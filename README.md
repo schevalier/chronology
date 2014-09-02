@@ -19,9 +19,13 @@ This repository contains three loosely coupled projects:
 
 ## Get running in 5 minutes
 
-Each of the links above has a "Get running in 5 minutes" section.  If
+Each of these projects has a "Get running in 5 minutes" section. If
 you can't get started with one of these systems in five minutes,
 contact us and we'll make sure you can!
+
+* [Getting started with Kronos](kronos/README.md#get-running-in-5-minutes)
+* [Getting started with Metis](metis/README.md#get-running-in-5-minutes)
+* [Getting started with Jia](jia/README.md#get-running-in-5-minutes)
 
 ## Contributing
 
