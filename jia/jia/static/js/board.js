@@ -316,7 +316,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
 
   $scope.initPanel = function(panel) {
     panel.cache = {
-      data: {events: [{'@time': 0, '@value': 0}]},
+      data: {events: []},
       visualizations: {},
       log: new $scope.log()
     };
