@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import datetime
 
 import gevent.monkey; gevent.monkey.patch_all()
 
@@ -12,6 +13,15 @@ from argparse import ArgumentParser
 
 from kronos.conf import settings
 from kronos.conf.constants import ServingMode
+
+def log_info(port):
+  return """
+    %(date)s
+    Starting kronos server at http://0.0.0.0:%(port)s/
+    Quit the server with CONTROL-C.""" % {
+      'date' : datetime.datetime.now().strftime("%B %d, %Y - %H:%M:%S"),
+      'port': port,
+      }
 
 if __name__ == '__main__':
   parser = ArgumentParser(description='Kronos HTTP server.')
@@ -31,7 +41,7 @@ if __name__ == '__main__':
 
   settings.clear()
   if args.config:
-    # If a config file path is given, import that as the `settings` module.  
+    # If a config file path is given, import that as the `settings` module.
     settings.update(imp.load_source('kronos.conf.run_settings', args.config))
   else:
     # Otherwise use default settings. This is to ensure we never try to read
@@ -50,6 +60,7 @@ if __name__ == '__main__':
   # else the endpoint access control logic will kick in too early.
   from kronos.app import application
 
+  print log_info(args.port)
   if args.reload:
     def reload():
       print 'Reloading kronosd...'
