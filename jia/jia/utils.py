@@ -18,7 +18,6 @@ def get_seconds(value, scale):
     'months': lambda x: x * 60 * 60 * 24 * 30,
     'years': lambda x: x * 60 * 60 * 24 * 365,
   }
-
   return scales[scale](value)
 
 
@@ -33,3 +32,4 @@ def send_mail(recipients, subject, message, from_addr=None):
   s = smtplib.SMTP('localhost')
   s.sendmail(from_addr, recipients, msg.as_string())
   s.quit()
+

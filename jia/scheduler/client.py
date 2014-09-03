@@ -63,3 +63,4 @@ def cancel(task_id, secret_key=default_key, url=default_url):
     'id': task_id,
   }
   return _send_with_auth(values, secret_key, url)
+

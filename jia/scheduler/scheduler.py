@@ -125,7 +125,17 @@ class Scheduler(object):
               run_at = now + datetime.timedelta(seconds=int(task['interval']))
               self._schedule(task, next_run=run_at)
           else:
-            print "ERROR:", result.exception
+            err_msg = result.exception
+            sys.stderr.write("ERROR: %s" % err_msg)
+            email_msg = 'Task %s failed at %s\n\n%s' % (
+              task['id'],
+              datetime.datetime.now(),
+              err_msg
+            )
+            send_mail(app.config['SCHEDULER_FAILURE_EMAILS'],
+                      'Scheduler Failure',
+                      email_msg)
+
 
 def _execute(task):
   """A wrapper around exec

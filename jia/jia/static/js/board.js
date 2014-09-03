@@ -2,10 +2,13 @@ var app = angular.module('jia.boards', ['ngSanitize',
                                         'ui.codemirror',
                                         'ui.bootstrap',
                                         'ui.bootstrap.datetimepicker',
-                                        'jia.timeseries',
-                                        'jia.table',
-                                        'jia.gauge',
-                                        'jia.barchart'
+                                        'ui.select',
+                                        'selecter',
+                                        'jia.querybuilder',
+                                        'jia.vis.timeseries',
+                                        'jia.vis.table',
+                                        'jia.vis.gauge',
+                                        'jia.vis.barchart'
                                        ]);
 
 app.config(['$interpolateProvider', function($interpolateProvider) {
@@ -42,11 +45,15 @@ app.factory('BoardTransport', function () {
   };
 });
 
+app.config(function(uiSelectConfig) {
+  uiSelectConfig.theme = 'bootstrap';
+});
+
 app.controller('BoardController',
 ['$scope', '$http', '$location', '$timeout', '$injector', '$routeParams',
- '$sce', '$sanitize', '$modal', 'BoardTransport',
+ '$sce', '$sanitize', '$modal', '$rootScope', 'BoardTransport',
 function ($scope, $http, $location, $timeout, $injector, $routeParams,
-          $sce, $sanitize, $modal, BoardTransport) {
+          $sce, $sanitize, $modal, $rootScope, BoardTransport) {
   // TODO(marcua): Re-add the sweet periodic UI refresh logic I cut
   // out of @usmanm's code in the Angular rewrite.
   $scope.boardId = $routeParams.boardId;
@@ -59,13 +66,18 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   };
 
   $scope.timeScales = [
-    'seconds',
-    'minutes',
-    'hours',
-    'days',
-    'weeks',
-    'months',
-    'years'
+    {name: 'seconds'},
+    {name: 'minutes'},
+    {name: 'hours'},
+    {name: 'days'},
+    {name: 'weeks'},
+    {name: 'months'},
+    {name: 'years'}
+  ];
+
+  $scope.timeframeModes = [
+    {name: 'Most recent', value: 'recent'},
+    {name: 'Date range', value: 'range'}
   ];
 
   $scope.bucketWidthHelpText = 'If you are aggregating events, pick a bucket '+
@@ -80,8 +92,8 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   this.loadVisualizations = function () {
     var visualizations = {};
     _.each(app.requires, function (dependency) {
-      if (dependency.indexOf('jia.') == 0) {
-        module = dependency.substring('jia.'.length);
+      if (dependency.indexOf('jia.vis.') == 0) {
+        module = dependency.substring('jia.vis.'.length);
         visualizations[module] = $injector.get(module);
       }
     });
@@ -123,7 +135,8 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   };
 
   $scope.changeVisualization = function(panel, type) {
-    // Avoid recalculating stuff if the user selects the type that is already being viewed
+    // Avoid calling setData if the user selects the type that is already
+    // being viewed
     if (type.meta.title != panel.display.display_type) {
       panel.cache.log.clear();
       panel.display.display_type = type.meta.title;
@@ -290,6 +303,17 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     }
   };
 
+  $scope.precomputeModal = function (panel) {
+    scope = $rootScope.$new();
+    scope.panel = panel;
+    scope.bucketWidthHelpText = $scope.bucketWidthHelpText;
+    scope.timeScales = $scope.timeScales;
+    $modal.open({
+      templateUrl: '/static/partials/precompute.html',
+      scope: scope
+    });
+  };
+
   $scope.initPanel = function(panel) {
     panel.cache = {
       data: {events: [{'@time': 0, '@value': 0}]},
@@ -319,6 +343,9 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     panel.cache.visualizations[visualizationType] = newVisualization;
     panel.cache.visualization = panel.cache.visualizations[visualizationType];
 
+    // Give the query builder a piece of cache
+    panel.cache.query_builder = {};
+
     // Flag to toggle bootstrap dropdown menu status
     panel.cache.visualizationDropdownOpen = false;
 
@@ -328,6 +355,28 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     }, function (newVal, oldVal) {
       if (newVal != oldVal) {
         panel.data_source.precompute.enabled = false;
+      }
+    });
+
+    // Translate the code toggle switch into a source_type value and vice-versa
+    $scope.$watch(function () {
+      return panel.data_source.source_type;
+    }, function (newVal, oldVal) {
+      if (panel.data_source.source_type == 'pycode') {
+        panel.cache.query_builder.code = true;
+      }
+      else {
+        panel.cache.query_builder.code = false;
+      }
+    });
+    $scope.$watch(function () {
+      return panel.cache.query_builder.code;
+    }, function (newVal, oldVal) {
+      if (panel.cache.query_builder.code) {
+        panel.data_source.source_type = 'pycode';
+      }
+      else {
+        panel.data_source.source_type = 'querybuilder';
       }
     });
 
@@ -342,6 +391,13 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     }, function (newVal, oldVal) {
       panel.data_source.timeframe.to = $scope.formatDateTime(newVal);
     });
+
+    // Update property dropdowns/typeaheads when the stream changes
+    $scope.$watch(function () {
+      return panel.data_source.stream;
+    }, function (newVal, oldVal) {
+      panel.cache.streamProperties = [];
+    });
   };
 
   $scope.newPanelObj = function () {
@@ -349,13 +405,17 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       id: (Math.floor(Math.random() * 0x100000000)).toString(16),
       title: '',
       data_source: {
-        source_type: 'pycode',
+        source_type: 'querybuilder',
         refresh_seconds: null,
         code: '',
+        query: {
+          stream: undefined,
+          steps: []
+        },
         timeframe: {
-          mode: 'recent',
+          mode: $scope.timeframeModes[0],
           value: 2,
-          scale: 'days',
+          scale: {name: 'days'},
           from: moment().subtract('days', 2).format($scope.dateTimeFormat),
           to: moment().format($scope.dateTimeFormat)
         },
@@ -364,11 +424,11 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
           task_id: null,
           bucket_width: {
             value: 1,
-            scale: 'hours'
+            scale: {name: 'hours'}
           },
           untrusted_time: {
             value: 30,
-            scale: 'minutes'
+            scale: {name: 'minutes'}
           }
         }
       },
@@ -383,7 +443,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     $scope.initPanel($scope.boardData.panels[0]);
   };
   
-  $scope.dateTimeFormat = 'ddd MMM DD YYYY HH:mm:ss';
+  $scope.dateTimeFormat = 'MMM DD YYYY HH:mm:ss';
 
   $scope.formatDateTime = function (datetime) {
     if (typeof datetime == 'string') {
@@ -401,6 +461,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
 
   $scope.getBoards();
 
+  $scope.streams = [''];
   $scope.getStreams = function () {
     $http.get('/streams')
       .success(function(data, status, headers, config) {
@@ -511,54 +572,3 @@ app.directive('visualization', function ($http, $compile) {
   };
 });
 
-app.directive('selecter', function ($http, $compile) {
-  /*
-   * Simple Angular directive for Ben Plum's Selecter.js
-   *
-   * Example usage:
-   * <!-- Bind the selected value to someVarInScope (similar to ng-model) -->
-   * <select selecter="someVarInScope">
-   *   <!-- Can easily use ng-repeat here if desired -->
-   *   <option value="opt1">Option 1</option>
-   *   <option value="opt2">Option 2</option>
-   * </select>
-   *
-   */
-
-  var linker = function(scope, element, attrs) {
-    var createSelecter = function () {
-      $(element).selecter({
-        callback: function (value, index) {
-          scope.model = value;
-          scope.$apply();
-        }
-      });
-    }
-     
-    var updateSelector = function (newVal) {
-      // Update the selecter when the value changes in scope
-      // Selecter doesn't provide an update method, so destroy and recreate
-      $(element).selecter('destroy');
-      $(element).find('option[value="' + newVal + '"]')
-                .attr('selected', 'selected');
-      createSelecter();
-    };
- 
-    scope.$watch('model', function (newVal, oldVal) {
-      // The timeout of zero is magic to wait for an ng-repeat to finish
-      // populating the <select>. See: http://stackoverflow.com/q/12240639/
-      setTimeout(function () { updateSelector(newVal); });
-    });
-
-  }
-
-  return {
-    restrict: "A",
-    replace: false,
-    link: linker,
-    scope: {
-      model: '=selecter'
-    }
-  };
-
-});

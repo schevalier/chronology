@@ -282,3 +282,4 @@ class QueryCache(object):
 
     for event in events:
       yield event
+

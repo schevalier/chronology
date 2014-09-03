@@ -12,6 +12,8 @@ from jia.compute import QueryCompute, enable_precompute, disable_precompute
 from jia.utils import get_seconds
 from pykronos import KronosClient
 
+import jia.query
+
 @app.route('/status', methods=['GET'])
 def status():
   """ A successful request endpoint without authentication.
@@ -20,6 +22,7 @@ def status():
   """
 
   return "OK"
+
 
 @app.route('/', methods=['GET'])
 @require_auth
@@ -166,17 +169,23 @@ def delete_board(id=None):
 def callsource(id=None):
   request_body = request.get_json()
   code = request_body.get('code')
+  query = request_body.get('query')
+  metis = request_body.get('source_type') == 'querybuilder'
   precompute = request_body.get('precompute')
   timeframe = request_body.get('timeframe')
 
   if precompute['enabled']:
     bucket_width = get_seconds(precompute['bucket_width']['value'],
-                               precompute['bucket_width']['scale'])
+                               precompute['bucket_width']['scale']['name'])
   else:
     bucket_width = None
 
-  task = QueryCompute(code, timeframe, bucket_width=bucket_width)
+  if metis:
+    code = query
+    
+  task = QueryCompute(code, timeframe, bucket_width=bucket_width, metis=metis)
   events = task.compute(use_cache=precompute['enabled'])
+  
   response = {}
   response['events'] = events
   return response

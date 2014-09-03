@@ -1,11 +1,14 @@
 import datetime
+import json
+import requests
 import sys
 import traceback
-from jia.errors import PyCodeError
 from jia.common.time import datetime_to_epoch_time
 from jia.common.time import datetime_to_kronos_time
 from jia.common.time import epoch_time_to_kronos_time
 from jia.common.time import kronos_time_to_datetime
+from jia.errors import PyCodeError
+from jia.query import create_metis_query_plan
 from jia.utils import get_seconds
 from pykronos import KronosClient
 from pykronos.utils.cache import QueryCache
@@ -38,18 +41,19 @@ query with or without help from the cache.
 
 PRECOMPUTE_INITIALIZATION_CODE = """
 from jia.compute import QueryCompute
-query = u'''%s'''
+query = %s
 timeframe = %s
 bucket_width = %s
 untrusted_time = %s
+use_metis = %s
 
 compute = QueryCompute(query, timeframe, bucket_width=bucket_width,
-                       untrusted_time=untrusted_time)
+                       untrusted_time=untrusted_time, metis=use_metis)
 compute.cache()
 """
 
 
-DT_FORMAT = '%a %b %d %Y %H:%M:%S'
+DT_FORMAT = '%b %d %Y %H:%M:%S'
 
 
 class QueryCompute(object):
@@ -61,7 +65,8 @@ class QueryCompute(object):
   the cache via the `cache` method, both `bucket_width` and `untrusted_time`
   must be specified.
   """
-  def __init__(self, query, timeframe, bucket_width=None, untrusted_time=None):
+  def __init__(self, query, timeframe, bucket_width=None, untrusted_time=None,
+               metis=False):
     """Initialize QueryCompute
     :param query: A string of python code to execute as a Jia query.
     :param timeframe: A timeframe dictionary. It specifies a mode, which can be
@@ -70,7 +75,7 @@ class QueryCompute(object):
     the purposes of storing default/previous values. If the mode is recent,
     only 'value' and 'scale' are used. If the mode is 'range', only 'from' and
     'to' are used.
-
+    
     Example timeframe:
     timeframe = {
       'mode': 'recent',
@@ -82,10 +87,12 @@ class QueryCompute(object):
 
     :param bucket_width: Optional bucket width in seconds
     :param untrusted_time: Optional untrusted time interval in seconds
+    :param metis: Send `query` to metis for computation
     """
     self._query = query
     self._bucket_width = bucket_width
     self._untrusted_time = untrusted_time
+    self._metis = metis
     self._start_time, self._end_time = self._get_timeframe_bounds(timeframe,
                                                                   bucket_width)
 
@@ -100,13 +107,17 @@ class QueryCompute(object):
       'unique_id': self._query
     }
 
+    if self._metis:
+      query_func = self._run_metis
+    else:
+      query_func = self._run_query
+      
     if self._bucket_width:
       bucket_width_timedelta = datetime.timedelta(seconds=bucket_width)
-      self._query_cache = QueryCache(self._cache_client, self._run_query,
+      self._query_cache = QueryCache(self._cache_client, query_func,
                                      bucket_width_timedelta,
                                      app.config['CACHE_KRONOS_NAMESPACE'],
                                      query_function_kwargs=unique)
-
 
   def _get_timeframe_bounds(self, timeframe, bucket_width):
     """
@@ -120,11 +131,11 @@ class QueryCompute(object):
     # TODO(derek): Potential optimization by setting the end_time equal to the
     # untrusted_time if end_time > untrusted_time and the results are not being
     # output to the user (only for caching)
-    if timeframe['mode'] == 'recent':
+    if timeframe['mode']['value'] == 'recent':
       # Set end_time equal to now and align to bucket width
       end_time = datetime_to_kronos_time(datetime.datetime.now())
       original_end_time = end_time
-      duration = get_seconds(timeframe['value'], timeframe['scale'])
+      duration = get_seconds(timeframe['value'], timeframe['scale']['name'])
       duration = epoch_time_to_kronos_time(duration)
       start_time = original_end_time - duration
 
@@ -140,7 +151,7 @@ class QueryCompute(object):
 
       start = kronos_time_to_datetime(start_time)
       end = kronos_time_to_datetime(end_time)
-    elif timeframe['mode'] == 'range':
+    elif timeframe['mode']['value'] == 'range':
       end = datetime.datetime.strptime(timeframe['to'], DT_FORMAT)
       end_seconds = datetime_to_epoch_time(end)
 
@@ -195,6 +206,13 @@ class QueryCompute(object):
 
     return events
 
+  def _run_metis(self, start_time, end_time, unique_id=None):
+    start_time = datetime_to_kronos_time(start_time)
+    end_time = datetime_to_kronos_time(end_time)
+    q = create_metis_query_plan(self._query, start_time, end_time)
+    r = requests.post("%s/1.0/query" % app.config['METIS_URL'], data=q)
+    return json.loads('[%s]' % (',').join(r.text.splitlines()))
+
   def compute(self, use_cache=True):
     """Call a user defined query and return events with optional help from
     the cache.
@@ -209,7 +227,10 @@ class QueryCompute(object):
                                                       self._end_time,
                                                       compute_missing=True))
     else:
-      return self._run_query(self._start_time, self._end_time)
+      if self._metis:
+        return self._run_metis(self._start_time, self._end_time)
+      else:
+        return self._run_query(self._start_time, self._end_time)
 
   def cache(self):
     """Call a user defined query and cache the results"""
@@ -227,30 +248,37 @@ class QueryCompute(object):
 
 def enable_precompute(panel):
   """Schedule a precompute task for `panel`"""
-  query = panel['data_source']['code']
+  use_metis = panel['data_source']['source_type'] == 'querybuilder'
+  if use_metis:
+    query = panel['data_source']['query']
+  else:
+    query = "u'''%s'''" % panel['data_source']['code']
   precompute = panel['data_source']['precompute']
   timeframe = panel['data_source']['timeframe']
-  bucket_width_seconds = get_seconds(precompute['bucket_width']['value'],
-                                     precompute['bucket_width']['scale'])
+  bucket_width = precompute['bucket_width']['value']
+  time_scale = precompute['bucket_width']['scale']['name']
+  bucket_width_seconds = get_seconds(bucket_width, time_scale)
 
-  if timeframe['mode'] == 'recent':
-    untrusted_time_seconds = get_seconds(precompute['untrusted_time']['value'],
-                                         precompute['untrusted_time']['scale'])
+  if timeframe['mode']['value'] == 'recent':
+    untrusted_time = precompute['untrusted_time']['value']
+    untrusted_time_scale = precompute['untrusted_time']['scale']['name']
+    untrusted_time_seconds = get_seconds(untrusted_time, untrusted_time_scale)
     # Schedule the task with an interval equal to the bucket_width
     interval = bucket_width_seconds
-  elif timeframe['mode'] == 'range':
+  elif timeframe['mode']['value'] == 'range':
     untrusted_time_seconds = 0
     # Schedule the task with an interval of 0 so it only runs once
     interval = 0
 
   task_code = PRECOMPUTE_INITIALIZATION_CODE % (query, timeframe,
                                                 bucket_width_seconds,
-                                                untrusted_time_seconds)
+                                                untrusted_time_seconds,
+                                                use_metis)
   result = scheduler_client.schedule(task_code, interval)
 
   if result['status'] != 'success':
     raise RuntimeError(result.get('reason'))
-
+  
   return result['id']
 
 
