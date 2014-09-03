@@ -27,7 +27,7 @@ Create a Kronos client with the URL of a running server.  Optionally
 provide a `namespace` to explicitly work with events in a particular
 namespace.
 """
-kc = KronosClient('http://localhost:8151', namespace='demo')
+kc = KronosClient('http://localhost:8151', namespace='kronos')
 start = datetime.now(tz=tzutc())
 
 ### A nonblocking client
@@ -41,7 +41,7 @@ defaulting to `0.1` specifies how many seconds to wait between batches
 to the server.  If the process running the client crashes before
 flushing events, those events will be lost.
 """
-nonblocking = KronosClient('http://localhost:8151', namespace='demo',
+nonblocking = KronosClient('http://localhost:8151', namespace='kronos',
                            blocking=False)
 
 ## Inserting data
@@ -55,7 +55,7 @@ kc.put({'yourproduct.website.pageviews': [
           'browser': {'name': 'Firefox', 'version': 26},
           'pages': ['page1.html', 'page2.html']}],
         'yourproduct.website.clicks': [
-         {'user': 40, 'num_clicks': 7},          
+         {'user': 40, 'num_clicks': 7},
          {'user': 42, 'num_clicks': 2}]})
 
 ### Optionally add a timestamp
@@ -98,7 +98,7 @@ events = kc.get('yourproduct.website.clicks',
 for event in events:
   print 'Reverse event', event
   last_event_id = event[ID_FIELD]
-  
+
 ### Limiting events
 """
 If you only want to retrieve a limited number of events, use the

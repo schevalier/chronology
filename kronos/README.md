@@ -34,7 +34,7 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil.tz import tzutc
 from pykronos.client import KronosClient
-kc = KronosClient('http://localhost:8151', namespace='demo')
+kc = KronosClient('http://localhost:8151', namespace='kronos')
 kc.put({'yourproduct.website.clicks': [
   {'user': 35, 'num_clicks': 10}]})
 for event in kc.get('yourproduct.website.clicks',
@@ -59,7 +59,7 @@ sudo python setup.py install
 ```
 Configure your settings in `/etc/kronos/settings.py` and
 `/etc/kronos/uwsgi.ini`. Logs can be found in `/var/log/kronos`.
-When everything is configured to your liking, run 
+When everything is configured to your liking, run
 ```
 sudo /etc/init.d/kronos start
 ```
@@ -73,7 +73,7 @@ unclear, [file an issue](../../../issues?state=open) and we'll clarify!
 
 ## Backends
 
-### Memory 
+### Memory
 
 The in-memory backend is mostly used for testing.  Here's a
 sample `storage` configuration for it:
@@ -226,7 +226,7 @@ difficult consistency and latency tradeoffs.  We imagine that many
 `delete` implementations, if implemented, will not be as performant or
 consistent as their `put` and `get` cousins.
 
-### Time-based 
+### Time-based
 
 Every event happens at a particular time.  You can insert events that
 happen at particular times (regardless of the current wall clock time)

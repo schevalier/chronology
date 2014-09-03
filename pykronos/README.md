@@ -23,7 +23,7 @@ Create a Kronos client with the URL of a running server.  Optionally
 provide a `namespace` to explicitly work with events in a particular
 namespace.
 ```python
-kc = KronosClient('http://localhost:8151', namespace='demo')
+kc = KronosClient('http://localhost:8151', namespace='kronos')
 start = datetime.now(tz=tzutc())
 ```
 ### A nonblocking client
@@ -36,7 +36,7 @@ defaulting to `0.1` specifies how many seconds to wait between batches
 to the server.  If the process running the client crashes before
 flushing events, those events will be lost.
 ```python
-nonblocking = KronosClient('http://localhost:8151', namespace='demo',
+nonblocking = KronosClient('http://localhost:8151', namespace='kronos',
                            blocking=False)
 ```
 ## Inserting data
