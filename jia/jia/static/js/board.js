@@ -471,13 +471,6 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
 
   $scope.getStreams();
 
-  $scope.showStreams = function () {
-    $modal.open({
-      templateUrl: '/static/partials/streams.html',
-      scope: $scope
-    });
-  }
-
   $scope.modes = [
     {name: 'recent', display: 'Most recent'},
     {name: 'range', display: 'Date range'},
