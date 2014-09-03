@@ -253,6 +253,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   $scope.saveBoard = function() {
     if ($scope.boardData.title == "") {
       $scope.missingTitle = true;
+      $('html, body').animate({ scrollTop: 0}, 'slow');
       return;
     }
 
