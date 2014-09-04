@@ -63,7 +63,7 @@ class KronosClientTest(unittest.TestCase):
                                     datetime.utcnow()))
       self.assertEqual(len(events), 4)
       self.assertEqual({1, 2, 3, 4}, set(map(lambda event: event['a'], events)))
-    
+   # TODO(jblum): test start_id, limit
 
   @kronos_client_test
   def test_delete(self):
@@ -89,6 +89,7 @@ class KronosClientTest(unittest.TestCase):
                                   kronos_time_now()))
     self.assertEqual(len(events), 2)
     self.assertEqual({1, 2}, set(map(lambda event: event['a'], events)))    
+    # TODO(jblum): test start_id
 
   @kronos_client_test
   def test_get_streams(self):
