@@ -115,6 +115,7 @@ class CohortTestCase(MetisServerTestCase):
   def test_cohort(self):
     expected = self.generate_data()
     plan = {
+      'kronos_url': 'http://localhost:9191',
       'cohort': {'stream': CohortTestCase.EMAIL_STREAM,
                  'start': CohortTestCase.START_DATETIME,
                  'cohorts': len(CohortTestCase.EMAIL_WEEKS),

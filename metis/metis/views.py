@@ -22,7 +22,7 @@ def query():
   # TODO(usmanm): `force` doesn't seem to work. Still need to send the correct
   # application/json header.
   request_json = request.get_json(force=True)
-  plan = request_json['plan']
-  return Response(('%s\r\n' % json.dumps(event)
-                   for event in service.execute_plan(plan)),
+  events = service.execute_plan(request_json['plan'],
+                                request_json.get('executor'))
+  return Response(('%s\r\n' % json.dumps(event) for event in events),
                   mimetype='application/json')

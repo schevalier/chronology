@@ -14,11 +14,9 @@ from copy import deepcopy
 
 from metis import app
 from metis.core.execute.base import Executor
-from metis.core.execute.utils import cast_to_number
 from metis.core.execute.utils import generate_filter
 from metis.core.execute.utils import get_properties_accessed_by_value
 from metis.core.execute.utils import get_value
-from metis.core.query.aggregate import Aggregator
 from metis.core.query.condition import Condition
 
 IGNORE_FILES_RE = re.compile('^.*\.pyc$', re.I)
@@ -92,65 +90,13 @@ class SparkExecutor(Executor):
     return self.context.parallelize(events)
 
   def execute_aggregate(self, node):
-    def group(event):
-      # `key` can only be strings in Spark if you want to use `reduceByKey`.
-      new_event = {value.alias: get_value(event, value)
-                   for value in node.group_by.values}
-      key = json.dumps(new_event, sort_keys=True)
-      for aggregate in node.aggregates:
-        arguments = aggregate.arguments
-        if aggregate.op == Aggregator.Op.COUNT:
-          if not len(arguments):
-            value = 1
-          else:
-            value = 0 if get_value(event, arguments[0]) is None else 1
-        elif aggregate.op == Aggregator.Op.SUM:
-          value = cast_to_number(get_value(event, arguments[0]), 0)
-        elif aggregate.op == Aggregator.Op.MIN:
-          value = cast_to_number(get_value(event, arguments[0]), float('inf'))
-        elif aggregate.op == Aggregator.Op.MAX:
-          value = cast_to_number(get_value(event, arguments[0]), -float('inf'))
-        elif aggregate.op == Aggregator.Op.AVG:
-          value = cast_to_number(get_value(event, arguments[0]), None)
-          if value is None:
-            value = (0, 0)
-          else:
-            value = (value, 1)
-        new_event[aggregate.alias] = value
-      return (key, new_event)
-
-    def _reduce(event1, event2):
-      event = deepcopy(event1)
-      for aggregate in node.aggregates:
-        alias = aggregate.alias
-        if aggregate.op in (Aggregator.Op.COUNT, Aggregator.Op.SUM):
-          value = event1[alias] + event2[alias]
-        elif aggregate.op == Aggregator.Op.MIN:
-          value = min(event1[alias], event2[alias])
-        elif aggregate.op == Aggregator.Op.MAX:
-          value = max(event1[alias], event2[alias])
-        elif aggregate.op == Aggregator.Op.AVG:
-          value = (event1[alias][0] + event2[alias][0],
-                   event1[alias][1] + event2[alias][1])
-        event[alias] = value
-      return event
-
     def finalize(event):
       # `event` is of the form (key, event).
-      event = deepcopy(event[1])
-      for aggregate in node.aggregates:
-        if aggregate.op == Aggregator.Op.AVG:
-          alias = aggregate.alias
-          value = event[alias]
-          if not value[1]:
-            event[alias] = None
-          else:
-            event[alias] = value[0] / float(value[1])
-      return event
+      return node.finalize_func(event[1])
 
     return (self.execute(node.stream)
-            .map(group)
-            .reduceByKey(_reduce)
+            .map(node.group_func)
+            .reduceByKey(node.reduce_func)
             .map(finalize))
 
   def execute_filter(self, node):
@@ -283,4 +229,4 @@ class SparkExecutor(Executor):
       for field in node.fields:
         new_event[field.alias] = get_value(event, field)
       return new_event
-    return self.execute(node.stream).map(project)
+    return self.execute(node.stream).map(node.map_func)

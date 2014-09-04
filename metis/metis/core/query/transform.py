@@ -1,3 +1,9 @@
+import json
+
+from copy import deepcopy
+
+from metis.core.execute.utils import cast_to_number
+from metis.core.execute.utils import get_value
 from metis.core.query import ExecutableNode
 from metis.core.query.aggregate import Aggregator
 from metis.core.query.aggregate import GroupBy
@@ -67,6 +73,15 @@ class Project(Transform):
     self.merge = merge
     super(Project, self).__init__(**kwargs)
 
+  def map_func(self, event):
+    if self.merge:
+      new_event = event
+    else:
+      new_event = {}
+    for field in self.fields:
+      new_event[field.alias] = get_value(event, field)
+    return new_event
+
   @classmethod
   def parse(self, _dict, **kwargs):
     _dict['fields'] = map(Value.parse, _dict['fields'])
@@ -119,7 +134,61 @@ class Aggregate(Transform):
     self.aggregates = aggregates
     self.group_by = group_by
     super(Aggregate, self).__init__(**kwargs)
-    
+
+  def group_func(self, event):
+    new_event = {value.alias: get_value(event, value)
+                 for value in self.group_by.values}
+    key = json.dumps(new_event, sort_keys=True)
+    for aggregate in self.aggregates:
+      arguments = aggregate.arguments
+      if aggregate.op == Aggregator.Op.COUNT:
+        if not len(arguments):
+          value = 1
+        else:
+          value = 0 if get_value(event, arguments[0]) is None else 1
+      elif aggregate.op == Aggregator.Op.SUM:
+        value = cast_to_number(get_value(event, arguments[0]), 0)
+      elif aggregate.op == Aggregator.Op.MIN:
+        value = cast_to_number(get_value(event, arguments[0]), float('inf'))
+      elif aggregate.op == Aggregator.Op.MAX:
+        value = cast_to_number(get_value(event, arguments[0]), -float('inf'))
+      elif aggregate.op == Aggregator.Op.AVG:
+        value = cast_to_number(get_value(event, arguments[0]), None)
+        if value is None:
+          value = (0, 0)
+        else:
+          value = (value, 1)
+      new_event[aggregate.alias] = value
+    return key, new_event
+
+  def reduce_func(self, event1, event2):
+    event = deepcopy(event1)
+    for aggregate in self.aggregates:
+      alias = aggregate.alias
+      if aggregate.op in (Aggregator.Op.COUNT, Aggregator.Op.SUM):
+        value = event1[alias] + event2[alias]
+      elif aggregate.op == Aggregator.Op.MIN:
+        value = min(event1[alias], event2[alias])
+      elif aggregate.op == Aggregator.Op.MAX:
+        value = max(event1[alias], event2[alias])
+      elif aggregate.op == Aggregator.Op.AVG:
+        value = (event1[alias][0] + event2[alias][0],
+                 event1[alias][1] + event2[alias][1])
+      event[alias] = value
+    return event
+
+  def finalize_func(self, event):
+    event = deepcopy(event)
+    for aggregate in self.aggregates:
+      if aggregate.op == Aggregator.Op.AVG:
+        alias = aggregate.alias
+        value = event[alias]
+        if not value[1]:
+          event[alias] = None
+        else:
+          event[alias] = value[0] / float(value[1])
+    return event
+
   @classmethod
   def parse(self, _dict):
     _dict['aggregates'] = map(Aggregator.parse, _dict['aggregates'])

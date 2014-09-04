@@ -144,6 +144,7 @@ def get_value(event, value):
     return FUNCTIONS[value.name](*args)
 
 
+# Conditions.
 CONDITIONS = {
   Condition.Op.LT: operator.lt,
   Condition.Op.LTE: operator.le,

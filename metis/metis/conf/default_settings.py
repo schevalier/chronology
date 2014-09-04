@@ -1,9 +1,10 @@
 DEBUG = True
+
+# Port to listen for request on.
 PORT = 8152
 
-EXECUTOR = 'spark.SparkExecutor'
+# All enabled executors.
+EXECUTORS = ['python.PythonExecutor']
 
-# Location of Spark home, where we can find PySpark.
-SPARK_HOME = '/scratch/spark-1.0.0'
-# Host name of the master node of your Spark cluster.
-SPARK_MASTER = 'local'
+# The default executor to use, if none is specified in the request.
+DEFAULT_EXECUTOR = 'python.PythonExecutor'

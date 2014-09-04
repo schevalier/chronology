@@ -3,7 +3,6 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil.tz import tzutc
 
-from metis import app
 from metis.common.time import datetime_to_kronos_time
 from metis.common.time import kronos_time_to_datetime
 from metis.common.time import kronos_time_to_epoch_time
@@ -107,7 +106,7 @@ def cohort_queryplan(plan):
   """
   cohort = plan['cohort']
   action = plan['action']
-  kronos_url = plan.get('kronos_url', app.config['KRONOS_SERVER'])
+  kronos_url = plan['kronos_url']
 
   # Calculate the start and end dates, in Kronos time, of the
   # beginning and end of the cohort and action streams that will be

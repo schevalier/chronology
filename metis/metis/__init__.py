@@ -10,7 +10,9 @@ def get_version(version=None):
 # The file path will have `metis.zip` in it if its being run on Spark workers.
 # In that case we don't want to run the following initialization code because
 # it can (and does) break things.
-if 'metis.zip' not in str(__file__):
+if 'metis.zip' in str(__file__):
+  app = None
+else:
   from flask import Flask
 
   METIS_PATH = os.path.realpath(os.path.dirname(__file__))
@@ -20,5 +22,3 @@ if 'metis.zip' not in str(__file__):
   app.config['PATH'] = METIS_PATH
 
   import metis.views
-else:
-  app = None
