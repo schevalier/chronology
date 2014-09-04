@@ -52,13 +52,13 @@ When you are done configuring, simply run `make` to start the Jia server.
 Visit [http://localhost:8152](http://localhost:8152) (or whatever port you
 configured Jia to run on) in a browser and you should see this:
 
-![Step 1](../docs/jia/getting-started/img/step1.png)
+![Step 1](docs/getting-started/img/step1.png)
 
 This is your first board. A board can have multiple panels. Each panel contains
 one query and displays one visualization. Call your board something like
 "Presidential Campaign Donations" and hit "Save".
 
-![Step 2](../docs/jia/getting-started/img/step2.png)
+![Step 2](docs/getting-started/img/step2.png)
 
 You will be able to get back to this board at any time via the "Saved Boards"
 dropdown on the toolbar.
@@ -66,20 +66,20 @@ dropdown on the toolbar.
 The first query we will visualize is a breakdown of donations by candidate over
 time. Start by adding a panel to your board and giving it a name.
 
-![Step 3](../docs/jia/getting-started/img/step3.png)
+![Step 3](docs/getting-started/img/step3.png)
 
 Hit the "Show Query" button to expand the query builder. Select a stream first.
 When working with the elections dataset, we only have one choice. Switch the
 timeframe from "Most recent" to "Date range" and specify a two year span from 
 January 1, 2011 to January 1, 2013.
 
-![Step 4](../docs/jia/getting-started/img/step4.png)
+![Step 4](docs/getting-started/img/step4.png)
 
 This will return about 100,000 events, so let's spare our browsers and set a
 limit of 10. At this point we just want to see what format the data is in.
 Set the visualization mode to "Table" and press "Run".
 
-![Step 5](../docs/jia/getting-started/img/step5.png)
+![Step 5](docs/getting-started/img/step5.png)
 
 Table view is useful for seeing what properties you have available on a given
 stream. By reviewing these 10 sample events, we can see that
@@ -106,13 +106,13 @@ result set to be ordered by `@time`. Let's do that.
 
 Here is what our completed query looks like.
 
-![Step 6](../docs/jia/getting-started/img/step6.png)
+![Step 6](docs/getting-started/img/step6.png)
 
 Switch the visualization type of this panel from "Table" to "Timeseries" and
 hit run. It will take a moment to run the aggregation, but you should be
 rewarded for your patience with a nice timeseries plot.
 
-![Step 7](../docs/jia/getting-started/img/step7.png)
+![Step 7](docs/getting-started/img/step7.png)
 
 Our 5 minutes are up, but if you're having as much fun as we are, we can do one
 more. This data set tells as much about the donors as it does about the
@@ -141,7 +141,7 @@ Order by `@value` in descending order and limit the results to something in the
 
 Here is our completed query:
 
-![Step 8](../docs/jia/getting-started/img/step8.png)
+![Step 8](docs/getting-started/img/step8.png)
 
 Switch the visualization type to "Bar Chart" and hit "Run." Depending on your
 screen width, the labels along the x-axis might be crunched. You can either
