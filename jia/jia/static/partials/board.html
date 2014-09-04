@@ -150,6 +150,14 @@
            ng-if="panel.cache.data.events.length > 1">
           <span class="glyphicon glyphicon-download"></span> Download CSV
         </a>
+        <div class="toggle-switch">
+          <label>Autorun</label>
+          <label class="toggle">
+            <input type="checkbox"
+                   ng-model="panel.data_source.autorun">
+            <span class="handle"></span>
+          </label>
+        </div>
       </div>
 
       <div class="code-controls query-builder"
