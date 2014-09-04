@@ -50,10 +50,10 @@ class QueryCache(object):
   CACHE_KEY = 'cached'
 
   def __init__(self, client, query_function, bucket_width, scratch_namespace,
-               query_function_args=[], query_function_kwargs={}):
+               query_function_args=None, query_function_kwargs=None):
     """
     Initializes the query cache.
-    
+
     :param client: A Kronos client for reading/storing computed streams.
     :param query_function: A function that, given a `start_date` and
     `end_date` that align on `bucket_width` boundaries, returns an
@@ -71,11 +71,11 @@ class QueryCache(object):
     :param query_function_kwargs: An optional dict of kwargs to send to
     query_function.
     """
-    
+
     self._client = client
     self._query_function = query_function
-    self._query_function_args = query_function_args
-    self._query_function_kwargs = query_function_kwargs
+    self._query_function_args = query_function_args or []
+    self._query_function_kwargs = query_function_kwargs or {}
     self._bucket_width = int(bucket_width.total_seconds())
     if self._bucket_width != bucket_width.total_seconds():
       raise ValueError('bucket_width can not have subsecond granularity')
