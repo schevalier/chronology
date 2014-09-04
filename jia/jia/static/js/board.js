@@ -399,6 +399,11 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     }, function (newVal, oldVal) {
       panel.cache.streamProperties = [];
     });
+
+    // When all other initialization is complete, run the query
+    if (panel.data_source.autorun) {
+      $scope.callSource(panel);
+    }
   };
 
   $scope.newPanelObj = function () {
@@ -408,6 +413,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       data_source: {
         source_type: 'querybuilder',
         refresh_seconds: null,
+        autorun: true,
         code: '',
         query: {
           stream: undefined,

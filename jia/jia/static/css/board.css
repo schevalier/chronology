@@ -168,11 +168,11 @@ cpf, op, aggop, value, prop {
   transition:all linear 3.5s;
 }
 
-.precompute, .code-toggle {
+.precompute, .code-toggle, .toggle-switch {
   padding: 7px 10px 0 10px;
 }
 
-.code-toggle label {
+.code-toggle label, .toggle-switch label {
   margin-top: 12px;
 }
 
@@ -180,7 +180,7 @@ cpf, op, aggop, value, prop {
   display: inline-block;
 }
 
-.precompute, .timeframe, .code-toggle {
+.precompute, .timeframe, .code-toggle, .toggle-switch {
   display: inline-block;
   vertical-align: top;
   height: 50px;
