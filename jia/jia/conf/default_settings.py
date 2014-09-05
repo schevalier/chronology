@@ -7,6 +7,7 @@ DEBUG = True
 PORT = 8152
 SECRET_KEY = 'a secret key---you should absolutely set this to something unique and strong'
 FORCE_SSL = False
+ALLOW_PYCODE = False # DANGEROUS: Allow arbitrary python queries from the browser
 SYSTEM_EMAIL = 'noreply@yourcompany.com' # Emails sent from here
 
 # Precompute settings

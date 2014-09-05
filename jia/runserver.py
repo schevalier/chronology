@@ -2,6 +2,7 @@
 
 import gevent.monkey; gevent.monkey.patch_all()
 import gevent.pywsgi
+import os
 import werkzeug.serving
 
 from argparse import ArgumentParser
@@ -15,7 +16,10 @@ if __name__ == '__main__':
   args = parser.parse_args()
   for key, value in args.__dict__.items():
     if value is not None:
-      app.config[key.upper()] = value
+      if key == 'config':
+        app.config.from_pyfile(os.path.join(os.pardir, args.config))
+      else:
+        app.config[key.upper()] = value
 
   werkzeug.serving.run_with_reloader(
     lambda: gevent.pywsgi.WSGIServer(('0.0.0.0', app.config['PORT']),

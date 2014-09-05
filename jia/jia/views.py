@@ -27,7 +27,8 @@ def status():
 @app.route('/', methods=['GET'])
 @require_auth
 def index():
-  return render_template('index.html')
+  allow_pycode = str(app.config['ALLOW_PYCODE']).lower()
+  return render_template('index.html', pycode=allow_pycode)
 
 
 @app.route('/<board_id>', methods=['GET'])

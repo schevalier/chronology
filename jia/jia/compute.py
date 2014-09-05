@@ -109,8 +109,10 @@ class QueryCompute(object):
 
     if self._metis:
       query_func = self._run_metis
-    else:
+    elif app.config['ALLOW_PYCODE']:
       query_func = self._run_query
+    else:
+      raise ValueError("`metis` must be `True` if ALLOW_PYCODE is not enabled")
       
     if self._bucket_width:
       bucket_width_timedelta = datetime.timedelta(seconds=bucket_width)
