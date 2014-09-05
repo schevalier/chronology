@@ -57,6 +57,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   // TODO(marcua): Re-add the sweet periodic UI refresh logic I cut
   // out of @usmanm's code in the Angular rewrite.
   $scope.boardId = $routeParams.boardId;
+  $scope.showCodeToggle = JIA_ALLOW_PYCODE;
 
   $scope.editorOptions = {
     lineWrapping: true,

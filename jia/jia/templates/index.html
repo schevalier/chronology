@@ -67,6 +67,9 @@
   <body ng-app="jia">
     <div ng-view></div>
     <!-- Jia JS -->
+    <script>
+      var JIA_ALLOW_PYCODE = {{ pycode }};
+    </script>
     <script src="/static/js/jia.js"></script>
     <script src="/static/js/querybuilder.js"></script>
     <script src="/static/js/board.js"></script>

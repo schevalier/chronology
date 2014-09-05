@@ -3,6 +3,7 @@ import json
 import requests
 import sys
 import traceback
+from jia import app
 from jia.common.time import datetime_to_epoch_time
 from jia.common.time import datetime_to_kronos_time
 from jia.common.time import epoch_time_to_kronos_time
@@ -13,7 +14,6 @@ from jia.utils import get_seconds
 from pykronos import KronosClient
 from pykronos.utils.cache import QueryCache
 from scheduler import client as scheduler_client
-from scheduler import app
 
 """Utilities for executing Jia queries.
 
@@ -109,8 +109,10 @@ class QueryCompute(object):
 
     if self._metis:
       query_func = self._run_metis
-    else:
+    elif app.config['ALLOW_PYCODE']:
       query_func = self._run_query
+    else:
+      raise ValueError("`metis` must be `True` if ALLOW_PYCODE is not enabled")
       
     if self._bucket_width:
       bucket_width_timedelta = datetime.timedelta(seconds=bucket_width)

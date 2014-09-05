@@ -3,7 +3,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from flask_sslify import SSLify
 
 app = Flask(__name__)
-app.config.from_pyfile('../settings.cfg')
+app.config.from_object('jia.conf.default_settings')
 app.secret_key = app.config['SECRET_KEY']
 db = SQLAlchemy(app)
 
