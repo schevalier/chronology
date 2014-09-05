@@ -41,6 +41,7 @@ from kronos.core.validator import validate_stream
 from kronos.storage.router import router
 from kronos.utils.decorators import endpoint
 from kronos.utils.decorators import ENDPOINTS
+from kronos.utils.streams import infer_schema as _infer_schema
 
 log = logging.getLogger(__name__)
 
@@ -258,9 +259,9 @@ def delete_events(environment, start_response, headers):
 
 
 @endpoint('/1.0/streams', methods=['POST'])
-def list_streams(environment, start_response, headers):
+def get_streams(environment, start_response, headers):
   """
-  List all streams and their properties that can be read from Kronos right now.
+  List all streams that can be read from Kronos right now.
   POST body should contain a JSON encoded version of:
     { namespace: namespace_name (optional)
     }
@@ -274,6 +275,40 @@ def list_streams(environment, start_response, headers):
         streams_seen_so_far.add(stream)
         yield '{0}\r\n'.format(marshal.dumps(stream))
   yield ''
+
+
+@endpoint('/1.0/streams/infer_schema', methods=['POST'])
+def infer_schema(environment, start_response, headers):
+  """
+  Return the inferred schema of the requested stream(s).
+  POST body should contain a JSON encoded version of:
+    [{ stream: stream_name,
+       namespace: namespace_name (optional)
+     }]
+  """
+  start_response('200 OK', headers)
+  schemas = dict()
+  for _dict in environment['json']:
+    namespace = _dict.get('namespace', settings.default_namespace)
+    stream = _dict['stream']
+    schemas[(namespace, stream)] = execute_greenlet_async(
+      _infer_schema,
+      namespace,
+      stream)
+  response = {'schemas': []}
+  success = True
+  for key, result in schemas.iteritems():
+    try:
+      value = result.get()
+    except Exception, e:
+      success = False
+      value = repr(e)
+    finally:
+      response['schemas'].append({'namespace': key[0],
+                                  'stream': key[1],
+                                  'schema': value})
+  response[SUCCESS_FIELD] = success
+  return response
 
 
 def application(environment, start_response):

@@ -21,8 +21,9 @@ ENDPOINTS = {}
 # decorator below for the various serving modes?
 _serving_mode_endpoints = {
   ServingMode.ALL: frozenset({'index', 'put_events', 'get_events',
-                              'delete_events', 'list_streams'}),
-  ServingMode.READONLY: frozenset({'index', 'get_events', 'list_streams'}),
+                              'delete_events', 'get_streams', 'infer_schema'}),
+  ServingMode.READONLY: frozenset({'index', 'get_events', 'get_streams',
+                                   'infer_schema'}),
   ServingMode.COLLECTOR: frozenset({'index', 'put_events'}),
   }
 

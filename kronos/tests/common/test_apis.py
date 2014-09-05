@@ -251,6 +251,26 @@ class TestKronosAPIs(KronosServerTestCase):
     self.assertEqual(len(retrieved_streams), 10)
     self.assertEqual(retrieved_streams, set(streams))
 
+  def test_schema(self):
+    events = [{'a': 1, TIMESTAMP_FIELD: 1},
+              {'a': 2.3, TIMESTAMP_FIELD: 2, 'optional': False}]
+    self.put('TestKronosAPIs_test_schema', events)
+    time.sleep(0.1)
+    schema = self.infer_schema('TestKronosAPIs_test_schema')['schemas'][0]
+    self.assertEqual(schema['stream'], 'TestKronosAPIs_test_schema')
+    self.assertEqual(schema['schema']['required'],
+                     [ID_FIELD, TIMESTAMP_FIELD, 'a'])
+    self.assertEqual(sorted(schema['schema']['properties']),
+                     [ID_FIELD, TIMESTAMP_FIELD, 'a', 'optional'])
+    self.assertEqual(schema['schema']['properties'][ID_FIELD]['type'],
+                     'string')
+    self.assertEqual(schema['schema']['properties'][TIMESTAMP_FIELD]['type'],
+                     'integer')
+    self.assertEqual(schema['schema']['properties']['a']['type'],
+                     'number')
+    self.assertEqual(schema['schema']['properties']['optional']['type'],
+                     'boolean')
+
   def test_namespaces(self):
     namespace1 = 'namespace1'
     namespace2 = 'namespace2'

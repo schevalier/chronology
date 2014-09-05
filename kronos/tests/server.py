@@ -24,6 +24,7 @@ class KronosServerTestCase(unittest.TestCase):
     self.delete_path = '%s/delete' % EVENT_BASE_PATH
     self.index_path = '%s/index' % BASE_PATH    
     self.streams_path = '%s/streams' % BASE_PATH
+    self.infer_schema_path = '%s/streams/infer_schema' % BASE_PATH
   
   def index(self):
     response = self.http_client.get(path=self.index_path)
@@ -92,3 +93,14 @@ class KronosServerTestCase(unittest.TestCase):
                                      buffered=True)
     self.assertEqual(response.status_code, 200)
     return map(marshal.loads, response.data.splitlines())
+
+  def infer_schema(self, stream_or_list, namespace=None):
+    if not isinstance(stream_or_list, list):
+      data = [{'stream': stream_or_list}]
+    else:
+      data = stream_or_list
+    response = self.http_client.post(self.infer_schema_path,
+                                     data=marshal.dumps(data),
+                                     buffered=True)
+    self.assertEqual(response.status_code, 200)
+    return marshal.loads(response.data)

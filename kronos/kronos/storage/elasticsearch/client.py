@@ -349,6 +349,7 @@ class ElasticSearchStorage(BaseStorage):
           continue
         last_id = _id
         event = hit['_source']
+        del event[LOGSTASH_TIMESTAMP_FIELD]
         yield json.dumps(event)
         limit -= 1
         if limit == 0:

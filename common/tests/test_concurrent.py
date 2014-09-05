@@ -6,8 +6,8 @@ import random
 import time
 import unittest
 
-from lib.concurrent import GreenletExecutor
-from lib.concurrent import GIPCExecutor
+from src.concurrent import GreenletExecutor
+from src.concurrent import GIPCExecutor
 
 
 def executor_test(function):
