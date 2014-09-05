@@ -98,8 +98,8 @@ If you only want to retrieve a limited number of events, use the
 		fmt.Printf("Limited event: %v\n", kronosStream.Response)
 	}
 ```
-   ## Getting a list of streams
-   To see all streams available in this namespace, use `GetStreams`.
+## Getting a list of streams
+To see all streams available in this namespace, use `GetStreams`.
 ```golang
 
 	ch1, _ := kc.GetStreams(nil)
@@ -107,17 +107,17 @@ If you only want to retrieve a limited number of events, use the
 		fmt.Printf("Found stream %v\n", kronosResponse.Json["stream"])
 	}
 ```
-   ## Deleting data
-   Sometimes, we make an oopsie and need to delete some events.  The
-   `Delete` function takes similar arguments for the start and end
-   timestamps to delete.
+## Deleting data
+Sometimes, we make an oopsie and need to delete some events.  The
+`Delete` function takes similar arguments for the start and end
+timestamps to delete.
 
-   Note: The most common Kronos use cases are for write-mostly systems
-   with high-throughput reads.  As such, you can imagine that most
-   backends will not be delete-optimized.  There's nothing in the Kronos
-   API that inherently makes deletes not performant, but we imagine some
-   backends will make tradeoffs to optimize their write and read paths at
-   the expense of fast deletes.
+Note: The most common Kronos use cases are for write-mostly systems
+with high-throughput reads.  As such, you can imagine that most
+backends will not be delete-optimized.  There's nothing in the Kronos
+API that inherently makes deletes not performant, but we imagine some
+backends will make tradeoffs to optimize their write and read paths at
+the expense of fast deletes.
 ```golang
 	kronosResponse, _ = kc.Delete(stream, startTime, gokronos.KronosTimeNow(), nil)
 	backend := kronosResponse.Json[stream].(map[string]interface{})["memory"]

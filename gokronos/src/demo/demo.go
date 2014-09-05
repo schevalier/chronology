@@ -103,8 +103,8 @@ func main() {
 	}
 
 	/*
-	   ## Getting a list of streams
-	   To see all streams available in this namespace, use `GetStreams`.
+		## Getting a list of streams
+		To see all streams available in this namespace, use `GetStreams`.
 	*/
 
 	ch1, _ := kc.GetStreams(nil)
@@ -113,17 +113,17 @@ func main() {
 	}
 
 	/*
-	   ## Deleting data
-	   Sometimes, we make an oopsie and need to delete some events.  The
-	   `Delete` function takes similar arguments for the start and end
-	   timestamps to delete.
+		## Deleting data
+		Sometimes, we make an oopsie and need to delete some events.  The
+		`Delete` function takes similar arguments for the start and end
+		timestamps to delete.
 
-	   Note: The most common Kronos use cases are for write-mostly systems
-	   with high-throughput reads.  As such, you can imagine that most
-	   backends will not be delete-optimized.  There's nothing in the Kronos
-	   API that inherently makes deletes not performant, but we imagine some
-	   backends will make tradeoffs to optimize their write and read paths at
-	   the expense of fast deletes.
+		Note: The most common Kronos use cases are for write-mostly systems
+		with high-throughput reads.  As such, you can imagine that most
+		backends will not be delete-optimized.  There's nothing in the Kronos
+		API that inherently makes deletes not performant, but we imagine some
+		backends will make tradeoffs to optimize their write and read paths at
+		the expense of fast deletes.
 	*/
 	kronosResponse, _ = kc.Delete(stream, startTime, gokronos.KronosTimeNow(), nil)
 	backend := kronosResponse.Json[stream].(map[string]interface{})["memory"]
