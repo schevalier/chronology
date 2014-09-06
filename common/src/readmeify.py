@@ -15,10 +15,12 @@ class Parser(object):
 
 PYTHON = "python"
 GO_LANG = "golang"
+JAVASCRIPT = "javascript"
 
 PARSERS = {
     PYTHON: Parser('"""', '"""', 'python'),
     GO_LANG: Parser('/*', '*/', 'golang'),
+    JAVASCRIPT: Parser('/*', '*/', 'javascript')
 }
 
 
