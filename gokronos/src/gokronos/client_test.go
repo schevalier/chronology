@@ -10,7 +10,7 @@ import (
 const sleepTime = 1000 * time.Millisecond
 
 func setupClient() *KronosClient {
-	return MakeKronosClient("http://127.0.0.1:8151", "demo")
+	return MakeKronosClient("http://127.0.0.1:8151", "kronos")
 }
 
 func TestIndex(t *testing.T) {
@@ -25,7 +25,7 @@ func TestPut(t *testing.T) {
 	event := make(map[string]interface{})
 	event["test_event"] = 1
 	optionalArgs := make(map[string]interface{})
-	optionalArgs["namespace"] = "demo"
+	optionalArgs["namespace"] = "kronos"
 	kronosResponse, err := kc.Put(stream, event, optionalArgs)
 	assertNoError(t, "putWithValues", err)
 	assertPut(t, kronosResponse)
