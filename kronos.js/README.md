@@ -14,6 +14,14 @@ var KronosClient = require("./kronos.js");
 var pprint = function(object) {
     return util.inspect(object, false, null);
 };
+
+var logResponse = function(kronosResponse, msg) {
+    for (var i = 0; i < kronosResponse.length; i++) {
+        console.log(msg + ": " + pprint(kronosResponse[i]));
+    }
+};
+
+var sleepTime = 1000; // ms
 ```
 Create a Kronos client with the URL of a running server. Optionally
 provide a `namespace` to explicitly work with events in a particular namespace.
@@ -63,4 +71,75 @@ event[kc.TIMESTAMP_FIELD] = kc.timeToKronosTime(new Date(1980, 1, 6, 0, 0, 0, 0)
 kc.put(stream, event, null, function(kronosResponse) {
     console.log("KronosPut: " + pprint(kronosResponse));
 });
+```
+## Retrieving data
+Retrieving data requires a `stream` name, a `startTime`, and an `endTime`.
+Note that an `kc.ID_FIELD` and `kc.TIMESTAMP_FIELD` field are
+attached to each event. The `kc.ID_FIELD` is a UUID1-style identifier
+with its time bits derived from the timestamp. This allows event IDs
+to be roughly sortable by the time that they happened while providing
+a deterministic tiebreaker when two events happened at the same time.
+```javascript
+setTimeout(function() {
+    kc.get(stream, startTime, kc.kronosTimeNow(), null, function(kronosResponse) {
+        logResponse(kronosResponse, "Recieved event");
+    });
+}, sleepTime);
+```
+### Event order
+By default, events are returned in ascending order of their
+`kc.ID_FIELD`. Pass in the optional argument `kc.DESCENDING_ORDER` argument to
+change this behavior to be in descending order of `kc.ID_FIELD`.
+```javascript
+setTimeout(function() {
+    var options = {
+        "order": kc.DESCENDING_ORDER
+    };
+    kc.get(stream, startTime, kc.kronosTimeNow(), options, function(kronosResponse) {
+        logResponse(kronosResponse, "Reverse event");
+    });
+}, sleepTime);
+```
+### Limiting events
+If you only want to retrieve a limited number of events, use the
+`limit` argument.
+```javascript
+setTimeout(function() {
+    var options = {
+        "limit": 1,
+    };
+    kc.get(stream, startTime, kc.kronosTimeNow(), options, function(kronosResponse) {
+        logResponse(kronosResponse, "Limited event");
+    });
+}, sleepTime);
+```
+   ## Getting a list of streams
+   To see all streams available in this namespace, use `kc.get_streams`.
+```javascript
+
+setTimeout(function() {
+    kc.get_streams(null, function(kronosResponse) {
+        logResponse(kronosResponse, "Found stream");
+    });
+}, sleepTime);
+```
+   ## Deleting data
+   Sometimes, we make an oopsie and need to delete some events.  The
+   `kc.delete` function takes similar arguments for the start and end
+   timestamps to delete.
+
+   Note: The most common Kronos use cases are for write-mostly systems
+   with high-throughput reads.  As such, you can imagine that most
+   backends will not be delete-optimized.  There's nothing in the Kronos
+   API that inherently makes deletes not performant, but we imagine some
+   backends will make tradeoffs to optimize their write and read paths at
+   the expense of fast deletes.
+```javascript
+
+setTimeout(function() {
+    kc.delete(stream, startTime, kc.kronosTimeNow(), null, function(kronosResponse) {
+        var numDeleted = kronosResponse[stream].memory.num_deleted;
+        console.log("Deleted " + numDeleted + " events");
+    });
+}, sleepTime);
 ```
