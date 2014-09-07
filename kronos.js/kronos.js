@@ -8,13 +8,27 @@ try {
     request = require("request");
 } catch (err) {}
 
+/*
+ * @param options {Object}
+ *    @param kronosUrl {String} Url for running Kronos server
+ *    @param namespace {String} (optional): Namespace to store events in.
+ *    @param jQuery {Object} (optional): use jQuery to make AJAX requests.
+ */
 function KronosClient(options) {
-    // `kronosUrl`: The Url of the Kronos server to talk to.
-    // `namespace` (optional): Namespace to store events in.
-    var self = this;
-    options = options || {};
+    if (typeof options.kronosUrl === "undefined") {
+        throw new Error("A kronosUrl must be provided");
+    }
+    var kronosUrl = options.kronosUrl;
     var namespace = options.namespace || null;
     var $ = options.jQuery;
+
+    var indexUrl = kronosUrl + "/1.0/index/";
+    var putUrl = kronosUrl + "/1.0/events/put";
+    var getUrl = kronosUrl + "/1.0/events/get";
+    var deleteUrl = kronosUrl + "/1.0/events/delete";
+    var streamsUrl = kronosUrl + "/1.0/streams";
+
+    var self = this;
     var noop = function() {};
     var HTTP_OK = 200;
 
@@ -23,13 +37,6 @@ function KronosClient(options) {
     self.SUCCESS_FIELD = "@success";
     self.ASCENDING_ORDER = "ascending";
     self.DESCENDING_ORDER = "descending";
-
-    var kronosUrl = options.kronosUrl;
-    var indexUrl = kronosUrl + "/1.0/index/";
-    var putUrl = kronosUrl + "/1.0/events/put";
-    var getUrl = kronosUrl + "/1.0/events/get";
-    var deleteUrl = kronosUrl + "/1.0/events/delete";
-    var streamsUrl = kronosUrl + "/1.0/streams";
 
     /*
      * Get the current time as KronosTime
@@ -105,6 +112,7 @@ function KronosClient(options) {
         var makeRequest = function(url, method, data, onSuccess, onError) {
             onSuccess = onSuccess || noop;
             onError = onError || noop;
+            data = JSON.stringify(data);
             if (typeof request !== "undefined") { //node.js
                 request({
                         "url": url,
@@ -112,7 +120,7 @@ function KronosClient(options) {
                         "body": data,
                         "headers": {
                             "Content-type": "application/json"
-                        }
+                        },
                     },
                     function(error, response, body) {
                         if (error) {
@@ -184,7 +192,7 @@ function KronosClient(options) {
      * @param statusCode {int}
      */
     var httpSuccess = function(statusCode) {
-        return (statusCode === HTTP_OK);
+        return statusCode === HTTP_OK;
     };
 
     /*
@@ -199,6 +207,7 @@ function KronosClient(options) {
      * Parse a response from a http request into json and send the results to the `callback` function.
      * `errBack` can be called if the http `statusCode` is not OK, no JSON results are returned or the `SUCCESS_FIELD`
      * is not truthy.
+     *
      * @param body {String}
      * @param statusCode{int}
      * @param callback {Function} to callback on completion
@@ -221,12 +230,12 @@ function KronosClient(options) {
             errBack(new Error("Error processing request: " + responseData.data));
         }
     };
+
     /*
      * Parse a string or Date into kronos time.
      * @param time {String || Date || int}
      */
     var parseTime = function(time) {
-
         if (typeof time === "string") {
             time = Date.parse(time);
         }
@@ -234,6 +243,35 @@ function KronosClient(options) {
             time = self.timeToKronosTime(time);
         }
         return time;
+    };
+
+    /*
+     * Helper function to set `namespace` in the requestDict.
+     * Tries to use options and falls back to the client level namespace, if present.
+     *
+     * @param options {Object}
+     * @param requestDict {Object}
+     */
+    var setNamespace = function(options, requestDict) {
+        var namespace = options.namespace || self.namespace;
+        if (namespace) {
+            requestDict.namespace = namespace;
+        }
+    };
+
+    /*
+     * Helper function to either `startId` or `startTime` in the requestDict.
+     *
+     * @param options {Object}
+     * @param startTime {KronosTime}
+     * @param requestDict {Object}
+     */
+    var setStart = function(options, startTime, requestDict) {
+        if (options.startId) {
+            requestDict.start_id = options.startId;
+        } else {
+            requestDict.start_time = startTime;
+        }
     };
 
     self.index = function(callback, errBack) {
@@ -252,7 +290,7 @@ function KronosClient(options) {
      */
     self.put = function(stream, event, namespace, callback, errBack) {
         event = event || {};
-        if (event[self.TIMESTAMP_FIELD] === null) {
+        if (!event[self.TIMESTAMP_FIELD]) {
             event[self.TIMESTAMP_FIELD] = self.kronosTimeNow();
         }
         var data = {
@@ -260,7 +298,6 @@ function KronosClient(options) {
             events: {},
         };
         data.events[stream] = [event];
-        data = JSON.stringify(data);
         http.post(putUrl, data, function(body, statusCode) {
             parseKronosResponse(body, statusCode, callback, errBack);
         }, errBack);
@@ -294,10 +331,8 @@ function KronosClient(options) {
         if (options.limit) {
             requestDict.limit = options.limit;
         }
-        var namespace = options.namespace || self.namespace;
-        if (namespace) {
-            requestDict.namespace = namespace;
-        }
+
+        setNamespace(options, requestDict);
 
         var errorCount = 0;
         var maxErrors = 10;
@@ -306,10 +341,9 @@ function KronosClient(options) {
             callback = callback || noop;
             errBack = errBack || noop;
             var err;
-            var data = JSON.stringify(requestDict);
 
             // TODO(jblum): stream response
-            http.post(getUrl, data, function(body, statusCode) {
+            http.post(getUrl, requestDict, function(body, statusCode) {
                 if (!httpSuccess(statusCode)) {
                     errorCount++;
                     err = getServerError(statusCode);
@@ -349,41 +383,30 @@ function KronosClient(options) {
         options = options || {};
         startTime = parseTime(startTime);
         endTime = parseTime(endTime);
+
         var requestDict = {
             "stream": stream,
             "end_time": endTime,
         };
 
-        if (options.startId) {
-            requestDict.start_id = options.startId;
-        } else {
-            requestDict.start_time = startTime;
-        }
+        setStart(options, startTime, requestDict);
+        setNamespace(options, requestDict);
 
-        var namespace = options.namespace || self.namespace;
-        if (namespace) {
-            requestDict.namespace = namespace;
-        }
-
-        http.post(deleteUrl, JSON.stringify(requestDict),
+        http.post(deleteUrl, requestDict,
             function(body, statusCode) {
                 parseKronosResponse(body, statusCode, callback, errBack);
             }, errBack);
     };
 
     /*
-     * Queries the Kronos server and fetches a list
-     * of streams available to be read.
+     * Queries the Kronos server and fetches a list of streams available to be read.
      */
     self.get_streams = function(options, callback, errBack) {
         options = options || {};
         var requestDict = {};
-        var namespace = options.namespace || self.namespace;
-        if (namespace) {
-            requestDict.namespace = namespace;
-        }
-        var data = JSON.stringify(requestDict);
-        http.post(streamsUrl, JSON.stringify(requestDict), function(body, statusCode) {
+        setNamespace(options, requestDict);
+
+        http.post(streamsUrl, requestDict, function(body, statusCode) {
             if (!httpSuccess(statusCode)) {
                 errBack(getServerError(statusCode));
             } else {
