@@ -6,14 +6,23 @@ into `README.md`, so you can consume the readme while running the
 javascript program with node.js (`make demo`) to understand how it works.
 
 The kronos.js package contains support for both the browser and a node.js server, either will work seamlessly with the client. For simplicity, we use node.js for this demo.
+
+If you would like to see an in browser demo, simply open the webpage `demo.html` in your browser and open a debugger to see the console messages.
 ```javascript
 "use strict";
-var util = require("util");
-var KronosClient = require("./kronos.js");
+try { // demo.html
+    var util = require("util");
+    var KronosClient = require("./kronos.js");
 
-var pprint = function(object) {
-    return util.inspect(object, false, null);
-};
+    var pprint = function(object) {
+        return util.inspect(object, false, null);
+    };
+
+} catch (e) {
+    pprint = function(object) {
+        return object
+    };
+}
 
 var logResponse = function(kronosResponse, msg) {
     for (var i = 0; i < kronosResponse.length; i++) {

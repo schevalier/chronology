@@ -344,26 +344,27 @@ function KronosClient(options) {
 
             // TODO(jblum): stream response
             http.post(getUrl, requestDict, function(body, statusCode) {
+                var responseData;
                 if (!httpSuccess(statusCode)) {
                     errorCount++;
                     err = getServerError(statusCode);
                 } else {
-                    var responseData = parseJSON(body);
+                    responseData = parseJSON(body);
                     if (responseData.err) {
                         errorCount++;
                         err = responseData.err;
                     }
-                    if (errorCount === maxErrors) {
-                        errBack(err);
-                    } else if (err) {
-                        retry(errorCount, requestDict, callback, errBack);
-                    } else {
-                        callback(responseData.data);
-                    }
+                }
+                if (errorCount >= maxErrors) {
+                    errBack(err);
+                } else if (err) {
+                    retry(errorCount, requestDict, callback, errBack);
+                } else {
+                    callback(responseData.data);
                 }
             }, function(err) {
                 errorCount++;
-                if (errorCount === maxErrors) {
+                if (errorCount >= maxErrors) {
                     errBack(err);
                 } else if (err) {
                     retry(errorCount, requestDict, callback, errBack);
@@ -422,6 +423,6 @@ function KronosClient(options) {
     return self;
 }
 
-(function(exports) {
+if (typeof module !== "undefined") {
     module.exports = KronosClient;
-})(typeof exports === "undefined" ? this.KronosClient = {} : exports);
+}
