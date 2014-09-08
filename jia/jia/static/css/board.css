@@ -637,3 +637,7 @@ ul.steps .form-control {
   vertical-align: middle;
   width: 150px;
 }
+
+div.visualization-container {
+  overflow-x: auto;
+}
