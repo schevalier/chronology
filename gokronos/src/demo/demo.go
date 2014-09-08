@@ -22,7 +22,7 @@ func main() {
 		provide a `namespace` to explicitly work with events in a particular namespace.
 		To not use a namespace, create the client with `namespace := ""`
 	*/
-	namespace := "demo"
+	namespace := "kronos"
 	kc := gokronos.MakeKronosClient("http://127.0.0.1:8151", namespace)
 	startTime := gokronos.KronosTimeNow()
 
