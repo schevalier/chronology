@@ -2,7 +2,8 @@
      ng-repeat="field in step.operation.operands['fields']">
   <cpf arg="field['name']" exclue="constant"></cpf>
   <direction arg="field['direction']"></direction>
-  <button class="btn btn-danger btn-xs" ng-click="removeArg($index)">
+  <button class="btn btn-danger btn-xs"
+          ng-click="removeOperand($index, step.operation.operands['fields'])">
     &times;
   </button>
 </div>
