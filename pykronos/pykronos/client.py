@@ -303,8 +303,14 @@ class KronosClient(object):
     requested streams.
     """
     if isinstance(streams, types.StringTypes):
-      request_dict = {'streams': [{'stream': streams, 'namespace': namespace}]}
+      request_dict = {'streams': [{'stream': streams,
+                                   'namespace': namespace or self.namespace}]}
     else:
+      if self.namespace:
+        for stream in streams:
+          if 'namespace' in stream:
+            continue
+          stream['namespace'] = self.namespace
       request_dict = {'streams': streams}
     return self._make_request(self._infer_schema_url, data=request_dict)
 
