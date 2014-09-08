@@ -13,7 +13,7 @@ jobs on the framework of your choice.
 
 ## Settings details
 
-Take a look at [settings.py.template](settings.py.template).  We tried
+Take a look at [settings.py.template](metis/conf/default_settings.py).  We tried
 to document all of the settings pretty thoroughly.  If anything is
 unclear, [file an issue](../../../issues?state=open) and we'll clarify!
 
