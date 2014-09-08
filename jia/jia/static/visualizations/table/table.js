@@ -37,7 +37,7 @@ module.factory('table', function ($filter, ngTableParams) {
         hash |= 0; // Convert to 32bit integer
       }
       // Must start with a letter to make ng-table happy
-      return 'a' + hash;
+      return 'a' + Math.abs(hash);
     };
 
     this.setData = function (data, msg) {
