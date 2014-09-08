@@ -37,7 +37,7 @@ class KronosLoggingMiddleware(object):
     self.namespace = kronos_config.get('namespace')
     self.log_exception_stack_trace = kronos_config.get(
         'log_exception_stack_trace', False)
-    self.fail_silently = kronos_config.get('fail_silently', False)
+    self.fail_silently = kronos_config.get('fail_silently', True)
 
   def _get_ip(self, request):
     if not KronosLoggingMiddleware.FORWARDED_IP_FIELDS & set(request.META):
