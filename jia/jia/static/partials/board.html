@@ -76,10 +76,12 @@
        ng-cloak>
     <input type="text" class="form-control panel-title" placeholder="New panel"
            ng-model="panel.title"/>
-    <visualization ng-repeat="visualization in panel.cache.visualizations"
-                   module="visualization"
-                   ng-if="visualization.meta.title == panel.display.display_type">
-    </visualization>
+    <div class="visualization-container">
+      <visualization ng-repeat="visualization in panel.cache.visualizations"
+                     module="visualization"
+                     ng-if="visualization.meta.title == panel.display.display_type">
+      </visualization>
+    </div>
     <div class="code-box">
       <div class="error log alert alert-danger"
            ng-if="panel.cache.log.errors.length">
