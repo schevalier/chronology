@@ -34,7 +34,8 @@ module.factory('timeseries', function () {
 
     this.timeseriesOptions = {
       renderer: 'line',
-      width: parseInt($('.panel').width() * .73)
+      width: parseInt($('.panel').width() * .73),
+      interpolation: 'linear'
     };
 
     this.timeseriesFeatures = {
