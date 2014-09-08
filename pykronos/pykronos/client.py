@@ -64,9 +64,10 @@ class KronosClient(object):
     self._delete_url = '%s/1.0/events/delete' % http_url
     self._index_url = '%s/1.0/index' % http_url
     self._streams_url = '%s/1.0/streams' % http_url
+    self._infer_schema_url = '%s/1.0/streams/infer_schema' % http_url
 
     self.namespace = namespace
-    self.chunk_size = chunk_size
+    self._chunk_size = chunk_size
 
     self._blocking = blocking
     if not blocking:
@@ -84,11 +85,11 @@ class KronosClient(object):
         self.daemon = True
       def run(self):
         while True:
-          me.flush()
+          me._flush()
           time.sleep(me._sleep_block)
     PutThread().start()
 
-  def flush(self):
+  def _flush(self):
     if self._blocking:
       return
     old_queue = None
@@ -117,12 +118,24 @@ class KronosClient(object):
     if tb:
       exception_dict['stack_trace'] = traceback.extract_tb(tb)
 
+  def _make_request(self, url, data=None, stream=False, timeout=None):
+    if data is not None:
+      data = json.dumps(data)
+    response = requests.post(url,
+                             data=data,
+                             stream=stream,
+                             timeout=timeout)
+    if response.status_code != requests.codes.ok:
+      raise KronosClientError('Bad status code: %d.' % response.status_code)
+    if not stream:
+      response = response.json()
+      if not response[SUCCESS_FIELD]:
+        raise KronosClientError('Encountered errors: %s' %
+                                _get_errors(response))
+    return response
+
   def index(self):
-    response_dict = requests.get(self._index_url).json()
-    if not response_dict[SUCCESS_FIELD]:
-      raise KronosClientError('Encountered errors %s' %
-                              _get_errors(response_dict))
-    return response_dict
+    return self._make_request(self._index_url)
 
   def put(self, event_dict, namespace=None):
     """
@@ -172,16 +185,7 @@ class KronosClient(object):
     if namespace is not None:
       request_dict['namespace'] = namespace
     
-    response = requests.post(self._put_url, data=json.dumps(request_dict))
-    if response.status_code != requests.codes.ok:
-      raise KronosClientError('Received response code %s with errors %s' %
-                              (response.status_code,
-                               response.json().get(ERRORS_FIELD)))
-    response_dict = response.json()
-    if not response_dict[SUCCESS_FIELD]:
-      raise KronosClientError('Encountered errors %s' %
-                              _get_errors(response_dict))
-    return response_dict
+    return self._make_request(self._put_url, data=request_dict)
 
   def get(self, stream, start_time, end_time, start_id=None, limit=None,
           order=ResultOrder.ASCENDING, namespace=None, timeout=None):
@@ -223,14 +227,11 @@ class KronosClient(object):
     last_id = None
     while True:
       try:
-        response = requests.post(self._get_url,
-                                 data=json.dumps(request_dict),
-                                 stream=True,
-                                 timeout=timeout)
-        if response.status_code != requests.codes.ok:
-          raise KronosClientError('Bad server response code %d' %
-                                  response.status_code)
-        for line in response.iter_lines(chunk_size=self.chunk_size):
+        response = self._make_request(self._get_url,
+                                      data=request_dict,
+                                      stream=True,
+                                      timeout=timeout)
+        for line in response.iter_lines(chunk_size=self._chunk_size):
           if line:
             # Python's json adds a lot of overhead when decoding a large
             # number of events; ujson fares better. However ujson won't work
@@ -278,17 +279,7 @@ class KronosClient(object):
     if namespace is not None:
       request_dict['namespace'] = namespace
 
-    response = requests.post(self._delete_url,
-                             data=json.dumps(request_dict),
-                             stream=True)
-    if response.status_code != requests.codes.ok:
-      raise KronosClientError('Bad server response code %d' %
-                              response.status_code)
-    response_dict = response.json()
-    if not response_dict[SUCCESS_FIELD]:
-      raise KronosClientError('Encountered errors %s' %
-                              _get_errors(response_dict))
-    return response_dict
+    return self._make_request(self._delete_url, data=request_dict)
 
   def get_streams(self, namespace=None):
     """
@@ -299,15 +290,23 @@ class KronosClient(object):
     namespace = namespace or self.namespace    
     if namespace is not None:
       request_dict['namespace'] = namespace
-    response = requests.post(self._streams_url,
-                             data=json.dumps(request_dict),
-                             stream=True)
-    if response.status_code != requests.codes.ok:
-      raise KronosClientError('Bad server response code %d' %
-                              response.status_code)
+    response = self._make_request(self._streams_url,
+                                  data=request_dict,
+                                  stream=True)
     for line in response.iter_lines():
       if line:
-        yield json.loads(line)
+        yield line
+
+  def infer_schema(self, streams, namespace=None):
+    """
+    Queries the Kronos server and fetches the infered schema for all the
+    requested streams.
+    """
+    if isinstance(streams, types.StringTypes):
+      request_dict = {'streams': [{'stream': streams, 'namespace': namespace}]}
+    else:
+      request_dict = {'streams': streams}
+    return self._make_request(self._infer_schema_url, data=request_dict)
 
   def log_function(self, stream_name, properties={},
                    log_function_stack_trace=False,

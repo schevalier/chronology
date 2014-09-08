@@ -1,3 +1,4 @@
+import types
 import unittest
 
 from werkzeug.test import Client
@@ -92,15 +93,15 @@ class KronosServerTestCase(unittest.TestCase):
                                      data=marshal.dumps(data),
                                      buffered=True)
     self.assertEqual(response.status_code, 200)
-    return map(marshal.loads, response.data.splitlines())
+    return response.data.splitlines()
 
   def infer_schema(self, stream_or_list, namespace=None):
-    if not isinstance(stream_or_list, list):
-      data = [{'stream': stream_or_list}]
+    if isinstance(stream_or_list, types.StringTypes):
+      streams = [{'stream': stream_or_list, 'namespace': namespace}]
     else:
-      data = stream_or_list
+      streams = stream_or_list
     response = self.http_client.post(self.infer_schema_path,
-                                     data=marshal.dumps(data),
+                                     data=marshal.dumps({'streams': streams}),
                                      buffered=True)
     self.assertEqual(response.status_code, 200)
     return marshal.loads(response.data)

@@ -5,6 +5,7 @@ import unittest
 from datetime import datetime
 
 from pykronos import KronosClient
+from pykronos.client import ID_FIELD
 from pykronos.client import TIMESTAMP_FIELD
 from pykronos.common.time import kronos_time_now
 
@@ -104,6 +105,27 @@ class KronosClientTest(unittest.TestCase):
     for i in xrange(10):
       stream = '%s_%s' % (self.stream, i)
       self.assertTrue(stream in streams)
+
+  @kronos_client_test
+  def test_inferred_schema(self):
+    events = [{'a': 1, TIMESTAMP_FIELD: 1},
+              {'a': 2.3, TIMESTAMP_FIELD: 2, 'optional': False}]
+    self.client.put({self.stream: events})
+    time.sleep(0.1)
+    schema = self.client.infer_schema([{'stream': self.stream}])['schemas'][0]
+    self.assertEqual(schema['stream'], self.stream)
+    self.assertEqual(schema['schema']['required'],
+                     [ID_FIELD, TIMESTAMP_FIELD, 'a'])
+    self.assertEqual(sorted(schema['schema']['properties']),
+                     [ID_FIELD, TIMESTAMP_FIELD, 'a', 'optional'])
+    self.assertEqual(schema['schema']['properties'][ID_FIELD]['type'],
+                     'string')
+    self.assertEqual(schema['schema']['properties'][TIMESTAMP_FIELD]['type'],
+                     'integer')
+    self.assertEqual(schema['schema']['properties']['a']['type'],
+                     'number')
+    self.assertEqual(schema['schema']['properties']['optional']['type'],
+                     'boolean')
 
   @kronos_client_test
   def test_log_function(self):
