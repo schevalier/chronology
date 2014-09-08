@@ -46,7 +46,7 @@ from kronos.utils.streams import infer_schema as _infer_schema
 log = logging.getLogger(__name__)
 
   
-@endpoint('/1.0/index')
+@endpoint('/1.0/index', methods=['GET', 'POST'])
 def index(environment, start_response, headers):
   """
   Return the status of this Kronos instance + its backends>
@@ -273,7 +273,7 @@ def get_streams(environment, start_response, headers):
     for stream in backend.streams(namespace):
       if stream.startswith(prefix) and stream not in streams_seen_so_far:
         streams_seen_so_far.add(stream)
-        yield '{0}\r\n'.format(marshal.dumps(stream))
+        yield '{0}\r\n'.format(stream)
   yield ''
 
 
@@ -288,8 +288,8 @@ def infer_schema(environment, start_response, headers):
   """
   start_response('200 OK', headers)
   schemas = dict()
-  for _dict in environment['json']:
-    namespace = _dict.get('namespace', settings.default_namespace)
+  for _dict in environment['json']['streams']:
+    namespace = _dict.get('namespace') or settings.default_namespace
     stream = _dict['stream']
     schemas[(namespace, stream)] = execute_greenlet_async(
       _infer_schema,

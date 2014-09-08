@@ -1,4 +1,7 @@
+import itertools
 import types
+
+from collections import defaultdict
 
 
 class Type(object):
@@ -109,17 +112,13 @@ class ObjectType(Type):
   def combine(self, other):
     if not isinstance(other, ObjectType):
       return AnyType()
-    properties = {}
-    required_properties = set(self.properties) & set(other.properties)
-    for prop, typ in self.properties.iteritems():
-      properties[prop] = typ
-    for prop, typ in other.properties.iteritems():
-      if prop in properties:
-        properties[prop] = properties[prop].combine(typ)
-      else:
-        properties[prop] = typ
+    properties = defaultdict(lambda: NullType())
+    for prop, typ in itertools.chain(self.properties.iteritems(),
+                                     other.properties.iteritems()):
+      properties[prop] = properties[prop].combine(typ)
     return ObjectType(properties=properties,
-                      required=sorted(required_properties))
+                      required=sorted(set(self.properties) &
+                                      set(other.properties)))
 
   def to_dict(self):
     _dict = super(ObjectType, self).to_dict()

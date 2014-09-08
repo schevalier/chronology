@@ -24,7 +24,7 @@ class TestServingMode(KronosServerTestCase):
     from kronos.conf import settings
 
     # Check disallowed methods.
-    self._hit_endpoint(self.index_path, {}, {405}, 'POST')
+    self._hit_endpoint(self.index_path, {}, {405}, 'PUT')
     self._hit_endpoint(self.streams_path, {}, {405}, 'GET')
 
     # Check forbidden resources.

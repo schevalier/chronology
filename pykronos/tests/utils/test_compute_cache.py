@@ -38,7 +38,7 @@ class QueryCacheTest(unittest.TestCase):
           self.stream: [{TIMESTAMP_FIELD: 
                          self.start_time + (self.increment * i),
                          'a': i % 5, 'b': i}]})
-      self.client.flush()
+      self.client._flush()
       function(self)
     return wrapper
 
@@ -89,8 +89,6 @@ class QueryCacheTest(unittest.TestCase):
     start_time = self.start_time - (self.bucket_width * 3)
     end_time = self.start_time + (self.total_events * self.increment) + (
       self.bucket_width * 3)
-    untrusted_time = self.start_time + (
-      timedelta(minutes=(self.total_events / 2) - 25))
     def bad_start_boundary():
       return list(
         cache.retrieve_interval(start_time + timedelta(minutes=1),
@@ -181,7 +179,7 @@ class QueryCacheTest(unittest.TestCase):
     self.client.put({cache._scratch_stream:
                        [duplicate_result]},
                     namespace=cache._scratch_namespace)
-    self.client.flush()
+    self.client._flush()
     safe_results = list(cache.retrieve_interval(start_time, end_time))
     self.assertEqual(results[:10]+ results[11:], safe_results)
 
