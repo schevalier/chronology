@@ -121,10 +121,13 @@ class KronosClient(object):
   def _make_request(self, url, data=None, stream=False, timeout=None):
     if data is not None:
       data = json.dumps(data)
-    response = requests.post(url,
-                             data=data,
-                             stream=stream,
-                             timeout=timeout)
+      func = requests.post
+    else:
+      func = requests.get
+    response = func(url,
+                    data=data,
+                    stream=stream,
+                    timeout=timeout)
     if response.status_code != requests.codes.ok:
       raise KronosClientError('Bad status code: %d.' % response.status_code)
     if not stream:

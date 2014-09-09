@@ -46,7 +46,7 @@ from kronos.utils.streams import infer_schema as _infer_schema
 log = logging.getLogger(__name__)
 
   
-@endpoint('/1.0/index', methods=['GET', 'POST'])
+@endpoint('/1.0/index')
 def index(environment, start_response, headers):
   """
   Return the status of this Kronos instance + its backends>
