@@ -640,6 +640,7 @@ ul.steps .form-control {
 
 div.visualization-container {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .schema-transform {
