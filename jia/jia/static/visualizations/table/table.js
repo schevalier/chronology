@@ -6,18 +6,11 @@ module.factory('table', function ($filter, ngTableParams) {
     title: 'table',
     readableTitle: 'Table',
     template: 'table.html',
-
     css: [
       '/static/css/ng-table.min.css',
     ],
-
     js: [
       '/static/js/ng-table.min.js',
-    ],
-
-    optionalFields: [
-      '@time',
-      '@group'
     ]
   };
 
@@ -25,6 +18,12 @@ module.factory('table', function ($filter, ngTableParams) {
 
     this.meta = meta;
     this.data = [];
+    this.settings = {
+      requiredFields: {},
+      optionalFields: {
+        'Time': '@time'
+      }
+    };
 
     // Provide a hash method for strings
     // ng-table requires unique variable-like IDs for cols
@@ -43,32 +42,45 @@ module.factory('table', function ($filter, ngTableParams) {
     this.setData = function (data, msg) {
       var events = data.events;
       var series = {};
+      var timeField = this.settings.optionalFields['Time'];
       
       if (_.size(events) > 0) {
 
         column_names = Object.keys(events[0]);
         cols = [];
         for (name in column_names) {
-          cols.push({title: column_names[name], field: column_names[name].hashCode()});
+          cols.push({
+            title: column_names[name],
+            field: column_names[name].hashCode()
+          });
         }
 
-        series = {name: 'events', cols: cols, data: _.map(events, function(event) {
-          data = {};
-          Object.keys(event).forEach(function (key) {
-            if (key == '@time') {
-              var date = new Date(event[key] * 1e-4);
-              var dateString = date.toLocaleDateString() + " " + date.toLocaleTimeString();
-              data[key.hashCode()] = dateString;
-            }
-            else {
-              data[key.hashCode()] = event[key];
-            }
-          });
-          return data;
-        })};
+        series = {
+          name: 'events',
+          cols: cols,
+          data: _.map(events, function(event) {
+            data = {};
+            Object.keys(event).forEach(function (key) {
+              if (key == timeField) {
+                var date = new Date(event[key] * 1e-4);
+                var dateString = date.toLocaleDateString() + " " +
+                                 date.toLocaleTimeString();
+                data[key.hashCode()] = dateString;
+              }
+              else {
+                data[key.hashCode()] = event[key];
+              }
+            });
+            return data;
+          })
+        };
 
       } else {
         series = {name: 'events', cols: [], data: []};
+      }
+      
+      if (series.data.length == 0) {
+        return;
       }
 
       if (typeof this.tableParams === 'undefined') {

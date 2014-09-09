@@ -143,9 +143,74 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       panel.display.display_type = type.meta.title;
       panel.cache.visualizations[type.meta.title] = new type.visualization();
       panel.cache.visualization = panel.cache.visualizations[type.meta.title];
+      panel.display.settings = panel.cache.visualization.settings;
       panel.cache.visualization.setData(panel.cache.data, panel.cache.log);
     }
     panel.cache.visualizationDropdownOpen = false;
+  };
+
+  var checkSchema = function (panel) {
+    var data = panel.cache.data;
+    var requiredFields = panel.display.settings.requiredFields;
+    var keys = [];
+
+    if (!data.events.length) {
+      panel.cache.schemaNeedsTransform = false;
+      return keys;
+    }
+
+    for (key in requiredFields) {
+      if (requiredFields.hasOwnProperty(key)) {
+        if (typeof data['events'][0][requiredFields[key]] == 'undefined') {
+          panel.cache.schemaNeedsTransform = true;
+          keys.push(key);
+        }
+      }
+    }
+
+    if (keys.length) {
+      panel.cache.schemaNeedsTransform = true;
+    }
+    else {
+      panel.cache.schemaNeedsTransform = false;
+    }
+
+    return keys;
+  }
+
+  $scope.toggleVisualizationSettingsOpen = function (panel) {
+    if (panel.cache.visualizationSettingsOpen) {
+      $scope.closeVisualizationSettings(panel);
+    }
+    else {
+      panel.cache.visualizationSettingsOpen = true;
+    }
+  };
+
+  $scope.closeVisualizationSettings = function (panel) {
+    var missing = checkSchema(panel);
+    panel.cache.log.clear();
+    if (panel.cache.schemaNeedsTransform) {
+      panel.cache.log.error('Query schema does not fulfill required inputs.');
+      _.each(missing, function (field) {
+        panel.cache.log.error('Missing ' + field +
+                              ': no property in query result called ' + 
+                              panel.display.settings.requiredFields[field]);
+      });
+      var availableProperties = [];
+      _.each(panel.cache.data.events[0], function (obj, key) {
+        availableProperties.push(key);
+      });
+      panel.cache.log.info('Available properties: ' +
+                           availableProperties.join(', '));
+      panel.cache.log.info('Sample event:');
+      panel.cache.log.info(JSON.stringify(panel.cache.data.events[0],
+                                          null, '  '), true);
+    }
+    else {
+      panel.cache.visualizationSettingsOpen = false;
+      panel.cache.visualization.setData(panel.cache.data, panel.cache.log);
+    }
   };
 
   $scope.callAllSources = function() {
@@ -161,6 +226,19 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     $http.post('/callsource', panel.data_source)
       .success(function(data, status, headers, config) {
         panel.cache.data = data;
+        if (!data['events']) {
+          panel.cache.log.error('Invalid response from server.');
+          return;
+        }
+        if (!data['events'].length) {
+          panel.cache.log.warn('Query result contains no events.');
+          return;
+        }
+        checkSchema(panel);
+        if (panel.cache.schemaNeedsTransform) {
+          panel.cache.visualizationSettingsOpen = true;
+          return;
+        }
         panel.cache.visualization.setData(data, panel.cache.log);
       })
       .error(function(data, status, headers, config) {
@@ -320,7 +398,8 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     panel.cache = {
       data: {events: []},
       visualizations: {},
-      log: new $scope.log()
+      log: new $scope.log(),
+      schemaNeedsTransform: false
     };
 
     // Avoid any board data format incompatibilities by initalizing
@@ -344,6 +423,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     var newVisualization = new selectedVisualization.visualization();
     panel.cache.visualizations[visualizationType] = newVisualization;
     panel.cache.visualization = panel.cache.visualizations[visualizationType];
+    panel.display.settings = panel.cache.visualization.settings;
 
     // Give the query builder a piece of cache
     panel.cache.query_builder = {};
@@ -401,6 +481,13 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       panel.cache.streamProperties = [];
     });
 
+    $scope.$watch(function () {
+      return panel.cache.visualization;
+    }, function (newVal, oldVal) {
+      if (newVal) {
+        checkSchema(panel);
+      }
+    });
   };
 
   $scope.newPanelObj = function () {
@@ -437,7 +524,8 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
         }
       },
       display: {
-        display_type: 'timeseries'
+        display_type: 'timeseries',
+        settings: {}
       },
     };
   };

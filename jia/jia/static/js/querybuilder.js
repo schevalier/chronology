@@ -65,6 +65,7 @@ function findObjectInListBasedOnKey(list, keyName, keyVal) {
 qb.directive('querybuilder', function ($http, $compile) {
   var controller = ['$scope', function($scope) {
     $scope.nextStep = {};
+    $scope.query = $scope.panel.data_source.query;
 
     $scope.$watch('nextStep.operation', function (newVal, oldVal) {
       if (newVal && !_.isEmpty(newVal)) {
@@ -87,7 +88,7 @@ qb.directive('querybuilder', function ($http, $compile) {
     templateUrl: '/static/partials/querybuilder.html',
     controller: controller,
     scope: {
-      query: '='
+      panel: '='
     }
   };
 });

@@ -79,8 +79,44 @@
     <div class="visualization-container">
       <visualization ng-repeat="visualization in panel.cache.visualizations"
                      module="visualization"
-                     ng-if="visualization.meta.title == panel.display.display_type">
+                     ng-if="!panel.cache.schemaNeedsTransform &&
+                            panel.cache.data.events.length &&
+                            visualization.meta.title == panel.display.display_type">
       </visualization>
+    </div>
+    <div class="schema-transform"
+         ng-show="panel.cache.visualizationSettingsOpen">
+      <h4>{[ panel.cache.visualization.meta.readableTitle ]} Settings</h4>
+      <div class="form-horizontal"> 
+        <div class="input-label"
+             ng-if="Object.keys(panel.display.settings.requiredFields).length">
+             Required inputs:
+        </div>
+        <div class="form-group"
+             ng-repeat="(key, value) in panel.display.settings.requiredFields">
+          <label class="col-xs-1 control-label">{[ key ]}:</label>
+          <div class="col-xs-3">
+            <input class="form-control"
+                   ng-model="panel.display.settings.requiredFields[key]">
+          </div>
+        </div>
+        <div class="input-label"
+             ng-if="Object.keys(panel.display.settings.optionalFields).length">
+          Optional inputs:
+        </div>
+        <div class="form-group"
+             ng-repeat="(key, value) in panel.display.settings.optionalFields">
+          <label class="col-xs-1 control-label">{[ key ]}:</label>
+          <div class="col-xs-3">
+            <input class="form-control"
+                   ng-model="panel.display.settings.optionalFields[key]">
+          </div>
+        </div>
+        <button class="btn btn-primary"
+                ng-click="closeVisualizationSettings(panel)">
+                <span class="glyphicon glyphicon-ok"></span> Done
+        </button>
+      </div>
     </div>
     <div class="code-box">
       <div class="error log alert alert-danger"
@@ -136,6 +172,11 @@
             </li>
           </ul>
         </div>
+        <button class="btn btn-default navbar-btn"
+                ng-class="{'btn-success': panel.cache.visualizationSettingsOpen}"
+                ng-click="toggleVisualizationSettingsOpen(panel)">
+          <span class="glyphicon glyphicon-cog"></span> Visualization Settings
+        </button>
         <button type="button" class="btn btn-default navbar-btn"
                 ng-click="panel.data_source.display = !panel.data_source.display">
           <span ng-show="!panel.data_source.display">
@@ -238,7 +279,7 @@
         </div>
       </div>
 
-      <querybuilder query="panel.data_source.query"
+      <querybuilder panel="panel"
                     ng-if="panel.data_source.display &&
                            panel.data_source.source_type == 'querybuilder'">
       </querybuilder>

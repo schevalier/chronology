@@ -6,19 +6,9 @@ module.factory('barchart', function () {
     title: 'barchart',
     readableTitle: 'Bar Chart',
     template: 'barchart.html',
-
     css: [
       '/static/visualizations/barchart/barchart.css'
     ],
-
-    requiredFields: [
-      '@label',
-      '@value'
-    ],
-
-    optionalFields: [
-      '@group'
-    ]
   };
 
   var visualization = function () {
@@ -27,17 +17,29 @@ module.factory('barchart', function () {
     this.c3data = {
       columns: []
     };
+    this.settings = {
+      requiredFields: {
+        'X-Axis': '@label',
+        'Y-Axis': '@value'
+      },
+      optionalFields: {
+        'Stack by': '@group'
+      }
+    };
 
     this.setData = function (data, msg) {
       this.data = data;
       var error = false;
+      var labelField = this.settings.requiredFields['X-Axis'];
+      var valueField = this.settings.requiredFields['Y-Axis'];
+      var groupField = this.settings.optionalFields['Stack by'];
 
       // In the future, this may be an option in the query builder
       var stacked = true;
 
       var groups = [];
       var series = _.groupBy(data.events, function(event) {
-        return event['@group'] || '';
+        return event[groupField] || '';
       });
 
       var categories = [];
@@ -49,11 +51,11 @@ module.factory('barchart', function () {
           // Extract the values from the events and build a list
           var data = _.map(events, function(event) {
             // Build a list of categories (x axis) and check for duplicates
-            if (i == 0 && _.contains(cats, event['@label'])) {
-              msg.warn('Duplicate label "' + event['@label'] + '"');
+            if (i == 0 && _.contains(cats, event[labelField])) {
+              msg.warn('Duplicate label "' + event[labelField] + '"');
             }
-            cats.push(event['@label']);
-            return event['@value'];
+            cats.push(event[labelField]);
+            return event[valueField];
           });
           
           // On first iteration, save the categories list
@@ -74,17 +76,16 @@ module.factory('barchart', function () {
 
           // C3 expects the group name to be the first item in the array
           // followed by all the data points
-          data.unshift(events[0]['@group']);
+          data.unshift(events[0][groupField]);
 
           if (stacked) {
-            groups.push(events[0]['@group']);
+            groups.push(events[0][groupField]);
           }
 
           return data;
         });
       } else {
         series = [];
-        msg.warn("Data contains no events");
       }
 
       var cols = [];

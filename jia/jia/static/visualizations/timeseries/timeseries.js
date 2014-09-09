@@ -17,20 +17,22 @@ module.factory('timeseries', function () {
       "//ngyewch.github.io/angular-rickshaw/rickshaw.js"
     ],
 
-    requiredFields: [
-      '@time',
-      '@value'
-    ],
-
-    optionalFields: [
-      '@group'
-    ]
   };
 
   var visualization = function () {
 
     this.meta = meta;
     this.series = [{name: 'series', data: [{x: 0, y: 0}]}];
+
+    this.settings = {
+      requiredFields: {
+        'X-Axis': '@time',
+        'Y-Axis': '@value'
+      },
+      optionalFields: {
+        'Series': '@series'
+      }
+    };
 
     this.timeseriesOptions = {
       renderer: 'line',
@@ -59,15 +61,19 @@ module.factory('timeseries', function () {
       // legend size.
       this.timeseriesOptions.width = parseInt($('.panel').width() * .73);
 
+      var timeField = this.meta.requiredFields['X-Axis'];
+      var valueField = this.meta.requiredFields['Y-Axis'];
+      var groupField = this.meta.optionalFields['Group'];
+
       var series = _.groupBy(data.events, function(event) {
-        return event['@group'] || 'series';
+        return event[groupField] || 'series';
       });
       delete this.timeseriesFeatures.legend;
 
       if (_.size(series) > 0) {
         series = _.map(series, function(events, seriesName) {
           return {name: seriesName, data: _.map(events, function(event) {
-            return {x: event['@time'] * 1e-7, y: event['@value']};
+            return {x: event[timeField] * 1e-7, y: event[valueField]};
           })}
         });
         if (_.size(series) > 1) {
@@ -75,7 +81,6 @@ module.factory('timeseries', function () {
         }
       } else {
         series = [{name: 'series', data: [{x: 0, y: 0}]}];
-        msg.warn("Data contains no events");
       }
 
       this.series = series;

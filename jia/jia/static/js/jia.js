@@ -13,4 +13,10 @@ jia.config(['$routeProvider',
       otherwise({
         redirectTo: '/boards/new'
       });
-  }]);
+  }
+]);
+
+jia.run(function($rootScope) {
+  $rootScope.Object = Object;
+});
+

@@ -641,3 +641,12 @@ ul.steps .form-control {
 div.visualization-container {
   overflow-x: auto;
 }
+
+.schema-transform {
+  padding: 0 15px;
+}
+
+.input-label {
+  margin-bottom: 10px;
+}
+
