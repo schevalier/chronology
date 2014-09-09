@@ -232,7 +232,7 @@ class QueryCache(object):
           emit_events = []
       for event in emit_events:
         yield event
-    self._client._flush()
+    self._client.flush()
 
   def compute_and_cache_missing_buckets(self, start_time, end_time,
                                         untrusted_time, force_recompute=False):

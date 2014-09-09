@@ -85,11 +85,11 @@ class KronosClient(object):
         self.daemon = True
       def run(self):
         while True:
-          me._flush()
+          me.flush()
           time.sleep(me._sleep_block)
     PutThread().start()
 
-  def _flush(self):
+  def flush(self):
     if self._blocking:
       return
     old_queue = None
