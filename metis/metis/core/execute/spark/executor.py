@@ -69,6 +69,8 @@ class SparkExecutor(Executor):
     # Delete temporary Metis lib file.
     os.unlink(metis_lib_file.name)
 
+    self.num_workers = int(app.config.get('SPARK_NUM_WORKERS', 10))
+
   def __getstate__(self):
     # Don't pickle the `SparkContext` object.
     state = self.__dict__.copy()
@@ -79,15 +81,24 @@ class SparkExecutor(Executor):
     return rdd.collect()
 
   def execute_kronos_stream(self, node):
-    # TODO(usmanm): Read time slices of events in parallel from worker nodes.
-    from pykronos import KronosClient
+    delta = (node.end_time - node.start_time) / self.num_workers
+    def get_events(i):
+      from pykronos import KronosClient
+      client = KronosClient(node.host, blocking=True)
+      start_time = node.start_time + (i * delta)
+      if i == self.num_workers - 1:
+        end_time = node.end_time
+      else:
+        end_time = start_time + delta - 1
+      return list(client.get(node.stream,
+                             start_time,
+                             end_time,
+                             namespace=node.namespace))
 
-    client = KronosClient(node.host, blocking=True)
-    events = client.get(node.stream,
-                        node.start_time,
-                        node.end_time,
-                        namespace=node.namespace)
-    return self.context.parallelize(events)
+    # XXX(usmanm): Does this preserve ordering? I ran a few simulations and it
+    # seems like ordering is preserved. Need to test on a multi-node cluster as
+    # well.
+    return self.context.parallelize(range(self.num_workers)).flatMap(get_events)
 
   def execute_aggregate(self, node):
     def finalize(event):
