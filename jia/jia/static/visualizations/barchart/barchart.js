@@ -14,8 +14,10 @@ module.factory('barchart', function () {
   var visualization = function () {
     this.meta = meta;
     this.data = [];
-    this.c3data = {
-      columns: []
+    this.chart = {
+      data: {
+        columns: []
+      }
     };
     this.settings = {
       requiredFields: {
@@ -42,6 +44,8 @@ module.factory('barchart', function () {
         return event[groupField] || '';
       });
 
+      var c3legend = {};
+
       var categories = [];
       if (_.size(series) > 0) {
         var i = 0;
@@ -57,7 +61,7 @@ module.factory('barchart', function () {
             cats.push(event[labelField]);
             return event[valueField];
           });
-          
+
           // On first iteration, save the categories list
           if (i == 0) {
             categories = cats;
@@ -76,7 +80,14 @@ module.factory('barchart', function () {
 
           // C3 expects the group name to be the first item in the array
           // followed by all the data points
-          data.unshift(events[0][groupField]);
+          if (typeof events[0][groupField] != 'undefined') {
+            data.unshift(events[0][groupField]);
+            c3legend['show'] = true;
+          }
+          else {
+            data.unshift(valueField);
+            c3legend['show'] = false;
+          }
 
           if (stacked) {
             groups.push(events[0][groupField]);
@@ -94,19 +105,25 @@ module.factory('barchart', function () {
       if(!error) {
         cols = series;
       }
-      
-      this.c3data = {
+
+      var c3data = {
         columns: cols,
         type: 'bar',
         groups: [groups]
       };
 
-      this.c3axis = {
+      var c3axis = {
         x: {
           type: 'category',
           categories: categories
         }
-      }
+      };
+
+      this.chart = {
+        data: c3data,
+        axis: c3axis,
+        legend: c3legend
+      };
     }
   }
 

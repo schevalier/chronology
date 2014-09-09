@@ -1,10 +1,9 @@
 angular.module('angular-c3', [])
-  .directive('c3chart', function($compile) {
+  .directive('c3', function($compile) {
     return {
       restrict: 'EA',
       scope: {
-        data: '=',
-        axis: '='
+        chart: '='
       },
       link: function(scope, element, attrs) {
         function update () {
@@ -12,15 +11,11 @@ angular.module('angular-c3', [])
           element.empty();
           var container = $compile('<div></div>')(scope);
           element.append(container);
-
-          var chart = c3.generate({
-            bindto: container[0],
-            data: scope.data,
-            axis: scope.axis
-          });
+          scope.chart['bindto'] = container[0];
+          var chart = c3.generate(scope.chart);
         }
         
-        scope.$watch('data', function (val, prev) {
+        scope.$watch('chart', function (val, prev) {
           if (!angular.equals(val, prev)) {
             update();
           }
