@@ -7,6 +7,7 @@ from django.http import HttpRequest
 from django.http import QueryDict
 
 from pykronos.client import ID_FIELD
+from pykronos.client import LIBRARY_FIELD
 from pykronos.client import TIMESTAMP_FIELD
 from pykronos.utils.django import KronosLoggingMiddleware
 from pykronos.common.time import kronos_time_now
@@ -94,6 +95,7 @@ class KronosLoggingMiddlewareTest(unittest.TestCase):
     self.assertEqual(len(events), 1)
     event = events[0]
     del event[ID_FIELD]
+    del event[LIBRARY_FIELD]
     self.assertEqual(event, json.loads(json.dumps(self.request._kronos_event)))
 
   def test_request_flow_with_exception(self):

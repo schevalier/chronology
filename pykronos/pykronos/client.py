@@ -15,6 +15,8 @@ from dateutil.parser import parse
 from threading import Lock
 from threading import Thread
 
+import pykronos
+
 from pykronos.errors import KronosClientError
 from pykronos.common.time import datetime_to_kronos_time
 from pykronos.common.time import kronos_time_now
@@ -22,6 +24,7 @@ from pykronos.common.time import kronos_time_now
 # These are constants, do not modify them.
 ERRORS_FIELD = '@errors'
 ID_FIELD = '@id'
+LIBRARY_FIELD = '@library'
 SUCCESS_FIELD = '@success'
 TIMESTAMP_FIELD = '@time'
 
@@ -174,6 +177,10 @@ class KronosClient(object):
           if isinstance(event[TIMESTAMP_FIELD], datetime):
             event[TIMESTAMP_FIELD] = datetime_to_kronos_time(
               event[TIMESTAMP_FIELD])
+        event[LIBRARY_FIELD] = {
+          'version': pykronos.__version__,
+          'name': 'pykronos'
+          }
 
     namespace = namespace or self.namespace
     

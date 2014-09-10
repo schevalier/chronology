@@ -6,6 +6,7 @@ from datetime import datetime
 
 from pykronos import KronosClient
 from pykronos.client import ID_FIELD
+from pykronos.client import LIBRARY_FIELD
 from pykronos.client import TIMESTAMP_FIELD
 from pykronos.common.time import kronos_time_now
 
@@ -115,9 +116,12 @@ class KronosClientTest(unittest.TestCase):
     schema = self.client.infer_schema(self.stream)
     self.assertEqual(schema['stream'], self.stream)
     self.assertEqual(schema['schema']['required'],
-                     [ID_FIELD, TIMESTAMP_FIELD, 'a'])
+                     [ID_FIELD, LIBRARY_FIELD, TIMESTAMP_FIELD, 'a'])
     self.assertEqual(sorted(schema['schema']['properties']),
-                     [ID_FIELD, TIMESTAMP_FIELD, 'a', 'optional'])
+                     [ID_FIELD, LIBRARY_FIELD, TIMESTAMP_FIELD, 'a',
+                      'optional'])
+    self.assertEqual(schema['schema']['properties'][LIBRARY_FIELD]['type'],
+                     'object')
     self.assertEqual(schema['schema']['properties'][ID_FIELD]['type'],
                      'string')
     self.assertEqual(schema['schema']['properties'][TIMESTAMP_FIELD]['type'],
