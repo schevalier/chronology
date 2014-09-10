@@ -1,16 +1,15 @@
 {
-	"globals" : {"module" : false, "require" : false},
-	"browser" : true,
-	"laxcomma" : true,
-	"camelcase" : true,
-	"curly" : true,
-	"immed" : true,
-	"newcap" : true,
-	"quotmark" : "double",
-	"undef" : true,
-	"strict" : true,
-	"trailing" : true,
-	"globalstrict" : true,
-	"eqeqeq" : true
-
+  "globals" : {"module" : false, "require" : false},
+  "browser" : true,
+  "laxcomma" : true,
+  "camelcase" : true,
+  "curly" : true,
+  "immed" : true,
+  "newcap" : true,
+  "quotmark" : "double",
+  "undef" : true,
+  "strict" : true,
+  "trailing" : true,
+  "globalstrict" : true,
+  "eqeqeq" : true
 }

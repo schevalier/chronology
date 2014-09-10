@@ -90,9 +90,10 @@ def endpoint(url, methods=['GET']):
           if is_remote_allowed(remote_origin):
             headers.extend([
               ('Access-Control-Allow-Origin', remote_origin),
-              ('Access-Control-Allow-Methods', ', '.join(methods)),
+              ('Access-Control-Allow-Credentials', 'true'),
               ('Access-Control-Allow-Headers', ', '.join(
-                ('Accept', 'Content-Type', 'Origin', 'X-Requested-With')))
+                ('Accept', 'Content-Type', 'Origin', 'X-Requested-With'))),
+              ('Access-Control-Allow-Methods', ', '.join(methods))
               ])
           # We just tell the client that CORS is ok. Client will follow up
           # with another request to get the answer.

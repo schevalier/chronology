@@ -1,160 +1,201 @@
 /*
-# kronos.js
+# Kronos.js
 
 ## Introduction
 The contents of this file can be found in `demo.js` and are compiled
 into `README.md`, so you can consume the readme while running the
-javascript program with node.js (`make demo`) to understand how it works.
+JavaScript program with [Node.js](http://nodejs.org/) (`make demo`) to
+understand how it works.
 
-The kronos.js package contains support for both the browser and a node.js server, either will work seamlessly with the client. For simplicity, we use node.js for this demo.
+The kronos.js library provides support for browsers and Node.js. To use it in a
+browser, simply drop a `<script>` tag into your HTML linking to `kronos.js` or
+`kronos.min.js`. To use it in Node.js, `require` the `index.js` module. We will
+publish kronos.js on [npm](https://www.npmjs.org/) soon.
 
-If you would like to see an in browser demo, simply open the webpage `demo.html` in your browser and open a debugger to see the console messages.
+If you would like to see an in browser demo, simply open the webpage `demo.html`
+in your browser.
 */
+
 "use strict";
-try { // demo.html
-    var util = require("util");
-    var KronosClient = require("./kronos.js");
 
-    var pprint = function(object) {
-        return util.inspect(object, false, null);
-    };
-
-} catch (e) {
-    pprint = function(object) {
-        return object;
-    };
+if (typeof module !== "undefined" && module.exports) { // Node.js
+  var util = require("util");
+  var kronos = require("./index.js");
+  var pprint = function(object) {
+    return util.inspect(object, false, null);
+  };
+  var log = console.log;
+} else { // Browser
+  var pprint = function(object) {
+    return JSON.stringify(object, null, " ");
+  };
+  var log = function(string) {
+    var div = document.getElementById("log");
+    var p = document.createElement("p");
+    p.innerHTML = string;
+    div.appendChild(p);
+  };
 }
-
-var logResponse = function(kronosResponse, msg) {
-    for (var i = 0; i < kronosResponse.length; i++) {
-        console.log(msg + ": " + pprint(kronosResponse[i]));
-    }
-};
-
-var sleepTime = 1000; // ms
 
 /*
 Create a Kronos client with the URL of a running server. Optionally
 provide a `namespace` to explicitly work with events in a particular namespace.
 */
-var kc = new KronosClient({
-    "kronosUrl": "http://127.0.0.1:8151",
-    "namespace": "kronos",
+var kronosClient = new kronos.KronosClient({
+  "url": "http://localhost:8150",
+  "namespace": "kronos"
 });
-var startTime = kc.kronosTimeNow();
-
 
 /*
-## KronosRequests
-  Each request method (detailed below) accepts an optional `callback` and `errBack` function.
+## Making Requests
+Each request method (detailed below) returns a
+[Q.Promise](https://github.com/kriskowal/q/wiki/API-Reference#promise-methods)
+object.
+
 ## Index Request
-The calling `kc.index()` will return information about the running Kronos server.
+The calling `kronosClient.index()` will return information about the running
+Kronos server.
 */
-kc.index(function(kronosResponse) {
-    console.log("KronosIndex: " + pprint(kronosResponse));
+kronosClient.index().then(function(response) {
+  log("KronosIndex: " + pprint(response));
 });
+
 /*
-## Inserting data
-Insert data with the `kc.put()` command. The argument is a stream to
-insert the data into. You can provide a single event which holds an
-arbitrary dictionary of JSON encodeable data.
+## Inserting Events
+Insert events with the `kronosClient.put()` command. The first argument is a
+stream name to insert the events into. You can provide a single event which
+holds an arbitrary dictionary of JSON encodeable key/values.
 */
 var stream = "yourproduct.website.pageviews";
-
-// make an event to log
-var event = {
-    "source": "http://test.com",
-    "browser": {
-        "name": "Chrome",
-        "version": 26,
-    },
-    "pages": ["page1.html", "page2.html"],
+var event_ = {
+  "source": "http://test.com",
+  "browser": {
+    "name": "Chrome",
+    "version": 26,
+  },
+  "pages": ["page1.html", "page2.html"],
 };
-kc.put(stream, event, null, function(kronosResponse) {
-    console.log("KronosPut: " + pprint(kronosResponse));
-}); // use the client's namespace
+kronosClient.put(stream, event_).then(function(response) {
+  log("KronosPut: " + pprint(response));
+});
 
 /*
-### Optionally add a timestamp
+### Optionally Add A Timestamp
 By default, each event will be timestamped on the client. If you add
-a `kc.TIMESTAMP_FIELD` argument, you can specify the time at which each
+a `kronos.TIMESTAMP_FIELD` property, you can specify the time at which each
 event ocurred.
 */
-event[kc.TIMESTAMP_FIELD] = kc.timeToKronosTime(new Date(1980, 1, 6, 0, 0, 0, 0));
-kc.put(stream, event, null, function(kronosResponse) {
-    console.log("KronosPut: " + pprint(kronosResponse));
+event_[kronos.TIMESTAMP_FIELD] = kronos.toKronosTime(new Date(1980, 1, 6));
+kronosClient.put(stream, event_).then(function(response) {
+  log("KronosPut: " + pprint(response));
 });
+
 /*
-## Retrieving data
-Retrieving data requires a `stream` name, a `startTime`, and an `endTime`.
-Note that an `kc.ID_FIELD` and `kc.TIMESTAMP_FIELD` field are
-attached to each event. The `kc.ID_FIELD` is a UUID1-style identifier
+## Retrieving Events
+Retrieving events requires a `stream` name, a `startTime`, and an `endTime`.
+The `namespace` argument is optional and the `options` argument is explained
+below.
+
+
+
+Note that an `kronos.ID_FIELD` and `kronos.TIMESTAMP_FIELD` field are always
+attached to each event. The `kronos.ID_FIELD` is a UUID1-style identifier
 with its time bits derived from the timestamp. This allows event IDs
 to be roughly sortable by the time that they happened while providing
 a deterministic tiebreaker when two events happened at the same time.
 */
 setTimeout(function() {
-    kc.get(stream, startTime, kc.kronosTimeNow(), null, function(kronosResponse) {
-        logResponse(kronosResponse, "Recieved event");
-    });
-}, sleepTime);
+  var events = [];
+  // The `Q.Promise` object returned by `kronosClient.get` has an additional
+  // `each` method which takes a function as the only argument. This
+  // function is called (in-order) for each event returned by the server.
+  // In this example, we're simply storing all the events returned into an
+  // Array. The `Q.Promise` object returned is resolved when all events have
+  // been consumed.
+  // TODO(usmanm): Some way to abort iteration?
+  kronosClient.get(stream, 0, kronos.kronosTimeNow()).each(
+    function(event) {
+      events.push(event);
+    }
+  ).then(function() {
+    log("KronosGet: " + pprint(events));
+  });
+}, 750);
+
 /*
-### Event order
+### Event Order
 By default, events are returned in ascending order of their
-`kc.ID_FIELD`. Pass in the optional argument `kc.DESCENDING_ORDER` argument to
-change this behavior to be in descending order of `kc.ID_FIELD`.
+`kronosClient.ID_FIELD`. Pass in the optional `order` argument as
+`kronosClient.Order.DESCENDING` to change this behavior to be in
+descending order of `kronos.ID_FIELD`.
 */
 setTimeout(function() {
-    var options = {
-        "order": kc.DESCENDING_ORDER
-    };
-    kc.get(stream, startTime, kc.kronosTimeNow(), options, function(kronosResponse) {
-        logResponse(kronosResponse, "Reverse event");
-    });
-}, sleepTime);
+  var options = {
+    "order": kronosClient.Order.DESCENDING
+  };
+  var events = [];
+  kronosClient.get(stream, 0, kronos.kronosTimeNow(), null, options).each(
+    function(event) {
+      events.push(event);
+    }
+  ).then(function() {
+    log("KronosGet {order: " + kronosClient.Order.DESCENDING + "}: " +
+        pprint(events));
+  });
+}, 750);
 
 /*
-### Limiting events
+### Limiting Events
 If you only want to retrieve a limited number of events, use the
-`limit` argument.
+optional `limit` argument.
 */
 setTimeout(function() {
-    var options = {
-        "limit": 1,
-    };
-    kc.get(stream, startTime, kc.kronosTimeNow(), options, function(kronosResponse) {
-        logResponse(kronosResponse, "Limited event");
-    });
-}, sleepTime);
+  var options = {
+    "limit": 1,
+  };
+  var events = [];
+  kronosClient.get(stream, 0, kronos.kronosTimeNow(), null, options).each(
+    function(event) {
+      events.push(event);
+    }
+  ).then(function() {
+    log("KronosGet {limit: 1}: " + pprint(events));
+  });
+}, 750);
 
 /*
-   ## Getting a list of streams
-   To see all streams available in this namespace, use `kc.get_streams`.
+## Getting List Of All Streams
+To see all streams available in this namespace, use `kronosClient.getStreams`.
+The behavior of this method is identical to `kronosClient.get` except this
+yields stream names (Strings) rather than events (Objects).
 */
-
 setTimeout(function() {
-    kc.get_streams(null, function(kronosResponse) {
-        logResponse(kronosResponse, "Found stream");
-    });
-}, sleepTime);
+  var streams = [];
+  kronosClient.getStreams().each(
+    function(stream) {
+      streams.push(stream);
+    }
+  ).then(function() {
+    log("KronosGetStreams: " + streams);
+  });
+}, 750);
 
 /*
-   ## Deleting data
-   Sometimes, we make an oopsie and need to delete some events.  The
-   `kc.delete` function takes similar arguments for the start and end
-   timestamps to delete.
+## Deleting Events
+Sometimes, we make an oopsie and need to delete some events.  The
+`kronosClient.delete` function accepts the same arguments as `kronosClient.get`.
 
-   Note: The most common Kronos use cases are for write-mostly systems
-   with high-throughput reads.  As such, you can imagine that most
-   backends will not be delete-optimized.  There's nothing in the Kronos
-   API that inherently makes deletes not performant, but we imagine some
-   backends will make tradeoffs to optimize their write and read paths at
-   the expense of fast deletes.
+Note: The most common Kronos use cases are for write-mostly systems
+with high-throughput reads.  As such, you can imagine that most
+backends will not be delete-optimized.  There's nothing in the Kronos
+API that inherently makes deletes not performant, but we imagine some
+backends will make tradeoffs to optimize their write and read paths at
+the expense of fast deletes.
 */
-
 setTimeout(function() {
-    kc.delete(stream, startTime, kc.kronosTimeNow(), null, function(kronosResponse) {
-        var numDeleted = kronosResponse[stream].memory.num_deleted;
-        console.log("Deleted " + numDeleted + " events");
-    });
-}, sleepTime);
+  kronosClient.delete(stream, 0, kronos.kronosTimeNow()).then(
+    function(response) {
+      log("KronosDelete: " + pprint(response));
+    }
+  );
+}, 1500);

@@ -6,7 +6,7 @@ from uuid import getnode
 from kronos.conf.constants import ServingMode
 
 # In debug mode, print every request to standard out.
-debug = False
+debug = True
 
 # Profile each request?
 profile = False
