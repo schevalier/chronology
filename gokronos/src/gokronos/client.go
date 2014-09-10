@@ -8,22 +8,25 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // These are constants, do not modify them.
 const IdField = "@id"
 const TimestampField = "@timestamp"
+const LibraryField = "@library"
 const SuccessField = "@success"
 const AscendingOrder = "ascending"
 const DescendingOrder = "descending"
 
 type KronosClient struct {
-	indexUrl   string
-	putUrl     string
-	getUrl     string
-	deleteUrl  string
-	streamsUrl string
-	namespace  string
+	indexUrl       string
+	putUrl         string
+	getUrl         string
+	deleteUrl      string
+	streamsUrl     string
+	inferSchemaUrl string
+	namespace      string
 }
 
 type KronosResponse struct {
@@ -52,6 +55,7 @@ func MakeKronosClient(httpUrl string, namespace string) *KronosClient {
 	kc.getUrl = fmt.Sprintf("%s/1.0/events/get", httpUrl)
 	kc.deleteUrl = fmt.Sprintf("%s/1.0/events/delete", httpUrl)
 	kc.streamsUrl = fmt.Sprintf("%s/1.0/streams", httpUrl)
+	kc.inferSchemaUrl = fmt.Sprintf("%s/1.0/streams/infer_schema", httpUrl)
 	kc.namespace = namespace
 	return kc
 }
@@ -75,20 +79,24 @@ func (kc *KronosClient) Index() (*KronosResponse, *KronosError) {
 	`namespace` (optional): Namespace for the stream.
 */
 // TODO(jblum): Implement put mulitiple events
-func (kc *KronosClient) Put(stream string, event map[string]interface{}, optionalArgs map[string]interface{}) (*KronosResponse, *KronosError) {
+func (kc *KronosClient) Put(stream string, event map[string]interface{}, options map[string]interface{}) (*KronosResponse, *KronosError) {
 
-	if optionalArgs == nil {
-		optionalArgs = make(map[string]interface{})
+	if options == nil {
+		options = make(map[string]interface{})
 	}
 	data := make(map[string]interface{})
-	kc.setNamespace(optionalArgs, data)
+	kc.setNamespace(options, data)
 
 	if event == nil {
 		event = make(map[string]interface{})
 	}
+
 	if event[TimestampField] == nil {
 		event[TimestampField] = KronosTimeNow()
-
+	}
+	event[LibraryField] = map[string]string{
+		"name":    ClientName,
+		"version": ClientVersion,
 	}
 
 	events := make(map[string]interface{})
@@ -97,15 +105,7 @@ func (kc *KronosClient) Put(stream string, event map[string]interface{}, optiona
 	events[stream] = streams
 	data["events"] = events
 
-	jsonBytes, err := kc.jsonMarshal(data)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := kc.postJson(kc.putUrl, jsonBytes)
-	if err != nil {
-		return nil, err
-	}
-	return kc.parseKronosResponse(resp)
+	return kc.makeRequest(kc.putUrl, data)
 }
 
 /*
@@ -117,25 +117,25 @@ func (kc *KronosClient) Put(stream string, event map[string]interface{}, optiona
     `AscendingOrder` or `DescendingOrder`.
 */
 // TODO(jblum): Do date parsing similar to Python client to be more flexible
-func (kc *KronosClient) Get(stream string, startTime *KronosTime, endTime *KronosTime, optionalArgs map[string]interface{}) chan *KronosStreamResponse {
+func (kc *KronosClient) Get(stream string, startTime *KronosTime, endTime *KronosTime, options map[string]interface{}) chan *KronosStreamResponse {
 	requestDict := make(map[string]interface{})
 	requestDict["stream"] = stream
 	requestDict["end_time"] = endTime.Time
 
-	if optionalArgs == nil {
-		optionalArgs = make(map[string]interface{})
+	if options == nil {
+		options = make(map[string]interface{})
 	}
 
-	//parse optionalArgs
-	kc.setStart(optionalArgs, startTime, requestDict)
-	kc.setNamespace(optionalArgs, requestDict)
+	//parse options
+	kc.setStart(options, startTime, requestDict)
+	kc.setNamespace(options, requestDict)
 
-	limit := optionalArgs["limit"]
+	limit := options["limit"]
 	if limit != nil {
 		requestDict["limit"] = limit.(int)
 	}
 
-	order := optionalArgs["order"]
+	order := options["order"]
 	if order == nil {
 		order = AscendingOrder
 	} else {
@@ -150,14 +150,8 @@ func (kc *KronosClient) Get(stream string, startTime *KronosTime, endTime *Krono
 		lastId := ""
 	Retry:
 		for {
-			jsonBytes, err := kc.jsonMarshal(requestDict)
-			if err != nil {
-				ch <- &KronosStreamResponse{nil, err}
-				close(ch)
-				break Retry
-			}
 			// TODO(jblum): stream response!
-			resp, err := kc.postJson(kc.getUrl, jsonBytes)
+			resp, err := kc.postJson(kc.getUrl, requestDict)
 			if err != nil {
 				errorCount++
 				if lastId != "" {
@@ -195,80 +189,78 @@ func (kc *KronosClient) Get(stream string, startTime *KronosTime, endTime *Krono
    at a timestamp.
 */
 // TODO(jblum): Do date parsing similar to Python client to be more flexible
-func (kc *KronosClient) Delete(stream string, startTime *KronosTime, endTime *KronosTime, optionalArgs map[string]interface{}) (*KronosResponse, *KronosError) {
-	if optionalArgs == nil {
-		optionalArgs = make(map[string]interface{})
+func (kc *KronosClient) Delete(stream string, startTime *KronosTime, endTime *KronosTime, options map[string]interface{}) (*KronosResponse, *KronosError) {
+	if options == nil {
+		options = make(map[string]interface{})
 	}
 
 	requestDict := make(map[string]interface{})
 	requestDict["stream"] = stream
 	requestDict["end_time"] = endTime.Time
 
-	kc.setStart(optionalArgs, startTime, requestDict)
-	kc.setNamespace(optionalArgs, requestDict)
+	kc.setStart(options, startTime, requestDict)
+	kc.setNamespace(options, requestDict)
 
-	jsonBytes, err := kc.jsonMarshal(requestDict)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := kc.postJson(kc.deleteUrl, jsonBytes)
-	if err != nil {
-		return nil, err
-	}
-	return kc.parseKronosResponse(resp)
+	return kc.makeRequest(kc.deleteUrl, requestDict)
 }
 
 /*
  Queries the Kronos server and fetches a list
  of streams available to be read.
 */
-func (kc *KronosClient) GetStreams(optionalArgs map[string]interface{}) (chan *KronosResponse, *KronosError) {
-	if optionalArgs == nil {
-		optionalArgs = make(map[string]interface{})
+func (kc *KronosClient) GetStreams(options map[string]interface{}) (chan *KronosResponse, *KronosError) {
+	if options == nil {
+		options = make(map[string]interface{})
 	}
 
 	requestDict := make(map[string]interface{})
-	kc.setNamespace(optionalArgs, requestDict)
+	kc.setNamespace(options, requestDict)
 
-	jsonBytes, err := kc.jsonMarshal(requestDict)
-	if err != nil {
-		return nil, err
-	}
-	// TODO(jblum): implement streaming of response
-	resp, err := kc.postJson(kc.streamsUrl, jsonBytes)
+	resp, err := kc.postJson(kc.streamsUrl, requestDict)
 
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO(jblum): abstract this into a streaming function
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
 	ch := make(chan *KronosResponse)
-	dec := json.NewDecoder(resp.Body)
 
 	go func() {
-		for {
-			var stream string
-			err := dec.Decode(&stream)
-			if err != nil {
-				close(ch)
-				break
-			} else {
-				event := make(map[string]interface{})
-				event["stream"] = stream
-				kronosResponse := KronosResponse{event}
-				ch <- &kronosResponse
+		splits := strings.Split(string(body[:]), "\r\n")
+		for _, stream := range splits {
+			if stream == "" {
+				continue
 			}
+			event := make(map[string]interface{})
+			event["stream"] = stream
+			kronosResponse := KronosResponse{event}
+			ch <- &kronosResponse
 		}
+		close(ch)
 	}()
 
 	return ch, nil
 }
 
+func (kc *KronosClient) InferSchema(stream string, options map[string]interface{}) (*KronosResponse, *KronosError) {
+	if options == nil {
+		options = make(map[string]interface{})
+	}
+
+	requestDict := make(map[string]interface{})
+	requestDict["stream"] = stream
+	kc.setNamespace(options, requestDict)
+
+	return kc.makeRequest(kc.inferSchemaUrl, requestDict)
+}
+
 /*
 	Helper function to either `startId` or `startTime` in the requestDict.
 */
-func (kc *KronosClient) setStart(optionalArgs map[string]interface{}, startTime *KronosTime, requestDict map[string]interface{}) {
-	startId := optionalArgs["startId"]
+func (kc *KronosClient) setStart(options map[string]interface{}, startTime *KronosTime, requestDict map[string]interface{}) {
+	startId := options["startId"]
 	if startId == nil {
 		requestDict["start_time"] = startTime.Time
 	} else {
@@ -280,8 +272,8 @@ func (kc *KronosClient) setStart(optionalArgs map[string]interface{}, startTime 
 	Helper function to set `namespace` in the requestDict.
 	Tries to use options and falls back to the client level namespace, if present.
 */
-func (kc *KronosClient) setNamespace(optionalArgs map[string]interface{}, requestDict map[string]interface{}) {
-	namespace := optionalArgs["namespace"]
+func (kc *KronosClient) setNamespace(options map[string]interface{}, requestDict map[string]interface{}) {
+	namespace := options["namespace"]
 	if namespace == nil {
 		namespace = kc.namespace
 	} else {
@@ -306,7 +298,13 @@ func (kc *KronosClient) jsonMarshal(data interface{}) ([]byte, *KronosError) {
 	Helper function which tries to parse a `[]byte` array of JSON
 	data and return a parsed `http.Response` object
 */
-func (kc *KronosClient) postJson(url string, jsonBytes []byte) (*http.Response, *KronosError) {
+func (kc *KronosClient) postJson(url string, data interface{}) (*http.Response, *KronosError) {
+	jsonBytes, e := kc.jsonMarshal(data)
+
+	if e != nil {
+		return nil, e
+	}
+
 	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonBytes))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -319,6 +317,15 @@ func (kc *KronosClient) postJson(url string, jsonBytes []byte) (*http.Response, 
 		return nil, kc.Error(errors.New(""), fmt.Sprintf("Bad server response code %d", resp.StatusCode))
 	}
 	return resp, nil
+}
+
+func (kc *KronosClient) makeRequest(url string, data interface{}) (*KronosResponse, *KronosError) {
+	resp, err := kc.postJson(url, data)
+
+	if err != nil {
+		return nil, err
+	}
+	return kc.parseKronosResponse(resp)
 }
 
 /*

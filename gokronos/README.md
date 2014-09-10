@@ -31,10 +31,10 @@ The calling `kc.Index()` will return information about the running Kronos server
 	kronosResponse, _ := kc.Index()
 	fmt.Printf("KronosIndex: %v\n", kronosResponse)
 ```
-## Inserting data
-Insert data with the `kc.Put()` command. The argument is a stream to
-insert the data into. You can provide a single event which holds an
-arbitrary dictionary of JSON encodeable data.
+## Inserting Events
+Insert events with the `kc.Put()` command. The argument is a stream to
+insert the event into. You can provide a single event which holds an
+arbitrary dictionary of JSON encodeable key/value pairs.
 ```golang
 	stream := "yourproduct.website.pageviews"
 
@@ -51,7 +51,7 @@ arbitrary dictionary of JSON encodeable data.
 	kronosResponse, _ = kc.Put(stream, event, nil) // use the client's namespace
 	fmt.Printf("KronosPut: %v\n", kronosResponse)
 ```
-### Optionally add a timestamp
+### Optionally Add A Timestamp
 By default, each event will be timestamped on the client.  If you add
 a `gokronos.TimestampField` argument, you can specify the time at which each
 event ocurred.
@@ -61,8 +61,10 @@ event ocurred.
 	kronosResponse, _ = kc.Put(stream, event, nil) // use the client's namespace
 	fmt.Printf("KronosPut: %v\n", kronosResponse)
 ```
-## Retrieving data
-Retrieving data requires a `stream` name, a `startTime`, and an `endTime`.
+## Retrieving Events
+Retrieving events requires a `stream` name, a `startTime`, and an `endTime`.
+
+
 Note that an `IdField` and `@TimestampField` field are
 attached to each event.  The `IdField` is a UUID1-style identifier
 with its time bits derived from the timestamp.  This allows event IDs
@@ -75,7 +77,7 @@ a deterministic tiebreaker when two events happened at the same time.
 		fmt.Printf("Received event: %v\n", kronosStream.Response)
 	}
 ```
-### Event order
+### Event Order
 By default, events are returned in ascending order of their
 `IdField`. Pass in the optional argument `gokronos.DescendingOrder` argument to
 change this behavior to be in descending order of `IdField`.
@@ -87,7 +89,7 @@ change this behavior to be in descending order of `IdField`.
 		fmt.Printf("Reverse event: %v\n", kronosStream.Response)
 	}
 ```
-### Limiting events
+### Limiting Events
 If you only want to retrieve a limited number of events, use the
 `limit` argument.
 ```golang
@@ -98,7 +100,7 @@ If you only want to retrieve a limited number of events, use the
 		fmt.Printf("Limited event: %v\n", kronosStream.Response)
 	}
 ```
-## Getting a list of streams
+## Getting List Of All Streams
 To see all streams available in this namespace, use `GetStreams`.
 ```golang
 
@@ -107,7 +109,16 @@ To see all streams available in this namespace, use `GetStreams`.
 		fmt.Printf("Found stream %v\n", kronosResponse.Json["stream"])
 	}
 ```
-## Deleting data
+## Inferred Schema
+Queries the Kronos server and fetches the infered schema for all the
+requested streams.
+```golang
+
+	kronosResponse, _ = kc.InferSchema(stream, nil)
+	schema := kronosResponse.Json["schema"].(map[string]interface{})
+	fmt.Printf("Inferred schema properties: %v\n", schema["properties"].(map[string]interface{}))
+```
+## Deleting Events
 Sometimes, we make an oopsie and need to delete some events.  The
 `Delete` function takes similar arguments for the start and end
 timestamps to delete.

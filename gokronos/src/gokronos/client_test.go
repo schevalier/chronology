@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const sleepTime = 1000 * time.Millisecond
@@ -79,7 +81,7 @@ func TestPutAndGet(t *testing.T) {
 		}
 		lastId = curId
 	}
-	assertEqual(t, testTag, limitCount, count)
+	assert.Equal(t, limitCount, count, testTag)
 
 	testTag = "testStartId"
 	optionalArgs = make(map[string]interface{})
@@ -116,7 +118,7 @@ func TestDelete(t *testing.T) {
 	backend := kronosResponse.Json[stream].(map[string]interface{})["memory"]
 	numDeleted := backend.(map[string]interface{})["num_deleted"].(float64)
 
-	assertEqual(t, "testDelete1", putCount1, int(numDeleted))
+	assert.Equal(t, putCount1, int(numDeleted), "testDelete1")
 
 	testTag = "testDelete_get2"
 	ch = kc.Get(stream, startTime, endTime, nil)
@@ -129,9 +131,9 @@ func TestGetStreams(t *testing.T) {
 	kc := setupClient()
 	streamCount := 5
 
-	streamName := "stream"
+	streamName := "stream-"
 	for i := 0; i < streamCount; i++ {
-		kc.Put(fmt.Sprintf("%s-%d", streamName, i), nil, nil)
+		kc.Put(fmt.Sprintf("%s%d", streamName, i), nil, nil)
 	}
 
 	time.Sleep(sleepTime)
@@ -145,7 +147,38 @@ func TestGetStreams(t *testing.T) {
 			assertGet(t, kronosResponse)
 		}
 	}
-	assertEqual(t, "testGetStreams", streamCount, count)
+	assert.Equal(t, streamCount, count, "testGetStreams")
+}
+
+func TestInferSchema(t *testing.T) {
+	kc := setupClient()
+	stream := "infer_schema_stream"
+	test_tag := "test_infer_schema"
+	event := make(map[string]interface{})
+	event["a"] = 1
+	event[TimestampField] = 1
+	kc.Put(stream, event, nil)
+
+	event["a"] = 2.3
+	event[TimestampField] = 2
+	event["optional"] = false
+	kc.Put(stream, event, nil)
+
+	time.Sleep(sleepTime)
+	kronosResponse, err := kc.InferSchema(stream, nil)
+	assertNoError(t, test_tag, err)
+
+	assert.Equal(t, kronosResponse.Json["stream"].(string), stream, "Correct Schema")
+
+	schema := kronosResponse.Json["schema"].(map[string]interface{})
+	properties := schema["properties"].(map[string]interface{})
+
+	assert.Equal(t, properties[IdField].(map[string]interface{})["type"].(string), "string", "Correct IdField")
+	assert.Equal(t, properties[TimestampField].(map[string]interface{})["type"].(string), "integer", "Correct TimestampField")
+	assert.Equal(t, properties[TimestampField].(map[string]interface{})["type"].(string), "integer", "Correct TimestampField")
+
+	assert.Equal(t, properties["a"].(map[string]interface{})["type"].(string), "number", "Correct Property: a")
+	assert.Equal(t, properties["optional"].(map[string]interface{})["type"].(string), "boolean", "Correct Property: optional")
 }
 
 func putMany(kc *KronosClient, stream string, putCount int) {
@@ -163,7 +196,7 @@ func getAndAssert(t *testing.T, ch chan *KronosStreamResponse, testTag string, e
 		count++
 		assertGet(t, kronosStream.Response)
 	}
-	assertEqual(t, testTag, expectedCount, count)
+	assert.Equal(t, expectedCount, count, testTag)
 }
 
 func assertNoError(t *testing.T, requestName string, err *KronosError) {
@@ -181,11 +214,5 @@ func assertPut(t *testing.T, kronosResponse *KronosResponse) {
 func assertGet(t *testing.T, kronosResponse *KronosResponse) {
 	if len(kronosResponse.Json) == 0 {
 		t.Fatalf("Error with get, received: %v", kronosResponse)
-	}
-}
-
-func assertEqual(t *testing.T, identifier string, expected int, actual int) {
-	if actual != expected {
-		t.Fatalf("Retrieved incorrect number of %s. Expected %d, found %vd", identifier, expected, actual)
 	}
 }
