@@ -103,7 +103,6 @@ If you only want to retrieve a limited number of events, use the
 ## Getting List Of All Streams
 To see all streams available in this namespace, use `GetStreams`.
 ```golang
-
 	ch1, _ := kc.GetStreams(nil)
 	for kronosResponse := range ch1 {
 		fmt.Printf("Found stream %v\n", kronosResponse.Json["stream"])
@@ -113,7 +112,6 @@ To see all streams available in this namespace, use `GetStreams`.
 Queries the Kronos server and fetches the infered schema for all the
 requested streams.
 ```golang
-
 	kronosResponse, _ = kc.InferSchema(stream, nil)
 	schema := kronosResponse.Json["schema"].(map[string]interface{})
 	fmt.Printf("Inferred schema properties: %v\n", schema["properties"].(map[string]interface{}))

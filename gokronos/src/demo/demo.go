@@ -108,7 +108,6 @@ func main() {
 		## Getting List Of All Streams
 		To see all streams available in this namespace, use `GetStreams`.
 	*/
-
 	ch1, _ := kc.GetStreams(nil)
 	for kronosResponse := range ch1 {
 		fmt.Printf("Found stream %v\n", kronosResponse.Json["stream"])
@@ -119,7 +118,6 @@ func main() {
 		Queries the Kronos server and fetches the infered schema for all the
 		requested streams.
 	*/
-
 	kronosResponse, _ = kc.InferSchema(stream, nil)
 	schema := kronosResponse.Json["schema"].(map[string]interface{})
 	fmt.Printf("Inferred schema properties: %v\n", schema["properties"].(map[string]interface{}))
