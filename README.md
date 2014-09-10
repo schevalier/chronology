@@ -73,7 +73,7 @@ reviewer comments 'LGTM' (looks good to me), bring the code into
 master with the following command (from your `feature-branch`):
 
 ```
-./push_branch.sh
+./push_branch.sh <commit message>
 ```
 
 Many many thanks for contributing!
