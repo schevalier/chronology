@@ -1,9 +1,9 @@
 <div class="btn-group">
   <selecter model="type" options="types" class="cpf"></selecter>
-  <input type="text"
-         class="form-control"
-         ng-show="type.type == 'property'"
-         ng-model="name">
+  <property model="name"
+            panel="$parent.$parent.panel"
+            ng-show="type.type == 'property'">
+  </property>
   <input type="text"
          class="form-control"
          ng-show="type.type == 'constant'"
@@ -18,4 +18,3 @@
        ng-model="args[func.options.indexOf(arg)]"
        placeholder="{[ arg.name ]}">
 <span ng-repeat-end></span><!-- Hack to insert whitespace for inline-block -->
-

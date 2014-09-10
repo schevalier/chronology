@@ -149,6 +149,14 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     panel.cache.visualizationDropdownOpen = false;
   };
 
+  $scope.updateSchema = function (panel) {
+    $http.get('/streams/' + panel.data_source.query.stream)
+      .success(function (data, status, headers, config) {
+        panel.cache.streamProperties = data.schema.required;
+      }
+    );
+  }
+
   var checkSchema = function (panel) {
     var data = panel.cache.data;
     var requiredFields = panel.display.settings.requiredFields;
@@ -478,7 +486,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     $scope.$watch(function () {
       return panel.data_source.stream;
     }, function (newVal, oldVal) {
-      panel.cache.streamProperties = [];
+      $scope.updateSchema(panel);
     });
 
     $scope.$watch(function () {
