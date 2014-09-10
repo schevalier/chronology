@@ -96,7 +96,7 @@ class InMemoryStorage(BaseStorage):
     if stream_events[lo] == start_id_event:
       lo += 1
     hi = bisect.bisect_right(stream_events, end_id_event)
-    
+
     if order == ResultOrder.DESCENDING:
       index_it = xrange(hi-1, lo-1, -1)
     else:

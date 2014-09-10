@@ -280,34 +280,23 @@ def get_streams(environment, start_response, headers):
 @endpoint('/1.0/streams/infer_schema', methods=['POST'])
 def infer_schema(environment, start_response, headers):
   """
-  Return the inferred schema of the requested stream(s).
+  Return the inferred schema of the requested stream.
   POST body should contain a JSON encoded version of:
-    [{ stream: stream_name,
-       namespace: namespace_name (optional)
-     }]
+    { stream: stream_name,
+      namespace: namespace_name (optional)
+    }
   """
-  start_response('200 OK', headers)
-  schemas = dict()
-  for _dict in environment['json']['streams']:
-    namespace = _dict.get('namespace') or settings.default_namespace
-    stream = _dict['stream']
-    schemas[(namespace, stream)] = execute_greenlet_async(
-      _infer_schema,
-      namespace,
-      stream)
-  response = {'schemas': []}
-  success = True
-  for key, result in schemas.iteritems():
-    try:
-      value = result.get()
-    except Exception, e:
-      success = False
-      value = repr(e)
-    finally:
-      response['schemas'].append({'namespace': key[0],
-                                  'stream': key[1],
-                                  'schema': value})
-  response[SUCCESS_FIELD] = success
+  stream = environment['json']['stream']
+  namespace = environment['json'].get('namespace') or settings.default_namespace
+
+  start_response('200 OK', headers)  
+  schema = _infer_schema(namespace, stream)
+  response = {
+    'stream': stream,
+    'namespace': namespace,
+    'schema': schema,
+    SUCCESS_FIELD: True
+    }
   return response
 
 

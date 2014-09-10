@@ -95,13 +95,10 @@ class KronosServerTestCase(unittest.TestCase):
     self.assertEqual(response.status_code, 200)
     return response.data.splitlines()
 
-  def infer_schema(self, stream_or_list, namespace=None):
-    if isinstance(stream_or_list, types.StringTypes):
-      streams = [{'stream': stream_or_list, 'namespace': namespace}]
-    else:
-      streams = stream_or_list
-    response = self.http_client.post(self.infer_schema_path,
-                                     data=marshal.dumps({'streams': streams}),
-                                     buffered=True)
+  def infer_schema(self, stream, namespace=None):
+    response = self.http_client.post(
+      self.infer_schema_path,
+      data=marshal.dumps({'stream': stream, 'namespace': namespace}),
+      buffered=True)
     self.assertEqual(response.status_code, 200)
     return marshal.loads(response.data)

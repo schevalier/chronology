@@ -112,7 +112,7 @@ class KronosClientTest(unittest.TestCase):
               {'a': 2.3, TIMESTAMP_FIELD: 2, 'optional': False}]
     self.client.put({self.stream: events})
     time.sleep(0.1)
-    schema = self.client.infer_schema([{'stream': self.stream}])['schemas'][0]
+    schema = self.client.infer_schema(self.stream)
     self.assertEqual(schema['stream'], self.stream)
     self.assertEqual(schema['schema']['required'],
                      [ID_FIELD, TIMESTAMP_FIELD, 'a'])

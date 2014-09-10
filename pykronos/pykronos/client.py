@@ -300,22 +300,14 @@ class KronosClient(object):
       if line:
         yield line
 
-  def infer_schema(self, streams, namespace=None):
+  def infer_schema(self, stream, namespace=None):
     """
-    Queries the Kronos server and fetches the infered schema for all the
-    requested streams.
+    Queries the Kronos server and fetches the inferred schema for the
+    requested stream.
     """
-    if isinstance(streams, types.StringTypes):
-      request_dict = {'streams': [{'stream': streams,
-                                   'namespace': namespace or self.namespace}]}
-    else:
-      if self.namespace:
-        for stream in streams:
-          if 'namespace' in stream:
-            continue
-          stream['namespace'] = self.namespace
-      request_dict = {'streams': streams}
-    return self._make_request(self._infer_schema_url, data=request_dict)
+    return self._make_request(self._infer_schema_url,
+                              data={'stream': stream,
+                                    'namespace': namespace or self.namespace})
 
   def log_function(self, stream_name, properties={},
                    log_function_stack_trace=False,
