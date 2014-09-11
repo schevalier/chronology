@@ -44,13 +44,15 @@ Insert data with the `put` command.  The argument is a dictionary of
 stream names (e.g., `yourproduct.website.pageviews`) to a list of
 JSON-encodable dictionaries to insert to each stream.
 ```python
-kc.put({'yourproduct.website.pageviews': [
-         {'source': 'http://test.com',
-          'browser': {'name': 'Firefox', 'version': 26},
-          'pages': ['page1.html', 'page2.html']}],
-        'yourproduct.website.clicks': [
-         {'user': 40, 'num_clicks': 7},
-         {'user': 42, 'num_clicks': 2}]})
+kc.put(
+  {'yourproduct.website.pageviews': [
+      {'source': 'http://test.com',
+       'browser': {'name': 'Firefox', 'version': 26},
+       'pages': ['page1.html', 'page2.html']}],
+   'yourproduct.website.clicks': [
+      {'user': 40, 'num_clicks': 7},
+      {'user': 42, 'num_clicks': 2}]
+   })
 ```
 ### Optionally add a timestamp
 By default, each event will be timestamped on the client.  If you add
