@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import json
-import copy
 import random
 import gevent
 
@@ -35,7 +34,7 @@ def token_protected_endpoint(function):
   """Requires valid auth_token in POST to access
 
   An auth_token is built by sending a dictionary built from a
-  Werkzeug.Request.form to the scheduler.auth.create_token function. 
+  Werkzeug.Request.form to the scheduler.auth.create_token function.
   """
   @wraps(function)
   def decorated(*args, **kwargs):
@@ -45,7 +44,6 @@ def token_protected_endpoint(function):
         'status': 'fail',
         'reason': 'You must provide an auth_token',
       })
-
 
     data = dict(request.form)
     del data['auth_token']

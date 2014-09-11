@@ -8,18 +8,14 @@ instance of Scheduler (with its own task queue), this application is not
 parallelizable. Running multiple Flask instances will result in creating
 duplicate running tasks, especially after restarting the server.
 """
-
-import gipc
 import gevent
 import gevent.monkey; gevent.monkey.patch_all()
 import gevent.pywsgi
-import subprocess
 import werkzeug.serving
 
-from gevent import Greenlet
-from multiprocessing import Process
 from scheduler import app
 from scheduler.scheduler import Scheduler
+
 
 if __name__ == '__main__':
     app.scheduler = Scheduler()
@@ -27,4 +23,3 @@ if __name__ == '__main__':
       lambda: gevent.pywsgi.WSGIServer((app.config['SCHEDULER_HOST'],
                                         app.config['PORT']),
                                        app).serve_forever())
-

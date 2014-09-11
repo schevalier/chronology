@@ -29,7 +29,8 @@ def _send_with_auth(values, secret_key, url):
 
   # Simulate a Flask request because that is what will be unpacked when the
   # request is received on the other side
-  request = Request.from_values(content_length=len(data),
+  request = Request.from_values(
+    content_length=len(data),
     input_stream=StringIO(data),
     content_type='application/x-www-form-urlencoded',
     method='POST')
@@ -63,4 +64,3 @@ def cancel(task_id, secret_key=default_key, url=default_url):
     'id': task_id,
   }
   return _send_with_auth(values, secret_key, url)
-

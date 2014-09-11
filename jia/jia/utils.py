@@ -1,5 +1,5 @@
 import smtplib
-from email.mime.text import MIMEText 
+from email.mime.text import MIMEText
 from jia import app
 
 
@@ -32,4 +32,3 @@ def send_mail(recipients, subject, message, from_addr=None):
   s = smtplib.SMTP('localhost')
   s.sendmail(from_addr, recipients, msg.as_string())
   s.quit()
-

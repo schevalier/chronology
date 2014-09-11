@@ -13,6 +13,7 @@ from jia.utils import send_mail
 from scheduler import app
 from scheduler.models import Task
 
+
 class Scheduler(object):
   """Inteval based code execution scheduler"""
 
@@ -75,7 +76,6 @@ class Scheduler(object):
     self._schedule_pipe.put(('cancel', task_id))
 
   def _schedule(self, task, next_run=None):
-    now = datetime.datetime.now()
     if not next_run:
       next_run = datetime.datetime.now()
     heappush(self._task_queue, (next_run, task))

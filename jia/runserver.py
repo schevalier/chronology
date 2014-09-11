@@ -8,6 +8,7 @@ import werkzeug.serving
 from argparse import ArgumentParser
 from jia import app
 
+
 if __name__ == '__main__':
   parser = ArgumentParser(description='Jia HTTP server.')
   parser.add_argument('--port', type=int, help='Port to listen on.')
@@ -16,10 +17,10 @@ if __name__ == '__main__':
   for key, value in args.__dict__.items():
     if value is not None:
       if key == 'config':
-        app.config.from_pyfile(os.path.join(os.pardir, args.config), silent=True)
+        app.config.from_pyfile(os.path.join(os.pardir, args.config),
+                               silent=True)
       else:
         app.config[key.upper()] = value
   werkzeug.serving.run_with_reloader(
     lambda: gevent.pywsgi.WSGIServer(('0.0.0.0', app.config['PORT']),
                                      app).serve_forever())
-

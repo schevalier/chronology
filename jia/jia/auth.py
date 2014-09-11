@@ -20,11 +20,13 @@ User {} is not allowed.
 Revoke access on this account before trying again</a>.
 """
 
+
 def http_scheme():
   if app.config['FORCE_SSL']:
     return 'https'
   else:
     return 'http'
+
 
 def require_auth(fn):
   @functools.wraps(fn)

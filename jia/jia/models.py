@@ -1,6 +1,7 @@
 import json
 from jia import db
 
+
 class Board(db.Model):
   class PanelSource(object):
     PYCODE = 'pycode'
@@ -21,7 +22,7 @@ class Board(db.Model):
   def save(self):
     db.session.add(self)
     db.session.commit()
-  
+
   def delete(self):
     db.session.delete(self)
     db.session.commit()
@@ -53,7 +54,7 @@ class Board(db.Model):
         'id': self.id,
         'title': '',
         'panels': []
-        }
+      }
     return board_dict
     """    pycode = self.pycodes.first() or PyCode()
     return {'id': self.id,

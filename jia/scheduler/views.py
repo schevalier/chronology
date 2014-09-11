@@ -9,6 +9,7 @@ from scheduler import app
 from scheduler.models import Task
 from scheduler.decorators import token_protected_endpoint
 
+
 @app.route("/schedule", methods=['POST'])
 @token_protected_endpoint
 def schedule():
@@ -45,7 +46,7 @@ def schedule():
     })
 
   new_task.save()
-  
+
   return json.dumps({
     'status': 'success',
     'id': task_id,
@@ -89,4 +90,3 @@ def cancel():
     'status': 'success',
     'id': task_id,
   })
-

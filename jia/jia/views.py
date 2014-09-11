@@ -12,7 +12,6 @@ from jia.compute import QueryCompute, enable_precompute, disable_precompute
 from jia.utils import get_seconds
 from pykronos import KronosClient
 
-import jia.query
 
 @app.route('/status', methods=['GET'])
 def status():
@@ -183,11 +182,10 @@ def callsource(id=None):
 
   if metis:
     code = query
-    
+
   task = QueryCompute(code, timeframe, bucket_width=bucket_width, metis=metis)
   events = task.compute(use_cache=precompute['enabled'])
-  
+
   response = {}
   response['events'] = events
   return response
-

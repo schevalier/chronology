@@ -11,7 +11,7 @@ if app.config['FORCE_SSL']:
   sslify = SSLify(app)
 
 import jia.models
-import jia.views
+import jia.views  # noqa
 
 # Create tables in sqlite3 db if not present.
 db.create_all()

@@ -38,7 +38,6 @@ provides methods for caching the results of a query, as well as running the
 query with or without help from the cache.
 """
 
-
 PRECOMPUTE_INITIALIZATION_CODE = """
 from jia.compute import QueryCompute
 query = %s
@@ -51,7 +50,6 @@ compute = QueryCompute(query, timeframe, bucket_width=bucket_width,
                        untrusted_time=untrusted_time, metis=use_metis)
 compute.cache()
 """
-
 
 DT_FORMAT = '%b %d %Y %H:%M:%S'
 
@@ -75,7 +73,7 @@ class QueryCompute(object):
     the purposes of storing default/previous values. If the mode is recent,
     only 'value' and 'scale' are used. If the mode is 'range', only 'from' and
     'to' are used.
-    
+
     Example timeframe:
     timeframe = {
       'mode': 'recent',
@@ -113,7 +111,7 @@ class QueryCompute(object):
       query_func = self._run_query
     else:
       raise ValueError("`metis` must be `True` if ALLOW_PYCODE is not enabled")
-      
+
     if self._bucket_width:
       bucket_width_timedelta = datetime.timedelta(seconds=bucket_width)
       self._query_cache = QueryCache(self._cache_client, query_func,
@@ -177,8 +175,8 @@ class QueryCompute(object):
   def _run_query(self, start_time, end_time, unique_id=None):
     """Executes a Python query string and returns events
 
-    Acts as a wrapper around exec that injects necessary local variables into the
-    scope of the user-provided query blob.
+    Acts as a wrapper around exec that injects necessary local variables into
+    the scope of the user-provided query blob.
 
     :param start_time: Python datetime to be injected into query
     :param end_time: Python datetime to be injected into query
@@ -198,7 +196,7 @@ class QueryCompute(object):
     }
 
     try:
-      exec self._query in {}, locals_dict # No globals.
+      exec self._query in {}, locals_dict  # No globals.
     except:
       _, exception, tb = sys.exc_info()
       raise PyCodeError(exception, traceback.format_tb(tb))
@@ -280,7 +278,7 @@ def enable_precompute(panel):
 
   if result['status'] != 'success':
     raise RuntimeError(result.get('reason'))
-  
+
   return result['id']
 
 
@@ -290,4 +288,3 @@ def disable_precompute(panel):
   result = scheduler_client.cancel(task_id)
   if result['status'] != 'success':
     raise RuntimeError(result.get('reason'))
-

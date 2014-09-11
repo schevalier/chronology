@@ -5,17 +5,19 @@ APPROOT = os.path.dirname(os.path.realpath(__file__))
 # Basic configuration settings
 DEBUG = True
 PORT = 8152
-SECRET_KEY = 'a secret key---you should absolutely set this to something unique and strong'
+SECRET_KEY = 'a secret key --- MUST set this to something unique and strong'
 FORCE_SSL = False
-ALLOW_PYCODE = False # DANGEROUS: Allow arbitrary python queries from the browser
-SYSTEM_EMAIL = 'noreply@yourcompany.com' # Emails sent from here
+# DANGEROUS: Allow arbitrary Python queries from the browser
+ALLOW_PYCODE = False
+SYSTEM_EMAIL = 'noreply@yourcompany.com'  # Emails sent from here
 
 # Precompute settings
 PRECOMPUTE = True
-CACHE_KRONOS_URL = 'http://localhost:8150' # The cache is written here
-                                           # Can be the same as KRONOS_URL
+# The cache is written here; can be the same as KRONOS_URL
+CACHE_KRONOS_URL = 'http://localhost:8150'
 CACHE_KRONOS_NAMESPACE = 'default_cache'
-SCHEDULER_HOST = '127.0.0.1' # It is not recommended to expose the scheduler outside the LAN
+# It is not recommended to expose the scheduler outside the LAN
+SCHEDULER_HOST = '127.0.0.1'
 SCHEDULER_PORT = 8157
 SCHEDULER_DATABASE_URI = 'sqlite:///%s/scheduler.db' % APPROOT
 # When precompute query code fails, emails will be sent to the following
@@ -34,8 +36,8 @@ SQLALCHEMY_DATABASE_URI = 'sqlite:///%s/app.db' % APPROOT
 
 # Google authentication to protect your board from random users
 ALLOWED_EMAILS = map(re.compile, [
-# Only user IDs matching regexes in this list will be allowed to use Jia
-'.+@YOUR_DOMAIN.COM$',
+  # Only user IDs matching regexes in this list will be allowed to use Jia
+  '.+@YOUR_DOMAIN.COM$',
 ])
 ENABLE_GOOGLE_AUTH = False
 GOOGLE_CLIENT_ID = ''

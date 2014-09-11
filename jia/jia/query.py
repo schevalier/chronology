@@ -1,18 +1,15 @@
 import copy
-import datetime
 import json
-import sys
 import metis.core.query.aggregate
 import metis.core.query.value
 from jia import app
-from metis.core.query.aggregate import Aggregator, GroupBy
+from metis.core.query.aggregate import GroupBy
 from metis.core.query.condition import Condition
 from metis.core.query.stream import KronosStream
 from metis.core.query.transform import Project, Filter, Aggregate, OrderBy
 from metis.core.query.transform import Limit
-from metis.core.query.value import Constant, Property, Function
-from jia.common.time import datetime_to_kronos_time
-from jia.common.time import kronos_time_to_datetime
+from metis.core.query.value import Constant
+from metis.core.query.value import Property
 
 
 def cpf(args, alias=None):
@@ -58,13 +55,13 @@ def aggregate(query_plan, operands):
   for agg in operands['aggregates']:
     aggregates.append(agg_op(agg['agg_type'], cpf(agg['agg_on']),
                       agg['alias']))
-  
+
   groups = []
   for group in operands['groups']:
     groups.append(cpf(group['field'], group['alias']))
 
   group_by = GroupBy(groups)
-  return Aggregate(query_plan, group_by, aggregates) 
+  return Aggregate(query_plan, group_by, aggregates)
 
 
 def orderby(query_plan, operands):
@@ -98,4 +95,3 @@ def create_metis_query_plan(query, start_time, end_time):
     query_plan = operators[operator](query_plan, operands)
 
   return json.dumps({'plan': query_plan.to_dict()})
-
