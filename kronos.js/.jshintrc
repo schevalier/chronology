@@ -11,5 +11,6 @@
   "strict" : true,
   "trailing" : true,
   "globalstrict" : true,
-  "eqeqeq" : true
+  "eqeqeq" : true,
+  "predef": ["console"]
 }
