@@ -133,7 +133,7 @@ def cohort_queryplan(plan):
 
   left.alias = 'cohort'
   right.alias = 'action'
-  
+
   joined = Join(left,
                 right,
                 (Condition(Condition.Op.EQ,
@@ -156,7 +156,7 @@ def cohort_queryplan(plan):
                     Constant(DateUnit.unit_to_kronos_time(action['unit']))],
                    alias='action_step')]),
     [Count([], alias='count')]
-    )
+  )
 
   aggregated = Aggregate(
     user_aggregated,
@@ -175,8 +175,8 @@ def cohort_response(plan, events):
     cohort_date = (kronos_time_to_datetime(event[TIMESTAMP_FIELD])
                    .date()
                    .isoformat())
-    step = timedelta(seconds=
-                     kronos_time_to_epoch_time(int(event['action_step'])))
+    step = timedelta(
+      seconds=kronos_time_to_epoch_time(int(event['action_step'])))
     step = getattr(step, plan['action']['unit'])
     cohort[cohort_date]['action_dates'][step] = event['cohort_actions']
   return cohort

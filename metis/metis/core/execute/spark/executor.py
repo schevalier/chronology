@@ -39,7 +39,7 @@ def _copy_lib_for_spark_workers(file_path):
 def _setup_pyspark():
   # Set SPARK_HOME environment variable.
   os.putenv('SPARK_HOME', app.config['SPARK_HOME'])
-  # From Python docs: Calling putenv() directly does not change os.environ, so 
+  # From Python docs: Calling putenv() directly does not change os.environ, so
   # it's better to modify os.environ. Also some platforms don't support
   # os.putenv. We'll just do both.
   os.environ['SPARK_HOME'] = app.config['SPARK_HOME']
@@ -59,7 +59,7 @@ class SparkExecutor(Executor):
     metis_lib_file = tempfile.NamedTemporaryFile(suffix='.zip', delete=False)
     metis_lib_file.close()
     _copy_lib_for_spark_workers(metis_lib_file.name)
-    
+
     # Also ship the Metis lib file so worker nodes can deserialize Metis
     # internal data structures.
     self.context = SparkContext(app.config['SPARK_MASTER'],
@@ -82,6 +82,7 @@ class SparkExecutor(Executor):
 
   def execute_kronos_stream(self, node):
     delta = (node.end_time - node.start_time) / self.num_workers
+
     def get_events(i):
       from pykronos import KronosClient
       client = KronosClient(node.host, blocking=True)
@@ -171,7 +172,7 @@ class SparkExecutor(Executor):
 
     def setup_join():
       eq_join_key_values = []
-      
+
       # TODO(usmanm): Right now we only optimize if the conditional is an EQ or
       # if its an AND and has some EQ in the top level. We don't do any
       # recursive searching in condition trees. Improve that.
@@ -189,7 +190,7 @@ class SparkExecutor(Executor):
           condition.conditions = filter_conditions
         else:
           condition = None
-      elif _type != Condition.Type.OR: # Ignore ORs for now.
+      elif _type != Condition.Type.OR:  # Ignore ORs for now.
         value = get_equijoin_key_values(condition)
         if value:
           eq_join_key_values.append(value)

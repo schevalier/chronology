@@ -64,8 +64,8 @@ class CohortTestCase(MetisServerTestCase):
            constants.TIMESTAMP_FIELD: datetime_to_kronos_time(date1)},
           {'user': user_id,
            constants.TIMESTAMP_FIELD: datetime_to_kronos_time(date2)}
-          ]
-        })
+        ]
+      })
 
     # Action stream: Users in group 1 hit the front page w/ 1/5
     # percent chance, group 2 with 2/5 chance, etc. Likelihood for
@@ -86,12 +86,12 @@ class CohortTestCase(MetisServerTestCase):
               action_dt,
               day_to_min_action_dt.get(action_dt.date(),
                                        CohortTestCase.MAX_DT)
-              )
+            )
             self.kronos_client.put({
               CohortTestCase.FRONTPAGE_STREAM: [
                 {'user_id': user_id,
                  '@time': datetime_to_kronos_time(action_dt)}]
-              })
+            })
             action_compare_dt = day_to_min_action_dt[action_dt.date()]
             for _email_dates in user_dates[user_id]:
               if (_email_dates['precise_date'] > action_compare_dt or
@@ -125,7 +125,7 @@ class CohortTestCase(MetisServerTestCase):
                  'repetitions': CohortTestCase.ACTION_REPETITION_DAYS,
                  'unit': DateUnit.DAYS,
                  'grouping_key': 'user_id'}
-      }
+    }
     metis_plan = cohort_queryplan(plan)
     events = self.query(metis_plan)
     cohort = cohort_response(plan, events)

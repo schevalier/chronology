@@ -16,7 +16,7 @@ class Aggregator(Node):
   def __init__(self, arguments, alias):
     self.arguments = arguments
     self.alias = alias
-  
+
   @classmethod
   def parse(cls, _dict):
     op = _dict.pop('op')

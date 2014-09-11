@@ -18,9 +18,9 @@ if __name__ == '__main__':
   if args.config:
     app.config.from_pyfile(os.path.join(os.pardir, args.config))
 
-  if args.debug != None:
+  if args.debug is not None:
     app.config['DEBUG'] = args.debug
-  if args.port != None:
+  if args.port is not None:
     port = int(args.port)
     app.config['PORT'] = port
 

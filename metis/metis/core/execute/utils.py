@@ -79,7 +79,7 @@ def _date_trunc(value, timeframe):
     DateTrunc.Unit.WEEK: lambda dt: dt.date() - timedelta(days=dt.weekday()),
     DateTrunc.Unit.MONTH: lambda dt: datetime(dt.year, dt.month, 1),
     DateTrunc.Unit.YEAR: lambda dt: datetime(dt.year, 1, 1)
-    }
+  }
   value = timeframes[timeframe](value)
   if return_as_str:
     return value.isoformat()
@@ -106,7 +106,7 @@ def _date_part(value, part):
     DatePart.Unit.MONTH: lambda dt: dt.month,
     DatePart.Unit.YEAR: lambda dt: dt.year,
     DatePart.Unit.WEEK_DAY: lambda dt: dt.weekday(),
-    }
+  }
   result = parts[part](value)
   return result
 
@@ -124,7 +124,7 @@ FUNCTIONS = {
   Function.Name.DATE_TRUNC: _date_trunc,
   Function.Name.DATE_PART: _date_part,
   Function.Name.LEN: len
-  }
+}
 
 # Ensure that we have a function mapped for each `Function.Name`.
 assert Function.Name.values() == set(FUNCTIONS)
@@ -154,7 +154,7 @@ CONDITIONS = {
   Condition.Op.CONTAINS: lambda left, right: right in left,
   Condition.Op.IN: lambda left, right: left in right,
   Condition.Op.REGEX: lambda left, right: re.search(right, left)
-  }
+}
 
 # Ensure that we have a function mapped for each `Condition.Op`.
 assert Condition.Op.values() == set(CONDITIONS)

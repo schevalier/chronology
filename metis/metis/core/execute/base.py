@@ -10,12 +10,13 @@ from metis.core.query.transform import Project
 # `ExecutableNode`, please add a method for to the `Executor` class below and
 # create a dispatch case inside `Executor.execute`.
 
+
 class Executor(object):
   """
   The Executor interface. ALL methods must be copied over (and implemented)
   to an Executor implementation, including the first method below which sets
   up the dynamic dispatcher.
-  """  
+  """
   def execute(self, node):
     if isinstance(node, KronosStream):
       return self.execute_kronos_stream(node)

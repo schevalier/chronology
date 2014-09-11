@@ -10,7 +10,7 @@ from metis.core.execute.utils import get_value
 class PythonExecutor(Executor):
   def execute_kronos_stream(self, node):
     from pykronos import KronosClient
-    
+
     client = KronosClient(node.host, blocking=True)
     return client.get(node.stream,
                       node.start_time,
@@ -19,7 +19,7 @@ class PythonExecutor(Executor):
 
   def execute_aggregate(self, node):
     groups = defaultdict(list)
-    
+
     for event in self.execute(node.stream):
       key, event = node.group_func(event)
       groups[key].append(event)
@@ -42,7 +42,7 @@ class PythonExecutor(Executor):
       for key, value in event2.iteritems():
         event['%s.%s' % (right_alias, key)] = value
       return event
-    
+
     # TODO(usmanm): All joins are Cartesian for now. Add some eq-join
     # optimizations.
     right = list(self.execute(node.right))
@@ -64,7 +64,6 @@ class PythonExecutor(Executor):
               if node.reverse else
               xrange(len(events))):
       yield events[i]
-    
 
   def execute_project(self, node):
     return itertools.imap(node.map_func, self.execute(node.stream))

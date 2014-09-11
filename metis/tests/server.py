@@ -2,7 +2,7 @@ import json
 import requests
 import unittest
 
-from metis import app
+from metis import app  # noqa
 from pykronos import KronosClient
 
 import logging; logging.basicConfig()

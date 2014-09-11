@@ -9,3 +9,5 @@ test: clean
 installdeps:
 	cat packages.txt | xargs sudo apt-get -y install
 	sudo pip install -r requirements.txt
+lint: clean
+	flake8 .

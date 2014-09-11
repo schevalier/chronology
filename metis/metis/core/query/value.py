@@ -55,7 +55,7 @@ class Value(Node):
 
   def __sub__(self, other):
     return self._combine_with(other, 'Subtract')
-  
+
   def __mul__(self, other):
     return self._combine_with(other, 'Multiply')
 

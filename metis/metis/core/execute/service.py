@@ -11,7 +11,7 @@ class ExecutorService(object):
   def __init__(self):
     self.executors = {}
     self.default_executor = app.config['DEFAULT_EXECUTOR']
-    
+
     for executor in app.config['EXECUTORS']:
       executor_path = 'metis.core.execute.%s' % executor
       executor_module, executor_cls = executor_path.rsplit('.', 1)

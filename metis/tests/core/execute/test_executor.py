@@ -58,7 +58,7 @@ class ExecutorTestCase(MetisServerTestCase):
     for i in xrange(25):
       self.kronos_client.put({
         self.stream: [{constants.TIMESTAMP_FIELD: random.randint(0, 999)}]
-        })
+      })
     events = self.query(KronosStream('http://localhost:9191',
                                      self.stream,
                                      0,
@@ -74,8 +74,8 @@ class ExecutorTestCase(MetisServerTestCase):
       self.kronos_client.put({
         self.stream: [{constants.TIMESTAMP_FIELD: random.randint(0, 999),
                        'i': i,
-                       'i+1': i+1}]
-        })
+                       'i+1': i + 1}]
+      })
     events = self.query(Project(KronosStream('http://localhost:9191',
                                              self.stream,
                                              0,
@@ -99,9 +99,9 @@ class ExecutorTestCase(MetisServerTestCase):
   def test_filter(self):
     for i in xrange(2000):
       event = {constants.TIMESTAMP_FIELD: random.randint(0, 999),
-                          'a': random.randint(0, 10),
-                          'b': random.randint(50, 150),
-                          'c': [random.randint(0, 20) for j in xrange(10)]}
+               'a': random.randint(0, 10),
+               'b': random.randint(50, 150),
+               'c': [random.randint(0, 20) for j in xrange(10)]}
       if random.randint(0, 100) > 50:
         event['d'] = 'iamlolcat'
       else:
@@ -140,7 +140,7 @@ class ExecutorTestCase(MetisServerTestCase):
         self.stream: [{constants.TIMESTAMP_FIELD: random.randint(0, 999),
                        'a': random.randint(0, 5),
                        'b': random.randint(1000, 10000)}]
-        })
+      })
     # NOP projection to ensure events flow through Spark.
     events = self.query(Project(KronosStream('http://localhost:9191',
                                              self.stream,
@@ -173,7 +173,7 @@ class ExecutorTestCase(MetisServerTestCase):
     for i in xrange(20):
       self.kronos_client.put({
         self.stream: [{constants.TIMESTAMP_FIELD: i}]
-        })
+      })
     events = self.query(Limit(KronosStream('http://localhost:9191',
                                            self.stream,
                                            0,
@@ -190,7 +190,7 @@ class ExecutorTestCase(MetisServerTestCase):
       a = random.randint(0, 2)
       self.kronos_client.put({
         self.stream: [{constants.TIMESTAMP_FIELD: i, 'a': a}]
-        })
+      })
       sums[50 * (i / 50)] += a
     events = self.query(
       Aggregate(Project(KronosStream('http://localhost:9191',
@@ -236,13 +236,13 @@ class ExecutorTestCase(MetisServerTestCase):
         self.stream + '1': [{constants.TIMESTAMP_FIELD: i,
                              'a': random.randint(0, 2),
                              'b': random.randint(0, 5)}]
-        })
+      })
     for i in xrange(100):
       self.kronos_client.put({
         self.stream + '2': [{constants.TIMESTAMP_FIELD: i,
                              'a': random.randint(0, 2),
                              'b': random.randint(0, 5)}]
-        })
+      })
     events = self.query(Join(KronosStream('http://localhost:9191',
                                           self.stream + '1',
                                           0,
@@ -277,13 +277,13 @@ class ExecutorTestCase(MetisServerTestCase):
         self.stream + '1': [{constants.TIMESTAMP_FIELD: random.randint(0, 999),
                              'a': i,
                              'b': i + 1}]
-        })
+      })
     for i in xrange(200):
       self.kronos_client.put({
         self.stream + '2': [{constants.TIMESTAMP_FIELD: random.randint(0, 999),
                              'a': i + 1,
                              'b': i + 2}]
-        })
+      })
 
     # 1-1 join with property.
     events = self.query(Join(KronosStream('http://localhost:9191',
@@ -321,23 +321,24 @@ class ExecutorTestCase(MetisServerTestCase):
       self.assertEqual(event['left.a'], event['right.a'] - 1)
 
     # 1-1 eqjoin with filtering.
-    events = self.query(Join(KronosStream('http://localhost:9191',
-                                          self.stream + '1',
-                                          0,
-                                          1000),
-                             KronosStream('http://localhost:9191',
-                                          self.stream + '2',
-                                          0,
-                                          1000),
-                             (Condition(Condition.Op.EQ,
-                                        Property('left.b'),
-                                        Property('right.a')) &
-                              Condition(Condition.Op.GT,
-                                        Property('left.%s' %
-                                                 constants.TIMESTAMP_FIELD),
-                                        Add([Property('right.%s' %
-                                                      constants.TIMESTAMP_FIELD),
-                                             Constant(10)])))).to_dict())
+    events = self.query(
+      Join(KronosStream('http://localhost:9191',
+                        self.stream + '1',
+                        0,
+                        1000),
+           KronosStream('http://localhost:9191',
+                        self.stream + '2',
+                        0,
+                        1000),
+           (Condition(Condition.Op.EQ,
+                      Property('left.b'),
+                      Property('right.a')) &
+            Condition(Condition.Op.GT,
+                      Property('left.%s' %
+                               constants.TIMESTAMP_FIELD),
+                      Add([Property('right.%s' %
+                                    constants.TIMESTAMP_FIELD),
+                           Constant(10)])))).to_dict())
     self.assertTrue(len(events) > 0)
     self.assertTrue(len(events) < 200)
     for event in events:
