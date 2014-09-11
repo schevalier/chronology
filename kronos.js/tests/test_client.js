@@ -7,7 +7,7 @@ var kronos = require("../index.js");
 var Q = require("q");
 
 var options = {
-  "url": "http://localhost:8150",
+  "url": "http://localhost:9191",
   "namespace": "kronos"
 };
 
@@ -119,7 +119,7 @@ describe("KronosClient", function() {
             );
           })
         );
-        
+
         Q.all(promises).then(function() {
           var events = [];
           promises.push(

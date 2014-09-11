@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+"use strict";
 
-var fs = require('fs');
-var UglifyJS = require('uglify-js');
+var fs = require("fs");
+var UglifyJS = require("uglify-js");
 
-var result = UglifyJS.minify('kronos.js', {
+/* jshint camelcase: false */
+var result = UglifyJS.minify("kronos.js", {
   mangle: true,
   compress: {
     sequences: true,
@@ -17,4 +19,4 @@ var result = UglifyJS.minify('kronos.js', {
   }
 });
 
-fs.writeFileSync('kronos.min.js', result.code);
+fs.writeFileSync("kronos.min.js", result.code);

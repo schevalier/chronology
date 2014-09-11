@@ -15,8 +15,8 @@ kronosjs: clean node_modules
 readme:
 	python common/readmeify.py javascript < demo.js > README.md
 test:
-	 @$(MOCHA) --reporter list tests/*.js
+	node runtests.js
 demo:
 	node demo.js
 lint:
-	@$(JSHINT) -c .jshintrc --exclude-path .jshintignore demo.js src/*.js tests/*js
+	@$(JSHINT) -c .jshintrc --exclude-path .jshintignore *.js src/*.js tests/*.js
