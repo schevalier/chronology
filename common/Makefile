@@ -4,3 +4,5 @@ clean:
 	find . -type f -name '*.*~' -delete
 test: clean
 	python runtests.py
+lint:
+	flake8 .

@@ -14,7 +14,7 @@ def get_property(event, name):
     parts = name.split('.')
   for i in xrange(len(parts), 0, -1):
     name = '.'.join(parts[:i])
-    if not name in event:
+    if name not in event:
       continue
     value = event[name]
     if i == len(parts):

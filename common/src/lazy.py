@@ -34,7 +34,7 @@ class _LazyObject(object):
 
   # Introspection support.
   __dir__ = wrapped_obj_proxy(dir)
-  
+
   # Pretend to be an instance of the wrapped class; to make sure `isinstance`
   # related equality checks work.
   __class__ = property(lambda self: self.__wrapped_cls__)
@@ -42,7 +42,7 @@ class _LazyObject(object):
   # Calling cmp on the wrapped object will automatically take care of using the
   # right object comparison function.
   __cmp__ = wrapped_obj_proxy(cmp)
-  
+
   # Hashing support.
   __hash__ = wrapped_obj_proxy(hash)
 
@@ -50,7 +50,7 @@ class _LazyObject(object):
   __str__ = wrapped_obj_proxy(str)
   __unicode__ = wrapped_obj_proxy(unicode)
   __repr__ = wrapped_obj_proxy(repr)
-  
+
   # Dictionary methods support.
   __getitem__ = wrapped_obj_proxy(operator.getitem)
   __setitem__ = wrapped_obj_proxy(operator.setitem)
@@ -66,7 +66,7 @@ class _LazyObject(object):
 
   # Attribute getter/setter/deleter support.
   __getattr__ = wrapped_obj_proxy(getattr)
-  
+
   def __setattr__(self, attr, value):
     if attr in ('__wrapped__', '__init_args__', '__init_kw__', '__init_lock__'):
       # Assign to __dict__ to avoid an infinite loop.
@@ -95,7 +95,7 @@ class LazyObjectMetaclass(type):
 
   class Messenger(object):
     __metaclass__ = LazyObjectMetaclass
-    
+
     def __init__(self, host):
       print 'Creating a new Messenger instance.'
       self.connection = connect(host)
@@ -129,4 +129,3 @@ class LazyObjectMetaclass(type):
     # wanted to be instantiated lazily.
     return type('Lazy%s' % name, (_LazyObject, ),
                 {'__wrapped_cls__': wrapped_cls})
-

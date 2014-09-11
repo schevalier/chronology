@@ -10,7 +10,7 @@ class InMemoryLRUCache(object):
 
   def __init__(self, max_items=1000):
     self.max_items = max_items
-    self.cache = {} # key => [value, next_ptr, prev_ptr]
+    self.cache = {}  # key => [value, next_ptr, prev_ptr]
     # sentinel comes AFTER the head and BEFORE the tail. head is the MRU cache
     # entry.
     self.sentinel = [None] * 3
@@ -18,35 +18,35 @@ class InMemoryLRUCache(object):
   def mark_as_lru(self, entry):
     _, entry_next, entry_previous = entry
     head = self.sentinel[2]
-    head[1] = self.sentinel[2] = entry # head.next = sentinel.prev = entry
-    entry[2] = head # entry.previous = head
+    head[1] = self.sentinel[2] = entry  # head.next = sentinel.prev = entry
+    entry[2] = head  # entry.previous = head
     entry[1] = self.sentinel  # entry.next = sentinel
-    entry_previous[1] = entry_next # entry_previous.next = entry_next
-    entry_next[2] = entry_previous # entry_next.previous = entry_previous
-    
+    entry_previous[1] = entry_next  # entry_previous.next = entry_next
+    entry_next[2] = entry_previous  # entry_next.previous = entry_previous
+
   def set(self, key, value):
     entry = self.cache.get(key, self.sentinel)
     if entry == self.sentinel:
       if len(self.cache) == self.max_items:
         _, tail_next, tail_previous = self.sentinel[1]
-        self.sentinel[1] = tail_next # sentinel.next = tail.next
-        tail_next[2] = self.sentinel # tail.next.previous = sentinel
+        self.sentinel[1] = tail_next  # sentinel.next = tail.next
+        tail_next[2] = self.sentinel  # tail.next.previous = sentinel
       head = self.sentinel[2] or self.sentinel
       entry = [value, self.sentinel, head]
-      head[1] = self.sentinel[2] = self.cache[key] = entry 
+      head[1] = self.sentinel[2] = self.cache[key] = entry
     else:
       entry[0] = value
       self.mark_as_lru(entry)
 
   def get(self, key):
-    entry = self.cache[key]      
+    entry = self.cache[key]
     self.mark_as_lru(entry)
     return entry[0]
 
   def delete(self, key):
     entry = self.cache.pop(key)
-    entry[2][1] = entry[1] # entry.prev.next = entry.next
-    entry[1][2] = entry[2] # entry.next.prev = entry.prev
+    entry[2][1] = entry[1]  # entry.prev.next = entry.next
+    entry[1][2] = entry[2]  # entry.next.prev = entry.prev
     return entry[0]
 
   def clear(self):
@@ -57,6 +57,7 @@ class InMemoryLRUCache(object):
 def memoize(max_items=1000):
   def decorator(func):
     cache = InMemoryLRUCache(max_items=max_items)
+
     @functools.wraps(func)
     def wrapper(*args):
       try:
@@ -73,4 +74,5 @@ def memoize(max_items=1000):
         return value
       raise value
     return wrapper
+
   return decorator

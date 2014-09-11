@@ -57,7 +57,7 @@ class IntegerType(Type):
     if isinstance(other, NumberType):
       return NumberType()
     return super(IntegerType, self).combine(other)
-  
+
 
 class NumberType(Type):
   name = 'number'
@@ -146,7 +146,7 @@ SCHEMA_TYPES = {
   types.BooleanType: BooleanType,
   types.ListType: ArrayType,
   types.DictType: ObjectType
-  }
+}
 
 
 def get_schema_type(value):

@@ -30,7 +30,7 @@ class AttributeProxyDict(dict):
     parts = item.split('.', 1)
     key = parts[0]
     parts = parts[1:]
-    
+
     value = super(AttributeProxyDict, self).__getitem__(key)
     if parts:
       value = value[parts[0]]
@@ -44,7 +44,7 @@ class Settings(AttributeProxyDict):
       return obj
     _dict = {}
     for attr in dir(obj):
-      if attr.startswith('_'): # Ignore private fields.
+      if attr.startswith('_'):  # Ignore private fields.
         continue
       _dict[attr] = getattr(obj, attr)
     return _dict

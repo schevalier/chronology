@@ -49,7 +49,7 @@ class SchemaTest(unittest.TestCase):
     self.assertEqual(len(nested.required), 1)
     self.assertEqual(set(nested.required), {'hello'})
     self.assertEqual(type(nested.properties['hello']), StringType)
-    
+
   def test_combining(self):
     a = {
       'bool': True,
@@ -62,9 +62,9 @@ class SchemaTest(unittest.TestCase):
       'array_any': [False],
       'object': {
         'lol': 'cat'
-        },
+      },
       'not_required1': 1
-      }
+    }
     b = {
       'bool': False,
       'string': 'world',
@@ -77,64 +77,64 @@ class SchemaTest(unittest.TestCase):
       'object': {
         'lol': 'cat',
         'not_required2': 'blah'
-        },
+      },
       'null_not_required': None
-      }
+    }
     merged = get_schema_type(a).combine(get_schema_type(b))
     expected = {
       'properties': {
         'any': {
           'type': 'any'
-          }, 
+        },
         'array_any': {
           'items': {
             'type': 'any'
-            }, 
+          },
           'type': 'array'
-          }, 
+        },
         'array_int': {
           'items': {
             'type': 'integer'
-            }, 
+          },
           'type': 'array'
-          }, 
+        },
         'bool': {
           'type': 'boolean'
-          }, 
+        },
         'int': {
           'type': 'integer'
-          },
+        },
         'not_required1': {
           'type': 'integer'
-          },
+        },
         'null': {
           'type': 'null'
-          },
+        },
         'number': {
           'type': 'number'
-          },
+        },
         'object': {
           'properties': {
             'lol': {
               'type': 'string'
-              }, 
+            },
             'not_required2': {
               'type': 'string'
-              }
-            },
+            }
+          },
           'required': ['lol'],
           'type': 'object'
-          },
+        },
         'string': {
           'type': 'string'
-          },
+        },
         'null_not_required': {
           'type': 'null'
-          },
         },
+      },
       'required': sorted(['bool', 'string', 'int', 'number', 'null', 'any',
                           'array_int', 'array_any', 'object']),
       'type': 'object'
-      }
+    }
     self.assertEqual(json.dumps(merged.to_dict(), sort_keys=True),
                      json.dumps(expected, sort_keys=True))

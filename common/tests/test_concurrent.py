@@ -17,7 +17,7 @@ def executor_test(function):
       self.executor = executor
       function(self)
   return wrapper
-      
+
 
 class ExecutorTest(unittest.TestCase):
   def setUp(self):
@@ -72,7 +72,7 @@ class ExecutorTest(unittest.TestCase):
           result.get(block=False)
         except gevent.Timeout:
           self.fail()
-      self.executor.wait(results) # Wait for executor to be totally free.
+      self.executor.wait(results)  # Wait for executor to be totally free.
 
   @executor_test
   def test_async_decorator(self):
@@ -80,7 +80,7 @@ class ExecutorTest(unittest.TestCase):
     def func(t):
       gevent.sleep(t)
       return 'lolcat'
-    
+
     start_time = time.time()
     result = func(0.2)
     call_duration = time.time() - start_time

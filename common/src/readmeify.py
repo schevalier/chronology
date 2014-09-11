@@ -18,9 +18,9 @@ GO_LANG = "golang"
 JAVASCRIPT = "javascript"
 
 PARSERS = {
-    PYTHON: Parser('"""', '"""', 'python'),
-    GO_LANG: Parser('/*', '*/', 'golang'),
-    JAVASCRIPT: Parser('/*', '*/', 'javascript')
+  PYTHON: Parser('"""', '"""', 'python'),
+  GO_LANG: Parser('/*', '*/', 'golang'),
+  JAVASCRIPT: Parser('/*', '*/', 'javascript')
 }
 
 
