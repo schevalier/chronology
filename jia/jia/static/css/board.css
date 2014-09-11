@@ -117,13 +117,15 @@ a {
   border-bottom-right-radius: 0;
 }
 
-cpf .btn-group selecter:first-child .selecter-selected {
+cpf .btn-group selecter:first-child .selecter-selected,
+cpf .ui-select-bootstrap button {
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
   border-left: 1px solid #aab2bd;
 }
 
-cpf .btn-group input, cpf .btn-group .selecter-selected {
+cpf .btn-group input, cpf .btn-group .selecter-selected,
+cpf .ui-select-bootstrap button {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-left: none;
@@ -138,6 +140,10 @@ cpf .btn-group .selecter.bottom.open .selecter-selected {
   border-left: 1px solid #3bafda;
   border-bottom-right-radius: 0;
   border-bottom-left-radius: 4px;
+}
+
+cpf .ui-select-bootstrap {
+  display: inline-block;
 }
 
 cpf, op, aggop, value, prop {
@@ -584,7 +590,7 @@ ul.steps li {
   padding-bottom: 10px;
 }
 
-ul.steps li:before {
+ul.steps > li:before {
   content: "";
   display: block;
   position: absolute;
@@ -595,7 +601,7 @@ ul.steps li:before {
   background: #AAB2BD;
 }
 
-ul.steps li:after {
+ul.steps > li:after {
   content: "";
   display: block;
   position: absolute;

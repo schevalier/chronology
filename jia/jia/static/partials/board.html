@@ -96,8 +96,8 @@
              ng-repeat="(key, value) in panel.display.settings.requiredFields">
           <label class="col-xs-1 control-label">{[ key ]}:</label>
           <div class="col-xs-3">
-            <input class="form-control"
-                   ng-model="panel.display.settings.requiredFields[key]">
+            <property model="panel.display.settings.requiredFields[key]"
+                      panel="panel">
           </div>
         </div>
         <div class="input-label"
@@ -108,8 +108,8 @@
              ng-repeat="(key, value) in panel.display.settings.optionalFields">
           <label class="col-xs-1 control-label">{[ key ]}:</label>
           <div class="col-xs-3">
-            <input class="form-control"
-                   ng-model="panel.display.settings.optionalFields[key]">
+            <property model="panel.display.settings.optionalFields[key]"
+                      panel="panel">
           </div>
         </div>
         <button class="btn btn-primary"
