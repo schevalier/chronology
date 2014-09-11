@@ -42,7 +42,8 @@ class BaseStorage(object):
   def delete(self, namespace, stream, start_time, end_time, start_id,
              configuration):
     if not start_id:
-      start_id = uuid_from_kronos_time(start_time, _type=UUIDType.LOWEST)
+      start_id = uuid_from_kronos_time(start_time - 1,
+                                       _type=UUIDType.HIGHEST)
     else:
       start_id = TimeUUID(start_id)
     if uuid_to_kronos_time(start_id) > end_time:
