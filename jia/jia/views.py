@@ -62,7 +62,7 @@ def infer_schema(stream_name=None):
                         namespace=app.config['KRONOS_NAMESPACE'])
   schema = client.infer_schema(stream_name,
                                namespace=app.config['KRONOS_NAMESPACE'])
-  return schema['schemas'][0]
+  return schema
 
 
 @app.route('/boards', methods=['GET'])
