@@ -20,7 +20,7 @@ def run_benchmark(benchmark):
   kronos_runner = KronosRunner(KRONOS_DIR,
                                config='benchmarks/%s/settings.py' % benchmark)
   kronos_runner.start()
-  
+
   for filename in glob('benchmarks/%s/*.py' % benchmark):
     module_name = filename.split('/')[-1].split('.')[0]
     if module_name in ('__init__', 'settings'):
@@ -31,7 +31,7 @@ def run_benchmark(benchmark):
       exec 'from benchmarks.%s.%s import run; run()' % (benchmark, module_name)
     except Exception, e:
       traceback.print_exc(e)
-      
+
   print '> [%s]: cleaning up...' % benchmark
   try:
     exec 'from benchmarks.%s import clean; clean()' % benchmark

@@ -1,1 +1,1 @@
-from metis.core.execute.spark.executor import SparkExecutor
+from metis.core.execute.spark.executor import SparkExecutor  # noqa

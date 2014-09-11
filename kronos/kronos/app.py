@@ -45,7 +45,7 @@ from kronos.utils.streams import infer_schema as _infer_schema
 
 log = logging.getLogger(__name__)
 
-  
+
 @endpoint('/1.0/index')
 def index(environment, start_response, headers):
   """
@@ -62,7 +62,7 @@ def index(environment, start_response, headers):
   for name, backend in router.get_backends():
     response['storage'][name] = {'alive': backend.is_alive(),
                                  'backend': settings.storage[name]['backend']}
-  
+
   start_response('200 OK', headers)
   return response
 
@@ -116,7 +116,7 @@ def put_events(environment, start_response, headers):
       result.get()
       response[stream][backend] = {
         'num_inserted': len(events_to_insert[stream])
-        }
+      }
     except Exception, e:
       log.exception('put_events: insertion to backend `%s` failed.', backend)
       success = False
@@ -159,7 +159,7 @@ def get_events(environment, start_response, headers):
     log.exception('get_events: stream validation failed for `%s`',
                   request_json.get('stream'))
     start_response('400 Bad Request', headers)
-    yield marshal.dumps({ERRORS_FIELD : [repr(e)],
+    yield marshal.dumps({ERRORS_FIELD: [repr(e)],
                          SUCCESS_FIELD: False})
     return
 
@@ -210,7 +210,7 @@ def delete_events(environment, start_response, headers):
       end_time : ending_time_as_kronos_time,
       start_id : only_delete_events_with_id_gte_me,
     }
-  Either start_time or start_id should be specified. 
+  Either start_time or start_id should be specified.
   """
   request_json = environment['json']
   try:
@@ -218,9 +218,9 @@ def delete_events(environment, start_response, headers):
     validate_stream(stream)
   except Exception, e:
     log.exception('delete_events: stream validation failed for `%s`.',
-              request_json.get('stream'))
+                  request_json.get('stream'))
     start_response('400 Bad Request', headers)
-    return {ERRORS_FIELD : [repr(e)]}
+    return {ERRORS_FIELD: [repr(e)]}
 
   namespace = request_json.get('namespace', settings.default_namespace)
   backends = router.backends_to_mutate(namespace, stream)
@@ -253,7 +253,7 @@ def delete_events(environment, start_response, headers):
 
   response = {request_json['stream']: response,
               SUCCESS_FIELD: success}
-  
+
   start_response('200 OK', headers)
   return response
 
@@ -289,14 +289,14 @@ def infer_schema(environment, start_response, headers):
   stream = environment['json']['stream']
   namespace = environment['json'].get('namespace') or settings.default_namespace
 
-  start_response('200 OK', headers)  
+  start_response('200 OK', headers)
   schema = _infer_schema(namespace, stream)
   response = {
     'stream': stream,
     'namespace': namespace,
     'schema': schema,
     SUCCESS_FIELD: True
-    }
+  }
   return response
 
 

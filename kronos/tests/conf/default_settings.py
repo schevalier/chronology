@@ -19,7 +19,7 @@ storage = {
     'keyspace_prefix': 'kronos_test',
     # Set to a value greater than 0 or you will get an UnavailableException
     'replication_factor': 1,
-    'timewidth_seconds': 2, # Keep this small for test environment.
+    'timewidth_seconds': 2,  # Keep this small for test environment.
     'shards_per_bucket': 3,
     'read_size': 10
   },
@@ -38,7 +38,7 @@ storage = {
 }
 
 node = {
-  'id':  hex(getnode()),
+  'id': hex(getnode()),
   'flush_size': 512,
   'greenlet_pool_size': 50,
   'gipc_pool_size': 2,
@@ -56,13 +56,13 @@ _default_stream_configuration = {
   '': {
     'backends': {
       'memory': None
-      },
+    },
     'read_backend': 'memory'
-    }
   }
+}
 
 namespace_to_streams_configuration = {
   default_namespace: _default_stream_configuration,
   'namespace1': _default_stream_configuration,
   'namespace2': _default_stream_configuration
-  }
+}

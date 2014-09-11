@@ -17,9 +17,11 @@ RUN_DIR = '/var/run/kronos'
 TMP_DIR = tempfile.gettempdir()
 UWSGI_VERSION = '2.0.5.1'
 
+
 def run_cmd(cmd):
   print '> %s' % cmd
   assert os.system(cmd) == 0
+
 
 def safe_mkdir(path):
   print '> mkdir %s' % path
@@ -28,6 +30,7 @@ def safe_mkdir(path):
   except OSError as e:
     if e.errno != errno.EEXIST:
       raise e
+
 
 def create_user_and_group():
   print 'Creating kronos user and group accounts...'
@@ -41,13 +44,15 @@ def create_user_and_group():
     run_cmd('groupadd kronos')
   print 'done.'
 
-def make_dirs(): 
+
+def make_dirs():
   print 'Creating directories...'
   safe_mkdir('/etc/kronos')
   safe_mkdir(LOG_DIR)
   safe_mkdir(RUN_DIR)
   safe_mkdir(LIB_DIR)
   print 'done.'
+
 
 def copy_files():
   print 'Copying configuration and init.d script files...'
@@ -63,6 +68,7 @@ def copy_files():
   with open('/etc/kronos/settings.py', 'w') as f:
     f.write(settings)
   print 'done.'
+
 
 def install_uwsgi():
   print 'Compiling uWSGI and copying it to the lib directory...'
@@ -90,11 +96,13 @@ def install_uwsgi():
   shutil.rmtree(tmp_dir, ignore_errors=True)
   print 'done.'
 
+
 def install_kronosd():
   create_user_and_group()
   make_dirs()
   install_uwsgi()
   copy_files()
+
 
 if __name__ == '__main__':
   install_kronosd()

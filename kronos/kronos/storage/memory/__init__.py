@@ -1,1 +1,1 @@
-from kronos.storage.memory.client import InMemoryStorage
+from kronos.storage.memory.client import InMemoryStorage  # noqa

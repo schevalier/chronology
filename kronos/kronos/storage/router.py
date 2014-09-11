@@ -20,7 +20,7 @@ class StorageRouter(object):
   # engines that only rely on HTTP calls, but engines like Cassandra use sockets
   # which cannot be shared between worker processes.
   __metaclass__ = LazyObjectMetaclass
-  
+
   def __init__(self):
     self.backends = {}
     self.prefix_read_backends = {}
@@ -64,7 +64,7 @@ class StorageRouter(object):
     for namespace, streams_conf in (settings.namespace_to_streams_configuration
                                     .iteritems()):
       prefix_read_backends = self.prefix_read_backends[namespace] = {}
-      prefix_confs  = self.prefix_confs[namespace] = defaultdict(dict)
+      prefix_confs = self.prefix_confs[namespace] = defaultdict(dict)
       for prefix, options in streams_conf.iteritems():
         prefix_read_backends[prefix] = self.get_backend(options['read_backend'])
         backends = options['backends']
@@ -97,7 +97,7 @@ class StorageRouter(object):
         continue
       longest_prefix = prefix
     return longest_prefix
-    
+
   def backends_to_mutate(self, namespace, stream):
     """
     Return all the backends enabled for writing for `stream`.

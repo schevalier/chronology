@@ -22,7 +22,7 @@ def _validate_and_get_value(options, options_name, key, _type):
   human-readable name for `options` to be used when printing errors.
   """
   if isinstance(options, dict):
-    has = lambda k: options.has_key(k)
+    has = lambda k: k in options
     get = lambda k: options[k]
   elif isinstance(options, object):
     has = lambda k: hasattr(options, k)
@@ -81,11 +81,12 @@ def validate_storage_settings(storage_class, settings):
 
   if not hasattr(storage_class, 'SETTINGS_VALIDATORS'):
     raise NotImplementedError(
-        '{}: storage class must define `SETTINGS_VALIDATORS`'.format(storage_class))
+      '{}: storage class must define `SETTINGS_VALIDATORS`'.format(
+        storage_class))
 
   settings_validators = getattr(storage_class, 'SETTINGS_VALIDATORS')
   settings = settings.copy()
-  settings.pop('backend', None) # No need to validate the `backend` key.
+  settings.pop('backend', None)  # No need to validate the `backend` key.
   invalid_settings = set(settings.keys()) - set(settings_validators.keys())
   if invalid_settings:
     raise ImproperlyConfigured(
@@ -132,8 +133,8 @@ def validate_settings(settings):
         validate_stream(prefix)
 
       backends = _validate_and_get_value(
-          options, 
-          "namespace_to_streams_configuration['{}']['{}']".format(namespace, 
+          options,
+          "namespace_to_streams_configuration['{}']['{}']".format(namespace,
                                                                   prefix),
           'backends', dict)
       for backend in backends.keys():
@@ -145,7 +146,7 @@ def validate_settings(settings):
 
       read_backend = _validate_and_get_value(
           options,
-          "namespace_to_streams_configuration['{}']['{}']".format(namespace, 
+          "namespace_to_streams_configuration['{}']['{}']".format(namespace,
                                                                   prefix),
           'read_backend', str)
       if read_backend not in storage:

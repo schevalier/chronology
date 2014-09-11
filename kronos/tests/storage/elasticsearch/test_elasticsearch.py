@@ -19,7 +19,7 @@ def reload_router(kill_update_thread=False):
     backend.index_manager.kill_rollover_worker()
 
 
-class TestElasticSearchBackend(KronosServerTestCase):  
+class TestElasticSearchBackend(KronosServerTestCase):
   def test_aliasing(self):
     settings.storage.elasticsearch.rollover_size = 10
     reload_router(kill_update_thread=True)
@@ -37,7 +37,7 @@ class TestElasticSearchBackend(KronosServerTestCase):
     router.get_backend('elasticsearch').index_manager.update()
     index2 = router.get_backend('elasticsearch').index_manager.get_index(
       'kronos')
-    
+
     self.put('test_aliasing', [{TIMESTAMP_FIELD: time2, 'i': i, 'j': 1}
                                for i in xrange(5)])
     self.put('test_aliasing', [{TIMESTAMP_FIELD: time3, 'i': i, 'j': 1}
@@ -91,7 +91,7 @@ class TestElasticSearchBackend(KronosServerTestCase):
     settings.storage.elasticsearch.rollover_size = 10
     settings.storage.elasticsearch.rollover_check_period_seconds = 2
     reload_router()
-    
+
     indices = set()
     for i in xrange(50):
       indices.add(router.get_backend('elasticsearch')

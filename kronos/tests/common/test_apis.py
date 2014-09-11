@@ -62,7 +62,7 @@ class TestKronosAPIs(KronosServerTestCase):
     events = self.get(stream, 0, 10)
     self.assertEqual(len(events), 10)
 
-    # Test put with mapping.    
+    # Test put with mapping.
     mapping = defaultdict(list)
     streams = ('TestKronosAPIs_test_put_mapping_1',
                'TestKronosAPIs_test_put_mapping_2',
@@ -76,7 +76,7 @@ class TestKronosAPIs(KronosServerTestCase):
         self.assertEqual(num, {'num_inserted': 10})
     for stream in streams:
       events = self.get(stream, 0, 10)
-      self.assertEqual(len(events), 10)    
+      self.assertEqual(len(events), 10)
 
   def test_get(self):
     stream = 'TestKronosAPIs_test_get'
@@ -147,7 +147,7 @@ class TestKronosAPIs(KronosServerTestCase):
 
     # Test get with `limit`.
     events = self.get(stream, 0, 4, limit=2)
-    self.assertEqual(len(events), 2)    
+    self.assertEqual(len(events), 2)
     self.assertEqual(events, sorted(events,
                                     key=lambda e: TimeUUID(e[ID_FIELD])))
     self.assertEqual(events[0][TIMESTAMP_FIELD], 1)

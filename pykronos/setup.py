@@ -14,7 +14,7 @@ REQUIREMENTS = [
   ]
 
 setup(name='pykronos',
-      version=__version__,
+      version=__version__,  # noqa
       packages=find_packages(exclude=['tests*']),
       include_package_data=True,
       license='MIT License',

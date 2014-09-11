@@ -2,8 +2,8 @@ from kronos.conf.constants import ServingMode
 from kronos.core import marshal
 from tests.server import KronosServerTestCase
 
-class TestServingMode(KronosServerTestCase):
 
+class TestServingMode(KronosServerTestCase):
   def _hit_endpoint(self, endpoint, data, expected_codes, method=None):
     if method:
       kwargs = {'path': endpoint}
@@ -18,7 +18,6 @@ class TestServingMode(KronosServerTestCase):
                                        data=marshal.dumps(data),
                                        buffered=True)
     self.assertTrue(response.status_code in expected_codes)
-
 
   def test_endpoints(self):
     from kronos.conf import settings
@@ -38,7 +37,7 @@ class TestServingMode(KronosServerTestCase):
       ServingMode.COLLECTOR: [(self.put_path, self.index_path),
                               (self.get_path, self.delete_path,
                                self.streams_path)]
-      }
+    }
 
     for mode, (found, forbidden) in mode_to_endpoints.iteritems():
       settings.serving_mode = mode

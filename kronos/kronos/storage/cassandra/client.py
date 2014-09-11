@@ -14,20 +14,20 @@ from kronos.utils.validate import is_list
 from kronos.utils.validate import is_non_empty_str
 from kronos.utils.validate import is_pos_int
 
-log = logging.getLogger(__name__) 
+log = logging.getLogger(__name__)
 
-CASSANDRA_PROTOCOL_VERSION = 2 # Change to 1 for Cassandra < 2.0
+CASSANDRA_PROTOCOL_VERSION = 2  # Change to 1 for Cassandra < 2.0
 
 
 class CassandraStorageException(Exception):
   pass
-    
 
-class CassandraStorage(BaseStorage): 
+
+class CassandraStorage(BaseStorage):
   SETTINGS_VALIDATORS = {
-    'timewidth_seconds': 
-       lambda x: (is_pos_int(x) and 
-                  epoch_time_to_kronos_time(int(x)) <= Stream.MAX_WIDTH),
+    'timewidth_seconds':
+      lambda x: (is_pos_int(x) and  # noqa
+                 epoch_time_to_kronos_time(int(x)) <= Stream.MAX_WIDTH),
     'shards_per_bucket': is_pos_int,
     'hosts': is_list,
     'keyspace_prefix': is_non_empty_str,
@@ -43,7 +43,7 @@ class CassandraStorage(BaseStorage):
     super(CassandraStorage, self).__init__(name, namespaces, **settings)
     self.namespaces = {}
     self.setup_cassandra(namespaces)
-    
+
   def setup_cassandra(self, namespaces):
     """
     Set up a connection to the specified Cassandra cluster and create the
@@ -65,7 +65,7 @@ class CassandraStorage(BaseStorage):
     # Shutdown all connections to Cassandra before exiting Python interpretter.
     atexit.register(lambda: map(lambda c: c.shutdown(),
                                 connections_to_shutdown))
-    
+
   def is_alive(self):
     """
     Is our connection to Cassandra alive?
@@ -103,7 +103,7 @@ class CassandraStorage(BaseStorage):
     return stream.delete(start_id,
                          uuid_from_kronos_time(end_time,
                                                _type=UUIDType.HIGHEST))
-  
+
   def _retrieve(self, namespace, stream, start_id, end_time, order, limit,
                 configuration):
     """

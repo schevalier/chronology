@@ -14,3 +14,5 @@ installdeps:
 	sudo pip install -r requirements.txt
 install: installdeps clean
 	sudo python setup.py install
+lint: clean
+	flake8 .

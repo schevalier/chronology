@@ -113,7 +113,7 @@ class StreamShard(object):
 
   def ids_iterator(self, start_id, end_id):
     select_ids_stmt = BoundStatement(self.namespace.SELECT_ID_STMT,
-                                     fetch_size=100000, # 100k ids at a time.
+                                     fetch_size=100000,  # 100k ids at a time.
                                      routing_key=self.key,
                                      consistency_level=ConsistencyLevel.ONE)
     ids = self.session.execute(
@@ -148,7 +148,7 @@ class Stream(object):
       index_scan_stmt.bind((self.stream,
                             max(start_time - Stream.MAX_WIDTH, 0),
                             end_time))
-      )
+    )
     shards = defaultdict(lambda: defaultdict(int))
     for (shard_time, width, shard) in potential_shards:
       if shard_time + width < start_time:
@@ -172,7 +172,7 @@ class Stream(object):
       shard_time = round_down(event[TIMESTAMP_FIELD], self.width)
       shard = shard_idx.get(shard_time,
                             random.randint(0, self.shards - 1))
-      
+
       # Insert to index.
       try:
         self.index_cache.get((shard_time, shard))
@@ -191,13 +191,13 @@ class Stream(object):
                      .bind((shard_key,
                             _id,
                             marshal.dumps(event))))
-      shard_idx[shard_time] = (shard + 1) % self.shards # Round robin.
+      shard_idx[shard_time] = (shard + 1) % self.shards  # Round robin.
 
     self.session.execute(batch_stmt)
 
   def iterator(self, start_id, end_id, descending, limit):
     start_id.descending = end_id.descending = descending
-    
+
     shards = self.get_overlapping_shards(uuid_to_kronos_time(start_id),
                                          uuid_to_kronos_time(end_id))
     shards = sorted(map(lambda shard: StreamShard(self.namespace,
@@ -249,7 +249,7 @@ class Stream(object):
       elif not iterators:
         # No events in the heap and no active iterators? We're done!
         return
-        
+
       shards_with_events = set(event.stream_shard for event in event_heap)
       for shard in iterators.keys():
         if shard in shards_with_events:
@@ -260,9 +260,9 @@ class Stream(object):
           heapq.heappush(event_heap, event)
         except StopIteration:
           del iterators[shard]
-    
+
     def _iterator(limit):
-      load_overlapping_shards() # bootstrap.
+      load_overlapping_shards()  # bootstrap.
 
       # No events?
       if not event_heap:
@@ -288,10 +288,11 @@ class Stream(object):
 
     for event in _iterator(limit):
       yield event
-    
+
   def delete(self, start_id, end_id):
     shards = list(self.get_overlapping_shards(uuid_to_kronos_time(start_id),
                                               uuid_to_kronos_time(end_id)))
+
     def delete_from_shard(shard):
       batch_stmt = BatchStatement(batch_type=BatchType.UNLOGGED,
                                   consistency_level=ConsistencyLevel.QUORUM)
@@ -310,7 +311,7 @@ class Stream(object):
                        .bind((shard.key, _id)))
       self.session.execute(batch_stmt)
       return num_deleted
-    
+
     for i, shard in enumerate(shards):
       shards[i] = execute_greenlet_async(delete_from_shard, shard)
     wait(shards)
@@ -326,7 +327,7 @@ class Stream(object):
     return num_deleted, errors
 
 
-class Namespace(object): 
+class Namespace(object):
   # Namespace-level CQL statements.
   CREATE_KEYSPACE_CQL = """CREATE KEYSPACE %s WITH
     REPLICATION = {'class': 'SimpleStrategy',

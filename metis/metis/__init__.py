@@ -21,4 +21,4 @@ else:
   app.config.from_pyfile('%s/conf/default_settings.py' % METIS_PATH)
   app.config['PATH'] = METIS_PATH
 
-  import metis.views
+  import metis.views  # noqa

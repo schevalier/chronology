@@ -29,20 +29,20 @@ class TestCassandraBackend(KronosServerTestCase):
   def test_stream_sharding(self):
     ''' Inserts elements that fall into the same time bucket and checks if they
     are being sharded properly. '''
-    
+
     stream_name = 'TestCassandraBackend_test_stream_sharding'
     stream = self.namespace.get_stream(stream_name, self.width, self.shards)
-    
+
     # Since we have a small number of shards, let's just assume that if we
     # insert 100 events to the same bucket, we'll have inserted at least one
-    # event in each shard.    
+    # event in each shard.
     for i in xrange(100):
       self.put(stream_name, [{TIMESTAMP_FIELD: epoch_time_to_kronos_time(1)}])
     events = self.get(stream_name, 0, epoch_time_to_kronos_time(2))
     self.assertEqual(len(events), 100)
-      
+
     num_events = 0
-    
+
     for shard in xrange(self.shards):
       stream_shard = StreamShard(stream.namespace, stream_name, 0, self.width,
                                  shard, False, MAX_LIMIT, 100)
@@ -58,12 +58,12 @@ class TestCassandraBackend(KronosServerTestCase):
     ''' Inserts events that fall into multiple time buckets and ensures that
     each time bucket has the right number of events at the end and all the
     events in each bucket fall into its time range. '''
-    
+
     stream_name = 'TestCassandraBackend_test_stream_splitting'
     stream = self.namespace.get_stream(stream_name, self.width, self.shards)
     settings.storage.cassandra.timewidth_seconds = 2
     router.reload()
-    
+
     # Each bucket interval has width of 2 seconds, so this should distribute
     # events in 5 buckets: [0, 2), [2, 4), [4, 6), [6, 8), [8, 10).
     for i in xrange(100):
@@ -71,7 +71,7 @@ class TestCassandraBackend(KronosServerTestCase):
                               epoch_time_to_kronos_time(i % 10)}])
     events = self.get(stream_name, 0, epoch_time_to_kronos_time(10))
     self.assertEqual(len(events), 100)
-    
+
     bucket_to_events = defaultdict(list)
     for start_time in (0, 2, 4, 6, 8):
       # Fetch events directly from each bucket.
@@ -101,10 +101,10 @@ class TestCassandraBackend(KronosServerTestCase):
   def test_index(self):
     ''' Inserts events in to a stream and ensures that the index column
     family contains all the of expected row keys. '''
-    
+
     stream_name = 'TestCassandraBackend_test_index'
     stream = self.namespace.get_stream(stream_name, self.width, self.shards)
-    
+
     for i in xrange(100):
       self.put(stream_name, [{TIMESTAMP_FIELD:
                               epoch_time_to_kronos_time(i % 20)}])
@@ -131,12 +131,13 @@ class TestCassandraBackend(KronosServerTestCase):
     it changes bucket width to 4 and inserts the same events again, causing
     all events to go into a single bucket. At the end it checks if the first
     bucket has 3x the number of events as the seconds bucket. '''
-    
+
     stream_name = 'TestCassandraBackend_test_overlapping_shards'
     stream = self.namespace.get_stream(stream_name, self.width, self.shards)
-    
+
     for i in xrange(60):
-      self.put(stream_name, [{TIMESTAMP_FIELD: epoch_time_to_kronos_time(i % 4)}])
+      self.put(stream_name,
+               [{TIMESTAMP_FIELD: epoch_time_to_kronos_time(i % 4)}])
     events = self.get(stream_name, 0, epoch_time_to_kronos_time(4))
     self.assertEqual(len(events), 60)
 
@@ -164,8 +165,8 @@ class TestCassandraBackend(KronosServerTestCase):
                                        uuid_from_time(start_time + 4))
         shard_to_events[start_time] += len(list(events))
     self.assertEqual(len(shard_to_events), 2)
-    self.assertEqual(shard_to_events[0], 90) # 30 + 60.
-    self.assertEqual(shard_to_events[2], 30) # 30 + 0.
+    self.assertEqual(shard_to_events[0], 90)  # 30 + 60.
+    self.assertEqual(shard_to_events[2], 30)  # 30 + 0.
     self.assertEqual(sum(shard_to_events.itervalues()), 120)
 
     # Revert default width settings.

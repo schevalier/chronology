@@ -18,7 +18,7 @@ profile = False
 # the `put` endpoint.  This way, javascript/frontend logging requests
 # can come in from any remote machine, but remote machines can't get
 # or delete the data in the Kronos store.
-# 
+#
 # Separately, behind a firewall, you will want to run a server in
 # `ServingMode.READONLY` mode, which allows read-only access to the
 # data for analytics processing without having to worry about errant
@@ -39,7 +39,7 @@ storage = {
 # Default namespace for clients that don't specify one on their requests.
 default_namespace = 'kronos'
 
-# Maps namespace => { stream_prefix => { 
+# Maps namespace => { stream_prefix => {
 #                      backends => {
 #                        backend_name => {} },
 #                      read_backend => backend_name } }
@@ -72,7 +72,7 @@ default_namespace = 'kronos'
 #      'read_backend': 'cassandra'
 #      },
 # ...
-#  
+#
 # Let's break this down: for the `default_namespace`, any stream with
 # prefix `''` (the default) stores its data into both `cassandra` and
 # `memory` (names we set in `storage` above).  The Cassandra time
@@ -87,22 +87,22 @@ namespace_to_streams_configuration = {
     '': {
       'backends': {
         'memory': None
-        },
+      },
       'read_backend': 'memory'
-      }
     }
   }
+}
 
 # Instance-related settings.
 node = {
-  'id': hex(getnode()), # Unique ID for this Kronos server.
-  'flush_size': 131072, # Number of bytes to flush at a time for /get endpoint.
-  'greenlet_pool_size': 500, # Greenlet poolsize per process.  Balance against
-                             # the parallelism of upstream processes, like
-                             # uWSGI.
+  'id': hex(getnode()),  # Unique ID for this Kronos server.
+  'flush_size': 131072,  # Number of bytes to flush at a time for /get endpoint.
+  'greenlet_pool_size': 500,  # Greenlet poolsize per process.  Balance against
+                              # the parallelism of upstream processes, like
+                              # uWSGI.
   'gipc_pool_size': multiprocessing.cpu_count(),
   'log_directory': 'logs',
-  'cors_whitelist_domains' : map(re.compile, [
+  'cors_whitelist_domains': map(re.compile, [
     # Domains that match any regex in this list will be allowed to
     # talk to this Kronos instance.  Allows CORS-compliant clients
     # (e.g., web browsers) to respect your wishes for performing XHR

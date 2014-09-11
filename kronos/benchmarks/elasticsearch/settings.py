@@ -23,7 +23,7 @@ storage = {
 }
 
 node = {
-  'id':  hex(getnode()),
+  'id': hex(getnode()),
   'flush_size': 131072,
   'greenlet_pool_size': 50,
   'gipc_pool_size': 2,
@@ -42,27 +42,26 @@ namespace_to_streams_configuration = {
     '': {
       'backends': {
         'elasticsearch': None
-        },
-      'read_backend': 'elasticsearch'
       },
+      'read_backend': 'elasticsearch'
+    },
     'read_size_10000': {
       'backends': {
         'elasticsearch': {'read_size': 10000}
-        },
-      'read_backend': 'elasticsearch'
       },
+      'read_backend': 'elasticsearch'
+    },
     'read_size_15000': {
       'backends': {
         'elasticsearch': {'read_size': 15000}
-        },
-      'read_backend': 'elasticsearch'
       },
+      'read_backend': 'elasticsearch'
+    },
     'read_size_20000': {
       'backends': {
         'elasticsearch': {'read_size': 20000}
-        },
+      },
       'read_backend': 'elasticsearch'
-      }
-
     }
   }
+}

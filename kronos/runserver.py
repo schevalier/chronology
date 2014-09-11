@@ -14,14 +14,16 @@ from argparse import ArgumentParser
 from kronos.conf import settings
 from kronos.conf.constants import ServingMode
 
+
 def log_info(port):
   return """
     %(date)s
     Starting kronos server at http://0.0.0.0:%(port)s/
     Quit the server with CONTROL-C.""" % {
-      'date' : datetime.datetime.now().strftime("%B %d, %Y - %H:%M:%S"),
+      'date': datetime.datetime.now().strftime("%B %d, %Y - %H:%M:%S"),
       'port': port,
-      }
+    }
+
 
 if __name__ == '__main__':
   parser = ArgumentParser(description='Kronos HTTP server.')
