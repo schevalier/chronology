@@ -8,7 +8,7 @@ profile = False
 serving_mode = ServingMode.ALL
 
 node = {
-  'id':  hex(getnode()),
+  'id': hex(getnode()),
   'flush_size': 512,
   'greenlet_pool_size': 20,
   'gipc_pool_size': 1,
@@ -33,14 +33,14 @@ _default_stream_configuration = {
   '': {
     'backends': {
       'memory': None
-      },
+    },
     'read_backend': 'memory'
-    }
   }
+}
 
 namespace_to_streams_configuration = {
   default_namespace: _default_stream_configuration,
   'namespace1': _default_stream_configuration,
   'namespace2': _default_stream_configuration,
   'computed': _default_stream_configuration
-  }
+}

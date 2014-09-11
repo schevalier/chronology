@@ -18,6 +18,7 @@ class KronosClientTest(unittest.TestCase):
     self.nonblocking_client = KronosClient('http://localhost:9191/',
                                            blocking=False,
                                            sleep_block=0.2)
+
   def kronos_client_test(function):
     @functools.wraps(function)
     def wrapper(self):
@@ -25,7 +26,7 @@ class KronosClientTest(unittest.TestCase):
                                   self.nonblocking_client]):
         self.stream = 'KronosClientTest_%s_%s' % (function.__name__, i)
         self.start_time = kronos_time_now()
-        self.sleep_time = i * 0.4 # Will be 0 for blocking.
+        self.sleep_time = i * 0.4  # Will be 0 for blocking.
         self.client = client
         function(self)
     return wrapper
@@ -90,7 +91,7 @@ class KronosClientTest(unittest.TestCase):
                                   self.start_time,
                                   kronos_time_now()))
     self.assertEqual(len(events), 2)
-    self.assertEqual({1, 2}, set(map(lambda event: event['a'], events)))    
+    self.assertEqual({1, 2}, set(map(lambda event: event['a'], events)))
     # TODO(jblum): test start_id
 
   @kronos_client_test
@@ -164,7 +165,7 @@ class KronosClientTest(unittest.TestCase):
     self.assertEqual(event['x'], 2)
     self.assertEqual(event['y'], 3)
     self.assertEqual(event['z'], 6)
-    self.assertTrue(event['duration'] < end - start )
+    self.assertTrue(event['duration'] < end - start)
 
   @kronos_client_test
   def test_log_scope(self):
@@ -187,7 +188,7 @@ class KronosClientTest(unittest.TestCase):
     event = events[0]
     self.assertEqual(event['x'], 1)
     self.assertEqual(event['y'], 2)
-    self.assertTrue(event['duration'] < end - start )
+    self.assertTrue(event['duration'] < end - start)
     self.assertEqual(event['hello'], 'world')
     self.assertTrue('exception' in event)
     self.assertEqual(event['exception']['class'], 'Exception')
