@@ -19,4 +19,4 @@ test:
 demo:
 	node demo.js
 lint:
-	@$(JSHINT) -c .jshintrc --exclude-path .jshintignore *.js src/*.js tests/*.js
+	@$(JSHINT) -c .jshintrc --exclude-path .jshintignore .
