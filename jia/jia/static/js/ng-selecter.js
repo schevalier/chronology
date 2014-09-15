@@ -3,33 +3,40 @@
  *
  * In controller:
  *
- * $scope.choices = [
- *   {name: 'Option 1', anythingElse: 39353},
- *   {name: 'Option 2', selected: true, anythingElse: 40406},
- *   {name: 'Option 3', anythingElse: 35353}
- * ]
- * 
- * // Alternatively, you can make optgroups:
- * // TODO(derek): turn this structure inside out for efficiency. `group`
- * // should be a key value pair on the option, not a key for a list of
- * // options.
  * $scope.choices = {
- *   'Group 1': [
- *     {name: 'Option 1', anythingElse: 39353},
- *     {name: 'Option 2', anythingElse: 40406},
- *     {name: 'Option 3', anythingElse: 35353}
- *   ],
- *   'Group 2': [
- *     {name: 'Option 4', anythingElse: 39353},
- *     {name: 'Option 5', anythingElse: 40406},
- *     {name: 'Option 6', anythingElse: 35353}
- *   ]
- * }
+ *   'Option 1': {
+ *      anythingElse: 39353
+ *   },
+ *   'Option 2': {
+ *      anythingElse: 40406,
+ *      selected: true
+ *   },
+ *   'Option 3': {
+ *      anythingElse: 35353
+ *   }
+ * };
+ * 
+ * // You can make optgroups:
+ * $scope.choices = {
+ *   'Option 1': {
+ *      anythingElse: 39353,
+ *      group: 'Group 1'
+ *   },
+ *   'Option 2': {
+ *      anythingElse: 40406,
+ *      group: 'Group 2'
+ *   },
+ *   'Option 3': {
+ *      anythingElse: 35353,
+ *      group: 'Group 2'
+ *   }
+ * };
  * 
  * $scope.chosen = $scope.choices[0];
  *
  * $scope.enabled = true;
  * 
+ * // Include any of the selecter config options
  * $scope.optionalConfig = {
  *   customClass: 'fancy',
  *   label: 'Choose an option...'
