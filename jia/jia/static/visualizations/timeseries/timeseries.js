@@ -61,9 +61,9 @@ module.factory('timeseries', function () {
       // legend size.
       this.timeseriesOptions.width = parseInt($('.panel').width() * .73);
 
-      var timeField = this.meta.requiredFields['X-Axis'];
-      var valueField = this.meta.requiredFields['Y-Axis'];
-      var groupField = this.meta.optionalFields['Group'];
+      var timeField = this.settings.requiredFields['X-Axis'];
+      var valueField = this.settings.requiredFields['Y-Axis'];
+      var groupField = this.settings.optionalFields['Group'];
 
       var series = _.groupBy(data.events, function(event) {
         return event[groupField] || 'series';

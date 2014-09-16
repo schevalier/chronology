@@ -54,17 +54,6 @@ def streams():
   }
 
 
-@app.route('/streams/<stream_name>', methods=['GET'])
-@json_endpoint
-@require_auth
-def infer_schema(stream_name=None):
-  client = KronosClient(app.config['KRONOS_URL'],
-                        namespace=app.config['KRONOS_NAMESPACE'])
-  schema = client.infer_schema(stream_name,
-                               namespace=app.config['KRONOS_NAMESPACE'])
-  return schema
-
-
 @app.route('/boards', methods=['GET'])
 @json_endpoint
 @require_auth
