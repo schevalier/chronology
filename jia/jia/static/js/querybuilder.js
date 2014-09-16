@@ -465,14 +465,3 @@ qb.directive('direction', function ($http, $compile) {
     }
   };
 });
-
-qb.directive('property', function ($http, $compile) {
-  return {
-    restrict: 'E',
-    templateUrl: '/static/partials/operators/property.html',
-    scope: {
-      model: '=',
-      panel: '='
-    }
-  }
-});
