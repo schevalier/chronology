@@ -504,6 +504,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       title: '',
       data_source: {
         source_type: 'querybuilder',
+        display: true,
         refresh_seconds: null,
         autorun: true,
         code: '',
@@ -532,7 +533,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
         }
       },
       display: {
-        display_type: 'timeseries',
+        display_type: 'table',
         settings: {}
       },
     };
