@@ -52,7 +52,8 @@ class SparkExecutor(Executor):
     # Setup PySpark. This is needed until PySpark becomes available on PyPI,
     # after which we can simply add it to requirements.txt.
     _setup_pyspark()
-    from pyspark import SparkContext
+    from pyspark.conf import SparkConf
+    from pyspark.context import SparkContext
 
     # Create a temporary .zip lib file for Metis, which will be copied over to
     # Spark workers so they can unpickle Metis functions and objects.
@@ -62,14 +63,21 @@ class SparkExecutor(Executor):
 
     # Also ship the Metis lib file so worker nodes can deserialize Metis
     # internal data structures.
-    self.context = SparkContext(app.config['SPARK_MASTER'],
-                                'Metis',
-                                pyFiles=[metis_lib_file.name])
+    conf = SparkConf()
+    conf.setMaster(app.config['SPARK_MASTER'])
+    conf.setAppName('chronology:metis')
+    parallelism = int(app.config.get('SPARK_PARALLELISM', 0))
+    if parallelism:
+      conf.set('spark.default.parallelism', parallelism)
+    self.context = SparkContext(conf=conf, pyFiles=[metis_lib_file.name])
 
     # Delete temporary Metis lib file.
     os.unlink(metis_lib_file.name)
 
-    self.num_workers = int(app.config.get('SPARK_NUM_WORKERS', 10))
+    # We'll use this to parallelize fetching events in KronosStream.
+    # The default of 8 is from:
+    # https://spark.apache.org/docs/latest/configuration.html
+    self.parallelism = parallelism or 8
 
   def __getstate__(self):
     # Don't pickle the `SparkContext` object.
@@ -81,13 +89,13 @@ class SparkExecutor(Executor):
     return rdd.collect()
 
   def execute_kronos_stream(self, node):
-    delta = (node.end_time - node.start_time) / self.num_workers
+    delta = (node.end_time - node.start_time) / self.parallelism
 
     def get_events(i):
       from pykronos import KronosClient
       client = KronosClient(node.host, blocking=True)
       start_time = node.start_time + (i * delta)
-      if i == self.num_workers - 1:
+      if i == self.parallelism - 1:
         end_time = node.end_time
       else:
         end_time = start_time + delta - 1
@@ -99,7 +107,7 @@ class SparkExecutor(Executor):
     # XXX(usmanm): Does this preserve ordering? I ran a few simulations and it
     # seems like ordering is preserved. Need to test on a multi-node cluster as
     # well.
-    return self.context.parallelize(range(self.num_workers)).flatMap(get_events)
+    return self.context.parallelize(range(self.parallelism)).flatMap(get_events)
 
   def execute_aggregate(self, node):
     def finalize(event):
