@@ -62,7 +62,7 @@ module.factory('timeseries', function () {
 
       var timeField = this.settings.requiredFields['X-Axis'];
       var valueField = this.settings.requiredFields['Y-Axis'];
-      var groupField = this.settings.optionalFields['Group'];
+      var groupField = this.settings.optionalFields['Series'];
 
       var compare = function (a, b) {
         return a[timeField] - b[timeField];
