@@ -49,12 +49,11 @@ module.factory('timeseries', function () {
     
     this.setData = function (data, msg) {
       // `data` should contain an `events` property, which is a list
-      // of Kronos-like events.  The events should be sorted in
-      // ascending time order.  An event has at least two fields `@time`
+      // of Kronos-like events.  An event has at least two fields `@time`
       // (Kronos time: 100s of nanoseconds since the epoch), and
-      // `@value`, a floating point value.  An optional `@group`
+      // `@value`, a floating point value.  An optional `@series`
       // attribute will split the event stream into different
-      // groups/series.  All events in the same `@group` will be
+      // groups/series.  All events in the same `@series` will be
       // plotted on their own line.
 
       // TODO(marcua): do a better job of resizing the plot given the
@@ -64,6 +63,12 @@ module.factory('timeseries', function () {
       var timeField = this.settings.requiredFields['X-Axis'];
       var valueField = this.settings.requiredFields['Y-Axis'];
       var groupField = this.settings.optionalFields['Group'];
+
+      var compare = function (a, b) {
+        return a[timeField] - b[timeField];
+      }
+
+      data.events.sort(compare);
 
       var series = _.groupBy(data.events, function(event) {
         return event[groupField] || 'series';
