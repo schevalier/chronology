@@ -200,5 +200,6 @@ executor, the following setting parameters must also be configured:
   * `SPARK_HOME` is the location where Spark is installed. This is used to
     find PySpark which is currently not available on PyPI.
   * `SPARK_MASTER` is the hostname of the master node of your Spark cluster.
-  * `SPARK_PARALLELISM` (optional, default: 10) is the number of Spark workers
-    reads are parallelized to when reading events from a Kronos stream.
+  * `SPARK_PARALLELISM` (optional, default: 8) is the number of Spark workers
+    reads are parallelized to when reading events from a Kronos stream, and the
+    parallelism factor passed down to the `Sparkcontext`.
