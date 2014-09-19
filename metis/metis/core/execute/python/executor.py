@@ -61,7 +61,7 @@ class PythonExecutor(Executor):
                     key=lambda e: tuple(get_value(e, field)
                                         for field in node.fields))
     for i in (xrange(len(events) - 1, -1, -1)
-              if node.reverse else
+              if node.order == node.ResultOrder.DESCENDING else
               xrange(len(events))):
       yield events[i]
 

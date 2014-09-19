@@ -237,7 +237,7 @@ class SparkExecutor(Executor):
     return (self.execute(node.stream)
             .keyBy(lambda e: tuple(get_value(e, field)
                                    for field in node.fields))
-            .sortByKey(ascending=not node.reverse)
+            .sortByKey(ascending=node.order == node.ResultOrder.ASCENDING)
             .map(lambda e: e[1]))
 
   def execute_project(self, node):

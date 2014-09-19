@@ -153,11 +153,13 @@ class ExecutorTestCase(MetisServerTestCase):
     times = [event[constants.TIMESTAMP_FIELD] for event in events]
     self.assertEqual(times, sorted(times))
 
+    # ResultOrder.ASCENDING should put events in ascending order 
     events = self.query(OrderBy(KronosStream('http://localhost:9191',
                                              self.stream,
                                              0,
                                              1000),
-                                [Property('a'), Property('b')]).to_dict())
+                                [Property('a'), Property('b')],
+                                OrderBy.ResultOrder.ASCENDING).to_dict())
     self.assertEqual(len(events), 100)
     a = b = -float('inf')
     for event in events:
@@ -165,6 +167,31 @@ class ExecutorTestCase(MetisServerTestCase):
         b = -float('inf')
       self.assertTrue(a <= event['a'])
       self.assertTrue(b <= event['b'])
+      a = event['a']
+      b = event['b']
+
+    # Test that ResultOrder.ASCENDING is default
+    events2 = self.query(OrderBy(KronosStream('http://localhost:9191',
+                                              self.stream,
+                                              0,
+                                              1000),
+                                 [Property('a'), Property('b')]).to_dict())
+    self.assertEqual(events, events2)
+
+    # ResultOrder.DESCENDING should put events in descending order
+    events = self.query(OrderBy(KronosStream('http://localhost:9191',
+                                             self.stream,
+                                             0,
+                                             1000),
+                                [Property('a'), Property('b')],
+                                OrderBy.ResultOrder.DESCENDING).to_dict())
+    self.assertEqual(len(events), 100)
+    a = b = float('inf')
+    for event in events:
+      if a != event['a']:
+        b = float('inf')
+      self.assertTrue(a >= event['a'])
+      self.assertTrue(b >= event['b'])
       a = event['a']
       b = event['b']
 

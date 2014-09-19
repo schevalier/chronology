@@ -102,11 +102,15 @@ class Filter(Transform):
 
 
 class OrderBy(Transform):
-  def __init__(self, stream, fields, reverse=False, **kwargs):
+  class ResultOrder(Enum):
+    ASCENDING = 'ascending'
+    DESCENDING = 'descending'
+
+  def __init__(self, stream, fields, order=ResultOrder.ASCENDING, **kwargs):
     self.type = Transform.Type.ORDER_BY
     self.stream = stream
     self.fields = fields
-    self.reverse = reverse
+    self.order = order 
     super(OrderBy, self).__init__(**kwargs)
 
   @classmethod
