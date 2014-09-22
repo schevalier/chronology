@@ -68,8 +68,11 @@ def orderby(query_plan, operands):
   fields = []
   for field in operands['fields']:
     fields.append(cpf(field['name']))
-  descending = field['direction']['type'] == 'desc'
-  return OrderBy(query_plan, fields, reverse=descending)
+  if operands['order']['type'] == 'asc':
+    order = OrderBy.ResultOrder.ASCENDING
+  else:
+    order = OrderBy.ResultOrder.DESCENDING
+  return OrderBy(query_plan, fields, order=order)
 
 
 def limit(query_plan, operands):

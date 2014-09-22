@@ -1,7 +1,6 @@
 <div class="operator-arg-set"
      ng-repeat="field in step.operation.operands['fields']">
   <cpf arg="field['name']" exclue="constant"></cpf>
-  <direction arg="field['direction']"></direction>
   <button class="btn btn-danger btn-xs"
           ng-click="removeOperand($index, step.operation.operands['fields'])">
     &times;
@@ -12,3 +11,6 @@
   <span class="glyphicon glyphicon-plus"></span>
   Add order by
 </button>
+<div class="reverse-order">
+  <direction arg="step.operation.operands['order']"></direction>
+</div>
