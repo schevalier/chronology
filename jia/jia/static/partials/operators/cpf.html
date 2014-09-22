@@ -2,12 +2,12 @@
   <selecter model="type" options="types" class="cpf"></selecter>
   <input type="text"
          class="form-control"
-         ng-show="type.type == 'property'"
-         ng-model="name">
-  <input type="text"
-         class="form-control"
          ng-show="type.type == 'constant'"
          ng-model="value">
+  <property model="name"
+            schema="$parent.schemas[$parent.index]"
+            ng-show="type.type == 'property'">
+  </property>
   <selecter model="func" options="functions" ng-show="type.type == 'function'">
   </selecter>
 </div>

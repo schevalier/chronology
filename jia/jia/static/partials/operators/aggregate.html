@@ -9,7 +9,10 @@
   </span>
   <div class="eol-group">
     Store result in
-    <value placeholder="'new field'" arg="aggregate['alias']"></value>
+    <value placeholder="'new field'"
+           arg="aggregate['alias']"
+           alters-schema="step">
+    </value>
     <button class="btn btn-danger btn-xs"
             ng-click="removeOperand($index, step.operation.operands['aggregates'])">
       &times;
@@ -26,7 +29,8 @@
      ng-repeat="group in step.operation.operands['groups']" >
   <cpf arg="group['field']"></cpf>
   <div class="eol-group">
-    Store result in <value arg="group['alias']"></value>
+    Store result in
+    <value arg="group['alias']" alters-schema="step"></value>
   </div>
   <button class="btn btn-danger btn-xs"
           ng-click="removeOperand($index, step.operation.operands['groups'])">

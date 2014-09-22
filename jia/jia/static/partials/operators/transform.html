@@ -1,5 +1,7 @@
 Create:
-<value placeholder="'New field'" arg="step.operation.operands['newProperty']"></value>
+<value placeholder="'New field'" arg="step.operation.operands['newProperty']"
+       alters-schema="step"></value>
 <div class="eol-group">
-  With value: <cpf arg="step.operation.operands['value']"></cpf>
+  With value:
+  <cpf arg="step.operation.operands['value']" schema="schemas[$index]"></cpf>
 </div>

@@ -5,7 +5,10 @@
         <button class="btn btn-danger" ng-click="delete(step)">
           &times;
         </button>
-        <step step="step"></step>
+        <step step="step"
+              schemas="schemas"
+              index="$index">
+        </step>
       </div>
     </li>
     <li>
