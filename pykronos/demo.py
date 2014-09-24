@@ -132,6 +132,14 @@ for stream in kc.get_streams():
   print 'Found stream', stream
 
 """
+## Inferred Schema
+
+You can retrieve a schema for a stream. The schema is inferred from the
+structure of the individual events.
+"""
+response = kc.infer_schema('yourproduct.website.clicks')
+print response['schema']
+"""
 ## Deleting Events
 
 Sometimes, we make an oopsie and need to delete some events.  The
