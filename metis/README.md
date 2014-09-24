@@ -129,7 +129,8 @@ aggregate = Aggregate(stream, group_by, aggregates)
 
 # Order by the new `total` field created in descending order and pick the
 # first event.
-plan = Limit(OrderBy(aggregate, [Property('total_donations')], reverse=True),
+plan = Limit(OrderBy(aggregate, [Property('total_donations')],
+                     order=OrderBy.ResultOrder.DESCENDING),
              1)
 
 events = list(query(plan))
