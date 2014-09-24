@@ -160,8 +160,8 @@ does this. Our approach is a little different. We keep on writing events to an
 index till the number of events in it exceeds a certain limit and then rollover
 to a new index. In order to keep track of what indices contain data for what
 time ranges, we use ElasticSearch's [aliasing](http://www.elasticsearch.org/guide/xen/elasticsearch/reference/current/indices-aliases.html)
-feature to assign an alais for each day that the index might contain data for.
-This approach let's us be compatible with Kibana while at the same time
+feature to assign an alias for each day that the index might contain data for.
+This approach lets us be compatible with Kibana while at the same time
 controlling the number of indices being created over time. Here's a sample
 `storage` configuration:
 
