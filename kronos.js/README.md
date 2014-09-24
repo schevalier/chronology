@@ -19,7 +19,7 @@ in your browser.
 
 if (typeof module !== "undefined" && module.exports) { // Node.js
   var util = require("util");
-  var kronos = require("./index.js");
+  var kronos = require("./index");
   var pprint = function(object) {
     return util.inspect(object, false, null);
   };
