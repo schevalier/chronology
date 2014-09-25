@@ -125,7 +125,8 @@ for stream in kc.get_streams():
 ## Inferred Schema
 
 You can retrieve a schema for a stream. The schema is inferred from the
-structure of the individual events.
+structure of the individual events. The schema protocol is based on JSON Schema
+v4.
 ```python
 response = kc.infer_schema('yourproduct.website.clicks')
 print response['schema']

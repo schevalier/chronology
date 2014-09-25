@@ -171,6 +171,20 @@ setTimeout(function() {
   });
 }, 750);
 ```
+## Infering Schema
+
+You can retrieve a schema for a stream by using `kronosClient.inferSchema`. The
+schema is inferred from the structure of the individual events. The schema
+protocol is based on JSON Schema v4.
+```javascript
+setTimeout(function(){
+  kronosClient.inferSchema(stream).then(
+    function(response){
+      log("KronosInferSchema: " + pprint(response));
+    }
+  );
+}, 750);
+```
 ## Deleting Events
 Sometimes, we make an oopsie and need to delete some events.  The
 `kronosClient.delete` function accepts the same arguments as `kronosClient.get`.
