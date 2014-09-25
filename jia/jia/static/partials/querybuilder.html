@@ -1,0 +1,19 @@
+<div>
+  <ul class="steps">
+    <li ng-repeat="step in panel.data_source.query.steps">
+      <div class="btn-group">
+        <button class="btn btn-danger" ng-click="delete(step)">
+          &times;
+        </button>
+        <step step="step"
+              schemas="schemas"
+              index="$index">
+        </step>
+      </div>
+    </li>
+    <li>
+      <step step="nextStep" newop="true"></step>
+    </li>
+  </ul>
+</div>
+

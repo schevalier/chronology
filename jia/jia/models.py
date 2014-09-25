@@ -1,5 +1,6 @@
-from jia import db
 import json
+from jia import db
+
 
 class Board(db.Model):
   class PanelSource(object):
@@ -7,6 +8,7 @@ class Board(db.Model):
 
   class PanelDisplay(object):
     TIMESERIES = 'timeseries'
+    TABLE = 'table'
 
   id = db.Column(db.String, primary_key=True)
   # JSON-encoded description of the board of the form { '__version__':
@@ -19,6 +21,10 @@ class Board(db.Model):
 
   def save(self):
     db.session.add(self)
+    db.session.commit()
+
+  def delete(self):
+    db.session.delete(self)
     db.session.commit()
 
   def json(self):
@@ -48,7 +54,7 @@ class Board(db.Model):
         'id': self.id,
         'title': '',
         'panels': []
-        }
+      }
     return board_dict
     """    pycode = self.pycodes.first() or PyCode()
     return {'id': self.id,
@@ -59,4 +65,3 @@ class Board(db.Model):
     del board_dict['id']
     self.board_data = json.dumps(dict(board_dict.items() +
                                       [('__version__', 1)]))
-

@@ -1,0 +1,4 @@
+flake8==2.2.3
+greenlet==0.4.2
+gevent==1.0.1
+gipc==0.4.0

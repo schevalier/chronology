@@ -1,3 +1,4 @@
-from client import KronosClient
-
-__version__ = '0.5.0'
+from pykronos.client import ID_FIELD  # noqa
+from pykronos.client import KronosClient  # noqa
+from pykronos.client import TIMESTAMP_FIELD  # noqa
+from pykronos.version import __version__  # noqa

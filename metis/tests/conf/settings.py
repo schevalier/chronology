@@ -1,7 +1,13 @@
-DEBUG = False
-DEFAULT_READ_NAMESPACE = 'metis'
-KRONOS_SERVER = 'http://localhost:9191'
-NUM_WORKERS = 5
+import os
+
+
+DEBUG = True
 PORT = 9192
-SPARK_HOME = '/u/usmanm/spark-0.8.1-incubating'
+
+EXECUTORS = ['python.PythonExecutor', 'spark.SparkExecutor']
+DEFAULT_EXECUTOR = 'spark.SparkExecutor'
+
+# Location of Spark home, where we can find PySpark.
+SPARK_HOME = os.environ.get('SPARK_HOME', '/scratch/spark-1.0.0')
+# Host name of the master node of your Spark cluster.
 SPARK_MASTER = 'local'

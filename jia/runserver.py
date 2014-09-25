@@ -1,14 +1,26 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import gevent.monkey; gevent.monkey.patch_all()
 import gevent.pywsgi
+import os
 import werkzeug.serving
 
+from argparse import ArgumentParser
 from jia import app
 
+
 if __name__ == '__main__':
-  app.config.from_pyfile('../settings.cfg')
-  app.secret_key = app.config['SECRET_KEY']
+  parser = ArgumentParser(description='Jia HTTP server.')
+  parser.add_argument('--port', type=int, help='Port to listen on.')
+  parser.add_argument('--config', help='Path of config file to use.')
+  args = parser.parse_args()
+  for key, value in args.__dict__.items():
+    if value is not None:
+      if key == 'config':
+        app.config.from_pyfile(os.path.join(os.pardir, args.config),
+                               silent=True)
+      else:
+        app.config[key.upper()] = value
   werkzeug.serving.run_with_reloader(
     lambda: gevent.pywsgi.WSGIServer(('0.0.0.0', app.config['PORT']),
                                      app).serve_forever())

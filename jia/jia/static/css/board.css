@@ -1,6 +1,31 @@
+::-moz-selection {
+  background: #fe57a1;
+  color: #fff;
+  text-shadow: none;
+}
+
+::selection {
+  background: #fe57a1;
+  color: #fff;
+  text-shadow: none;
+}
+
 body {
   font-family: 'Cambo', serif;
   margin: 25px 50px;
+  padding-top: 50px;
+}
+
+a {
+  cursor: pointer;
+}
+
+.navbar-brand:hover {
+  color: #fff !important;
+}
+
+.board {
+  min-width: 1120px;
 }
 
 .board-navigation {
@@ -12,47 +37,262 @@ body {
   margin: 10px 0px 10px 0px;
 }
 
+.board .panel {
+}
+
 .board-title {
   font-size: 20px;
   border: 0px solid;
   border-bottom: 1px solid #ccc;
+  height: 40px;
+}
+
+.btn-help {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin-right: 3px;
+  border-radius: 50%;
+}
+
+.btn-help span {
+  margin-left: -1px;
+}
+
+.required {
+  border-bottom: 1px solid #f00 !important;
+  background: #fee;
 }
 
 .panel-title {
-  font-size: 14 px;
+  font-size: 16px;
   border: 0px solid;
 }
 
 .code-box {
-  margin: 20px 0px;
+  margin: 20px 0 0 0;
 }
 
 .code-box .code-controls {
+  padding: 0 10px;
+  background: #E6E9ED;
+  border-top: solid 1px #AAB2BD;
+}
+
+.code-box .code-controls input[type=number],
+.precompute-settings input[type=number] {
+  width: 60px;
+  display: inline-block;
+  vertical-align: middle;
+  text-align: center;
+  padding: 6px 0;
+}
+
+.code-box .code-controls .selecter,
+.precompute-settings .selecter {
+  width: 113px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.untrusted-time {
+  margin-top: 1em;
+}
+
+.modal-footer {
+  margin-top: 0;
+}
+
+.btn-group .selecter {
+  margin-bottom: 0;
+}
+
+.cpf .selecter {
+  width: 90px;
+  float: left;
+}
+
+.cpf .selecter .selecter-selected {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+cpf .btn-group selecter:first-child .selecter-selected,
+cpf .ui-select-bootstrap button {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  border-left: 1px solid #aab2bd;
+}
+
+cpf .btn-group input, cpf .btn-group .selecter-selected,
+cpf .ui-select-bootstrap button {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+}
+
+cpf .btn-group .selecter.open .selecter-selected {
+  border-left: 1px solid #3bafda;
+  border-bottom-left-radius: 0;
+}
+
+cpf .btn-group .selecter.bottom.open .selecter-selected {
+  border-left: 1px solid #3bafda;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 4px;
+}
+
+cpf .ui-select-bootstrap {
+  display: inline-block;
+}
+
+cpf, op, aggop, value, prop {
+  display: inline-block;
+  margin-bottom: 5px;
+  vertical-align: middle;
+}
+
+.operator-arg-set {
+  margin-bottom: 5px;
+}
+
+.timeframe, .daterange {
+  display: inline;
+}
+
+.timeframe label {
+  margin-top: 8px;
+}
+
+.timeframe .selecter {
+  margin: 8px 0;
+}
+
+.animate-show.ng-hide-add.ng-hide-add-active,
+.animate-show.ng-hide-remove.ng-hide-remove-active {
+  -webkit-transition:all linear 3.5s;
+  transition:all linear 3.5s;
+}
+
+.precompute, .code-toggle, .toggle-switch {
+  padding: 7px 10px 0 10px;
+}
+
+.code-toggle label, .toggle-switch label {
+  margin-top: 12px;
+}
+
+.recent {
+  display: inline-block;
+}
+
+.precompute, .timeframe, .code-toggle, .toggle-switch {
+  display: inline-block;
+  vertical-align: top;
+  height: 50px;
+  margin-left: 6px;
+  color: #656D78;
+  padding-left: 10px;
+  border-left: solid 1px #AAB2BD;
+}
+
+.stream {
+  display: inline-block;
+  height: 50px;
+  width: 29%;
+  padding-top: 8px;
+}
+
+.stream .ui-select-bootstrap {
+  display: inline-block;
+  width: 100%;
+}
+
+.stream .ui-select-match {
+  position: relative;
   overflow: hidden;
-  margin: 10px;
 }
 
-.code-box .code-controls .run-btn {
-  float: left;
-  margin-right: 10px;
-}
-
-.code-box .code-controls .refresh-ctl {
-  float: left;
+.input-fade {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: 100px;
+  background: -moz-linear-gradient(left,  rgba(255,255,255,0) 0%, rgba(255,255,255,1) 75%, rgba(255,255,255,1) 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(255,255,255,0)), color-stop(75%,rgba(255,255,255,1)), color-stop(100%,rgba(255,255,255,1))); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(left,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 75%,rgba(255,255,255,1) 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(left,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 75%,rgba(255,255,255,1) 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(left,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 75%,rgba(255,255,255,1) 100%); /* IE10+ */
+  background: linear-gradient(to right,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 75%,rgba(255,255,255,1) 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ffffff', endColorstr='#ffffff',GradientType=1 ); /* IE6-9 */
 }
 
-.code-box .code-controls .msg {
-  float: right;
-  line-height: 34px;
+.btn-default:hover .input-fade,
+.btn-default:active .input-fade,
+.btn-default.active .input-fade {
+  background: -moz-linear-gradient(left,  rgba(204,209,217,0) 0%, rgba(204,209,217,1) 75%, rgba(204,209,217,1) 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(204,209,217,0)), color-stop(75%,rgba(204,209,217,1)), color-stop(100%,rgba(204,209,217,1))); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(left,  rgba(204,209,217,0) 0%,rgba(204,209,217,1) 75%,rgba(204,209,217,1) 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(left,  rgba(204,209,217,0) 0%,rgba(204,209,217,1) 75%,rgba(204,209,217,1) 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(left,  rgba(204,209,217,0) 0%,rgba(204,209,217,1) 75%,rgba(204,209,217,1) 100%); /* IE10+ */
+  background: linear-gradient(to right,  rgba(204,209,217,0) 0%,rgba(204,209,217,1) 75%,rgba(204,209,217,1) 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ccd1d9', endColorstr='#ccd1d9',GradientType=1 ); /* IE6-9 */
+}
+
+.btn-default-focus .input-fade {
+  background: -moz-linear-gradient(left,  rgba(245,247,250,0) 0%, rgba(245,247,250,1) 75%, rgba(245,247,250,1) 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(245,247,250,0)), color-stop(75%,rgba(245,247,250,1)), color-stop(100%,rgba(245,247,250,1))); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(left,  rgba(245,247,250,0) 0%,rgba(245,247,250,1) 75%,rgba(245,247,250,1) 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(left,  rgba(245,247,250,0) 0%,rgba(245,247,250,1) 75%,rgba(245,247,250,1) 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(left,  rgba(245,247,250,0) 0%,rgba(245,247,250,1) 75%,rgba(245,247,250,1) 100%); /* IE10+ */
+  background: linear-gradient(to right,  rgba(245,247,250,0) 0%,rgba(245,247,250,1) 75%,rgba(245,247,250,1) 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00f5f7fa', endColorstr='#f5f7fa',GradientType=1 ); /* IE6-9 */
+}
+
+.code-controls label {
+  color: #656D78;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+  font-size: 0.8em;
+}
+
+.precompute .enable {
+  display: inline-block;
+  padding-top: 8px;
+}
+
+.precompute .options {
+  display: inline;
+  width: auto;
+  opacity: 1;
+}
+
+.precompute .options.animate-show.ng-hide {
+  opacity:0;
+  width: 0;
+}
+
+.precompute .options input[type=text] {
+  width: 70px;
+  padding: 0;
+  display: inline;
+  text-align: center;
 }
 
 .code-box .error-alert {
   margin-bottom: 0px;
 }
+
 div, span, p, td {
-    font-family: Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
+
+.CodeMirror span {
+  font-family: monospace !important;
+}
+
 rickshaw {
     display: inline-block;
     width: 100%;
@@ -65,7 +305,6 @@ rickshaw {
 
 .code-box .CodeMirror {
   height: 250px;
-  padding-top: 10px;
   font-size: 12px;
 }
 
@@ -154,4 +393,270 @@ rickshaw {
 
 .panel {
   border:1px solid #CCCCCC;
+}
+
+/* Hack to fix bottom border on ng-table with dynamic cols */
+.ng-table.table {
+  border-collapse: separate;
+}
+
+.ng-table.table > tfoot > tr:first-child td {
+  border-top: none;
+}
+
+.ng-table.table > tbody > tr:last-child td {
+  border-bottom: solid 1px #ddd;
+}
+
+.ng-table.table > tfoot > tr:first-child {
+  border-top: solid 1px #ddd;
+}
+
+/* Hard override on ng-table counts */
+.ng-table-counts {
+  display: none;
+}
+
+.log {
+  position: relative;
+  margin: 10px;
+}
+
+.log ul {
+  display: inline-block;
+  vertical-align: middle;
+  padding-left: 50px;
+}
+
+.alert-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  line-height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  width: 40px;
+}
+
+.alert-icon span.glyphicon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+}
+
+.datetimepicker {
+  color: #CCD1D9;
+}
+
+.dtp-container {
+  width: 160px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.dtp-container input {
+  text-align: center;
+  padding: 6px 0;
+}
+
+/* Copied from datetimepicker.css */
+.datetimepicker table tr td span.active,
+.datetimepicker table tr td span.active:hover,
+.datetimepicker table tr td span.active.disabled,
+.datetimepicker table tr td span.active.disabled:hover {
+  background: none;
+  background-color: #4fc1e9;
+}
+
+.datetimepicker table tr td.active,
+.datetimepicker table tr td.active:hover,
+.datetimepicker table tr td.active.disabled,
+.datetimepicker table tr td.active.disabled:hover {
+  background: #4fc1e9;
+}
+
+.datetimepicker table tr td.active:hover,
+.datetimepicker table tr td.active:hover:hover,
+.datetimepicker table tr td.active.disabled:hover,
+.datetimepicker table tr td.active.disabled:hover:hover,
+.datetimepicker table tr td.active:active,
+.datetimepicker table tr td.active:hover:active,
+.datetimepicker table tr td.active.disabled:active,
+.datetimepicker table tr td.active.disabled:hover:active,
+.datetimepicker table tr td.active.active,
+.datetimepicker table tr td.active:hover.active,
+.datetimepicker table tr td.active.disabled.active,
+.datetimepicker table tr td.active.disabled:hover.active,
+.datetimepicker table tr td.active.disabled,
+.datetimepicker table tr td.active:hover.disabled,
+.datetimepicker table tr td.active.disabled.disabled,
+.datetimepicker table tr td.active.disabled:hover.disabled,
+.datetimepicker table tr td.active[disabled],
+.datetimepicker table tr td.active:hover[disabled],
+.datetimepicker table tr td.active.disabled[disabled],
+.datetimepicker table tr td.active.disabled:hover[disabled] {
+  background-color: #4fc1e9;
+}
+
+.datetimepicker table tr td span.active:hover,
+.datetimepicker table tr td span.active:hover:hover,
+.datetimepicker table tr td span.active.disabled:hover,
+.datetimepicker table tr td span.active.disabled:hover:hover,
+.datetimepicker table tr td span.active:active,
+.datetimepicker table tr td span.active:hover:active,
+.datetimepicker table tr td span.active.disabled:active,
+.datetimepicker table tr td span.active.disabled:hover:active,
+.datetimepicker table tr td span.active.active,
+.datetimepicker table tr td span.active:hover.active,
+.datetimepicker table tr td span.active.disabled.active,
+.datetimepicker table tr td span.active.disabled:hover.active,
+.datetimepicker table tr td span.active.disabled,
+.datetimepicker table tr td span.active:hover.disabled,
+.datetimepicker table tr td span.active.disabled.disabled,
+.datetimepicker table tr td span.active.disabled:hover.disabled,
+.datetimepicker table tr td span.active[disabled],
+.datetimepicker table tr td span.active:hover[disabled],
+.datetimepicker table tr td span.active.disabled[disabled],
+.datetimepicker table tr td span.active.disabled:hover[disabled] {
+  background-color: #4fc1e9;
+}
+
+.datetimepicker table tr td.past, .datetimepicker table tr td.future {
+  color: #656D78;
+}
+
+.datetimepicker table tr td.minute:hover,
+.datetimepicker table tr td.hour:hover,
+.datetimepicker table tr td.day:hover,
+.datetimepicker table tr td span:hover,
+.datetimepicker thead tr:first-child th:hover,
+.datetimepicker tfoot tr:first-child th:hover {
+  background-color: #E6E9ED;
+  color: #656D78;
+}
+
+.ui-select-bootstrap .ui-select-choices-row > a {
+  color: #FFFFFF;
+}
+
+.ui-select-bootstrap .ui-select-choices-row.active > a {
+  background: #656d78;
+}
+
+.btn-default-focus {
+  background: #F5F7FA;
+}
+
+querybuilder > div {
+  background: #E6E9ED;
+  border-top: solid 1px #AAB2BD;
+  padding: 10px;
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+step .selecter {
+  display: inline-block;
+  width: 150px;
+  vertical-align: top;
+  margin-bottom: 5px;
+}
+
+step .selecter.flat-left {
+  display: block;
+  float: left;
+}
+
+step div.args {
+  margin-left: 188px;
+}
+
+.selecter .selecter-item.placeholder {
+  display: none;
+  color: #999;
+}
+
+ul.steps {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+ul.steps li {
+  position: relative;
+  min-height: 77px;
+  padding-bottom: 10px;
+}
+
+ul.steps > li:before {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 1px;
+  top: 33px;
+  bottom: 10px;
+  left: 92px;
+  background: #AAB2BD;
+}
+
+ul.steps > li:after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 0px;
+  height: 0px;
+  left: 82px;
+  bottom: 0;
+  border-top: 10px solid #AAB2BD;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+}
+
+ul.steps li:last-child {
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+ul.steps li:last-child:after {
+  display: none;
+}
+
+ul.steps li:last-child .selecter {
+  width: 184px;
+}
+
+.eol-group {
+  display: inline-block;
+}
+
+.btn-group .selecter.flat-left .selecter-selected,
+.btn-group .selecter.flat-left.bottom.open .selecter-selected {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+}
+
+ul.steps .form-control {
+  display: inline-block;
+  vertical-align: middle;
+  width: 150px;
+}
+
+div.visualization-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.schema-transform {
+  padding: 0 15px;
+}
+
+.input-label {
+  margin-bottom: 10px;
+}
+
+.reverse-order {
+  margin-top: 10px;
 }

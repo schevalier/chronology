@@ -1,8 +1,9 @@
 #!/usr/bin/python
+import datetime
 
 import gevent.monkey; gevent.monkey.patch_all()
+
 import gevent.pywsgi
-import geventhttpclient.httplib; geventhttpclient.httplib.patch()
 
 import imp
 import logging; logging.basicConfig()
@@ -12,6 +13,17 @@ from argparse import ArgumentParser
 
 from kronos.conf import settings
 from kronos.conf.constants import ServingMode
+
+
+def log_info(port):
+  return """
+    %(date)s
+    Starting kronos server at http://0.0.0.0:%(port)s/
+    Quit the server with CONTROL-C.""" % {
+      'date': datetime.datetime.now().strftime("%B %d, %Y - %H:%M:%S"),
+      'port': port,
+    }
+
 
 if __name__ == '__main__':
   parser = ArgumentParser(description='Kronos HTTP server.')
@@ -25,28 +37,38 @@ if __name__ == '__main__':
                       help='which serving mode to run in')
   parser.add_argument('--config', action='store',
                       help='path of config file to use')
+  parser.add_argument('--profile', action='store_true',
+                      help='Profile each request using cProfile?')
   args = parser.parse_args()
 
-
-  # If a config file path is given, import that as the `settings` module.
+  settings.clear()
   if args.config:
+    # If a config file path is given, import that as the `settings` module.
     settings.update(imp.load_source('kronos.conf.run_settings', args.config))
+  else:
+    # Otherwise use default settings. This is to ensure we never try to read
+    # the settings for the configured kronos service when using this runner
+    # script.
+    from kronos.conf import default_settings
+    settings.update(default_settings)
 
   # Override the `debug` in the settings module and `debug` for
   # `args`.
   settings.debug = args.debug or settings.debug
-  args.debug = settings.debug
   settings.serving_mode = args.serving_mode or settings.serving_mode
-  args.serving_mode = settings.serving_mode
+  settings.profile = args.profile or settings.profile
 
   # Only load the application after we've overwritten settings.serving_mode, or
   # else the endpoint access control logic will kick in too early.
   from kronos.app import application
 
+  print log_info(args.port)
   if args.reload:
-    werkzeug.serving.run_with_reloader(
-      lambda: gevent.pywsgi.WSGIServer(('0.0.0.0', int(args.port)),
-                                       application).serve_forever())
+    def reload():
+      print 'Reloading kronosd...'
+      gevent.pywsgi.WSGIServer(('0.0.0.0', int(args.port)),
+                               application).serve_forever()
+    werkzeug.serving.run_with_reloader(reload)
   else:
     gevent.pywsgi.WSGIServer(('0.0.0.0', int(args.port)),
                              application).serve_forever()

@@ -3,10 +3,10 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil.tz import tzutc
 from datadiff.tools import assert_equal
-from pykronos.utils.time import datetime_to_kronos_time
 from random import randint
 from random import random
 
+from metis.common.time import datetime_to_kronos_time
 from metis.conf import constants
 from metis.convenience.cohort import cohort_queryplan
 from metis.convenience.cohort import cohort_response
@@ -26,15 +26,15 @@ class CohortTestCase(MetisServerTestCase):
   EMAIL_WEEKS = [(0, 2), (2, 4), (1, 3), (3, 0), (4, 1)]
   NUM_USERS = 400
   MAX_DT = datetime(2020, 1, 1).replace(tzinfo=tzutc())
-  
+
   def generate_data(self):
     user_ids = range(CohortTestCase.NUM_USERS)
-    
+
     # Email stream: Users in groups 1-5 get an email in weeks 1 and 3,
     # 2 and 4, 3 and 5, 4 and 1, 5 and 2, respectively.
     # See `EMAIL_WEEKS`.
     user_dates = {}
-    
+
     # Fill in expected_output, which is of
     # the form: {cohort_date: {cohort_size: NN,
     #                          action_dates: {action_date: num_actions}}}
@@ -49,7 +49,7 @@ class CohortTestCase(MetisServerTestCase):
       week2 = CohortTestCase.START_DATETIME + timedelta(weeks=weeks2)
       date2 = week2 + timedelta(hours=randint(0, 72))
       week1_str = datetime_to_date_str(week1)
-      week2_str = datetime_to_date_str(week2)      
+      week2_str = datetime_to_date_str(week2)
       user_dates[user_id] = ({'cohort': week1_str,
                               'cohort_date': week1,
                               'precise_date': date1},
@@ -64,8 +64,8 @@ class CohortTestCase(MetisServerTestCase):
            constants.TIMESTAMP_FIELD: datetime_to_kronos_time(date1)},
           {'user': user_id,
            constants.TIMESTAMP_FIELD: datetime_to_kronos_time(date2)}
-          ]
-        })
+        ]
+      })
 
     # Action stream: Users in group 1 hit the front page w/ 1/5
     # percent chance, group 2 with 2/5 chance, etc. Likelihood for
@@ -86,12 +86,12 @@ class CohortTestCase(MetisServerTestCase):
               action_dt,
               day_to_min_action_dt.get(action_dt.date(),
                                        CohortTestCase.MAX_DT)
-              )
+            )
             self.kronos_client.put({
               CohortTestCase.FRONTPAGE_STREAM: [
                 {'user_id': user_id,
                  '@time': datetime_to_kronos_time(action_dt)}]
-              })
+            })
             action_compare_dt = day_to_min_action_dt[action_dt.date()]
             for _email_dates in user_dates[user_id]:
               if (_email_dates['precise_date'] > action_compare_dt or
@@ -115,6 +115,7 @@ class CohortTestCase(MetisServerTestCase):
   def test_cohort(self):
     expected = self.generate_data()
     plan = {
+      'kronos_url': 'http://localhost:9191',
       'cohort': {'stream': CohortTestCase.EMAIL_STREAM,
                  'start': CohortTestCase.START_DATETIME,
                  'cohorts': len(CohortTestCase.EMAIL_WEEKS),
@@ -124,11 +125,11 @@ class CohortTestCase(MetisServerTestCase):
                  'repetitions': CohortTestCase.ACTION_REPETITION_DAYS,
                  'unit': DateUnit.DAYS,
                  'grouping_key': 'user_id'}
-      }
+    }
     metis_plan = cohort_queryplan(plan)
     events = self.query(metis_plan)
     cohort = cohort_response(plan, events)
-    
+
     # Same set of cohorts.
     self.assertEqual(set(expected), set(cohort))
     # Action dates match for all cohorts.

@@ -1,5 +1,5 @@
 libevent-dev
+libpcre3-dev
 python-all-dev
 python-pip
-uwsgi
-uwsgi-plugin-python
+uuid-dev
