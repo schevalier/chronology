@@ -214,7 +214,7 @@ Here are what the parameters above mean:
 
 ### S3
 
-** Under construction---don't use it yet **
+*Under construction -- check back later.*
 
 ## Deployment
 
