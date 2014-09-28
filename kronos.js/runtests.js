@@ -7,7 +7,7 @@ var request = require("request");
 var startTestServer = function() {
   console.log("Firing up test kronos server...");
   var kronosProc = spawn(
-    "run_kronos.py",
+    "../kronos/runserver.py",
     ["--config", "tests/conf/kronos_settings.py", "--port", "9191"],
     {cwd: __dirname});
   return kronosProc;
