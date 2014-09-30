@@ -16,7 +16,8 @@ jia.config(['$routeProvider',
   }
 ]);
 
-jia.run(function($rootScope) {
+jia.run(['$rootScope', function($rootScope) {
+  // Make Object available in templates
   $rootScope.Object = Object;
-});
+}]);
 

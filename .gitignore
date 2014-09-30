@@ -12,3 +12,5 @@ settings.cfg
 incubator-spark
 stream_names
 .sass-cache
+metis/pyspark
+node_modules/*
