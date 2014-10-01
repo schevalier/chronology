@@ -54,6 +54,7 @@ class SparkExecutor(Executor):
     _setup_pyspark()
     from pyspark.conf import SparkConf
     from pyspark.context import SparkContext
+    from pyspark.serializers import MarshalSerializer
 
     # Create a temporary .zip lib file for Metis, which will be copied over to
     # Spark workers so they can unpickle Metis functions and objects.
@@ -69,7 +70,9 @@ class SparkExecutor(Executor):
     parallelism = int(app.config.get('SPARK_PARALLELISM', 0))
     if parallelism:
       conf.set('spark.default.parallelism', parallelism)
-    self.context = SparkContext(conf=conf, pyFiles=[metis_lib_file.name])
+    self.context = SparkContext(conf=conf,
+                                pyFiles=[metis_lib_file.name],
+                                serializer=MarshalSerializer())
 
     # Delete temporary Metis lib file.
     os.unlink(metis_lib_file.name)
