@@ -4,6 +4,7 @@ APPROOT = os.path.dirname(os.path.realpath(__file__))
 
 # Basic configuration settings
 DEBUG = True
+HOST = '0.0.0.0'
 PORT = 8152
 SECRET_KEY = 'a secret key --- MUST set this to something unique and strong'
 FORCE_SSL = False

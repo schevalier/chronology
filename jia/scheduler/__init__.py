@@ -2,7 +2,7 @@ from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.config.from_pyfile('../settings.cfg')
+app.config.from_pyfile('../jia/conf/default_settings.py')
 app.config.update(PORT=app.config['SCHEDULER_PORT'])
 app.config.update(SQLALCHEMY_DATABASE_URI=app.config['SCHEDULER_DATABASE_URI'])
 app.secret_key = app.config['SECRET_KEY']
