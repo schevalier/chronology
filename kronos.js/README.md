@@ -92,7 +92,7 @@ below.
 
 
 
-Note that an `kronos.ID_FIELD` and `kronos.TIMESTAMP_FIELD` field are always
+Note that a `kronos.ID_FIELD` and `kronos.TIMESTAMP_FIELD` field are always
 attached to each event. The `kronos.ID_FIELD` is a UUID1-style identifier
 with its time bits derived from the timestamp. This allows event IDs
 to be roughly sortable by the time that they happened while providing
