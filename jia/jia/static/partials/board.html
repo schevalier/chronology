@@ -203,6 +203,21 @@
             <span class="handle"></span>
           </label>
         </div>
+        <div class="toggle-switch"
+             ng-if="panel.data_source.timeframe.mode.value == 'recent'">
+          <label>Autorefresh</label>
+          <label class="toggle">
+            <input type="checkbox"
+                   ng-model="panel.data_source.autorefresh.enabled">
+            <span class="handle"></span>
+          </label>
+          <div class="refresh-interval animate-show"
+               ng-show="panel.data_source.autorefresh.enabled">
+            <input ng-model="panel.data_source.autorefresh.interval"
+                   class="form-control"
+                   type="number"> sec
+          </div>
+        </div>
       </div>
 
       <div class="code-controls query-builder"

@@ -230,7 +230,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   $scope.callSource = function(panel) {
     panel.cache.loading = true;
     panel.cache.log.clear();
-    
+
     $http.post('/callsource', panel.data_source)
       .success(function(data, status, headers, config) {
         panel.cache.data = data;
@@ -240,7 +240,6 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
         }
         if (!data['events'].length) {
           panel.cache.log.warn('Query result contains no events.');
-          return;
         }
         checkSchema(panel);
         if (panel.cache.schemaNeedsTransform) {
@@ -248,6 +247,13 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
           return;
         }
         panel.cache.visualization.setData(data, panel.cache.log);
+
+        // If autorefresh, schedule the next run
+        if (panel.data_source.autorefresh.enabled &&
+            panel.data_source.timeframe.mode.value == 'recent') {
+          var interval = panel.data_source.autorefresh.interval * 1000;
+          window.setTimeout($scope.callSource, interval, panel);
+        }
       })
       .error(function(data, status, headers, config) {
         if (status == 400) {
@@ -484,7 +490,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
 
     // Update property dropdowns/typeaheads when the stream changes
     $scope.$watch(function () {
-      return panel.data_source.stream;
+      return panel.data_source.query.stream;
     }, function (newVal, oldVal) {
       $scope.updateSchema(panel);
     });
@@ -507,6 +513,10 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
         display: true,
         refresh_seconds: null,
         autorun: true,
+        autorefresh: {
+          enabled: false,
+          interval: 10 * 60
+        },
         code: '',
         query: {
           stream: undefined,

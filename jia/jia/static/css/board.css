@@ -182,6 +182,18 @@ cpf, op, aggop, value, prop {
   margin-top: 12px;
 }
 
+.refresh-interval {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.refresh-interval input {
+  width: 50px;
+  display: inline-block;
+  vertical-align: middle;
+  text-align: center;
+}
+
 .recent {
   display: inline-block;
 }
