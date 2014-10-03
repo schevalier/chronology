@@ -2,7 +2,14 @@ from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask_sslify import SSLify
 
-app = Flask(__name__)
+class JiaServer(Flask):
+  jinja_options = Flask.jinja_options.copy()
+  jinja_options.update(dict(
+      variable_start_string='<%',
+      variable_end_string='%>',
+  ))
+
+app = JiaServer(__name__)
 app.config.from_object('jia.conf.default_settings')
 app.secret_key = app.config['SECRET_KEY']
 db = SQLAlchemy(app)

@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/static/lib/css/rickshaw.min.css">
     <link rel="stylesheet" href="/static/lib/css/ng-table.min.css">
     <link rel="stylesheet" href="/static/lib/css/c3.css">
-    <link rel="stylesheet" href="/static/visualizations/gauge/gauge.css">
+    <link rel="stylesheet" href="/static/app/visualizations/gauge/gauge.css">
     <link rel="stylesheet" href="/static/css/board.css">
     <!-- endbuild -->
   </head>
@@ -25,7 +25,7 @@
   <body>
     <div ng-view></div>
     <script>
-      var JIA_ALLOW_PYCODE = {{ pycode }};
+      var JIA_ALLOW_PYCODE = <% pycode %>;
     </script>
     <!-- build:js /static/build/js/jia.js -->
     <!-- 3rd party libs -->
@@ -48,30 +48,30 @@
     <script src="/static/lib/js/select.min.js"></script>
 
     <!-- Internal libs -->
-    <script src="/static/js/ng-selecter.js"></script>
+    <script src="/static/app/selecter/ng-selecter.js"></script>
 
     <!-- Timeseries -->
     <script src="/static/lib/js/d3.min.js"></script>
     <script src="/static/lib/js/rickshaw.min.js"></script>
     <script src="/static/lib/js/angular-rickshaw.js"></script>
-    <script src="/static/visualizations/timeseries/timeseries.js"></script>
+    <script src="/static/app/visualizations/timeseries/timeseries.js"></script>
     
     <!-- Table -->
     <script src="/static/lib/js/ng-table.min.js"></script>
-    <script src="/static/visualizations/table/table.js"></script>
+    <script src="/static/app/visualizations/table/table.js"></script>
     
     <!-- Gauge -->
-    <script src="/static/visualizations/gauge/gauge.js"></script>
+    <script src="/static/app/visualizations/gauge/gauge.js"></script>
 
     <!-- Bar Chart -->
     <script src="/static/lib/js/c3.min.js"></script>
-    <script src="/static/js/angular-c3.js"></script>
-    <script src="/static/visualizations/barchart/barchart.js"></script> 
+    <script src="/static/app/c3/angular-c3.js"></script>
+    <script src="/static/app/visualizations/barchart/barchart.js"></script> 
 
     <!-- Jia -->
-    <script src="/static/js/jia.js"></script>
-    <script src="/static/js/querybuilder.js"></script>
-    <script src="/static/js/board.js"></script>
+    <script src="/static/app/jia.js"></script>
+    <script src="/static/app/editboard/querybuilder.js"></script>
+    <script src="/static/app/editboard/editboard.js"></script>
     <!-- endbuild -->
   </body>
 </html>

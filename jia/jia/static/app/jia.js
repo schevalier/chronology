@@ -1,13 +1,13 @@
 var jia = angular.module('jia', [
   'ngRoute',
-  'jia.boards'
+  'jia.editboard'
 ]);
 
 jia.config(['$routeProvider',
   function ($routeProvider) {
     $routeProvider.
       when('/boards/:boardId', {
-        templateUrl: '/static/partials/board.html',
+        templateUrl: '/static/app/editboard/editboard.html',
         controller: 'BoardController'
       }).
       otherwise({

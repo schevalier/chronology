@@ -30,7 +30,7 @@
           </a>
           <ul class="dropdown-menu">
             <li ng-repeat="board in boards">
-              <a href="#/boards/{[ board.id ]}">{[ board.title ]}</a>
+              <a href="#/boards/{{ board.id }}">{{ board.title }}</a>
             </li>
           </ul>
         </li>
@@ -86,7 +86,7 @@
     </div>
     <div class="schema-transform"
          ng-show="panel.cache.visualizationSettingsOpen">
-      <h4>{[ panel.cache.visualization.meta.readableTitle ]} Settings</h4>
+      <h4>{{ panel.cache.visualization.meta.readableTitle }} Settings</h4>
       <div class="form-horizontal"> 
         <div class="input-label"
              ng-if="Object.keys(panel.display.settings.requiredFields).length">
@@ -94,7 +94,7 @@
         </div>
         <div class="form-group"
              ng-repeat="(key, value) in panel.display.settings.requiredFields">
-          <label class="col-xs-1 control-label">{[ key ]}:</label>
+          <label class="col-xs-1 control-label">{{ key }}:</label>
           <div class="col-xs-3">
             <property model="panel.display.settings.requiredFields[key]"
                       schema="panel.cache.schemas[panel.cache.schemas.length - 1]">
@@ -107,7 +107,7 @@
         </div>
         <div class="form-group"
              ng-repeat="(key, value) in panel.display.settings.optionalFields">
-          <label class="col-xs-1 control-label">{[ key ]}:</label>
+          <label class="col-xs-1 control-label">{{ key }}:</label>
           <div class="col-xs-3">
             <property model="panel.display.settings.optionalFields[key]"
                       schema="panel.cache.schemas[panel.cache.schemas.length - 1]">
@@ -164,13 +164,13 @@
           <button type="button"
                   class="btn btn-primary dropdown-toggle display-type-btn navbar-btn"
                   ng-disabled="disabled">
-            {[ panel.cache.visualization.meta.readableTitle ]}
+            {{ panel.cache.visualization.meta.readableTitle }}
             <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
             <li ng-repeat="visualization in visualizations"
                 ng-click="changeVisualization(panel, visualization)">
-              <a>{[ visualization.meta.readableTitle ]}</a>
+              <a>{{ visualization.meta.readableTitle }}</a>
             </li>
           </ul>
         </div>
@@ -190,7 +190,7 @@
           Query
         </button>
         <a class="btn btn-default" target="_blank"
-           download="{[ panel.title + '.csv']}"
+           download="{{ panel.title + '.csv'}}"
            ng-click="downloadCSV(panel, $event)"
            ng-if="panel.cache.data.events.length > 1">
           <span class="glyphicon glyphicon-download"></span> Download CSV
@@ -226,7 +226,7 @@
           <ui-select ng-model="panel.data_source.query.stream"
                      theme="bootstrap">
             <ui-select-match placeholder="Stream">
-              {[ $select.selected ]}
+              {{ $select.selected }}
               <span class="input-fade"></span> 
             </ui-select-match>
             <ui-select-choices repeat="stream in streams | filter: $select.search">
@@ -296,8 +296,7 @@
         </div>
       </div>
 
-      <querybuilder panel="panel"
-                    ng-if="panel.data_source.display &&
+      <querybuilder ng-if="panel.data_source.display &&
                            panel.data_source.source_type == 'querybuilder'">
       </querybuilder>
 

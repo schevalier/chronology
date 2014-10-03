@@ -1,19 +1,23 @@
 <table class="table" ng-table="module.tableParams">
   <thead>
   <tr>
-    <th ng-repeat="column in module.tableParams.series.cols" class="sortable text-center"
+    <th ng-repeat="column in module.tableParams.series.cols"
+        class="sortable text-center"
         ng-class="{
           'sort-asc': module.tableParams.isSortBy(column.field, 'asc'),
           'sort-desc': module.tableParams.isSortBy(column.field, 'desc')
         }"
         ng-click="module.tableParams.sorting(column.field, module.tableParams.isSortBy(column.field, 'asc') ? 'desc' : 'asc');">
-      <div>{[ column.title ]}</div>
+      <div>{{ column.title }}</div>
     </th>
   </tr>
   </thead>
   <tbody>
   <tr ng-repeat="point in $data">
-    <td ng-repeat="column in module.tableParams.series.cols" sortable="column.field">{[ point[column.field] ]}</td>
+    <td ng-repeat="column in module.tableParams.series.cols"
+        sortable="column.field">
+      {{ point[column.field] }}
+    </td>
   </tr>
   </tbody>
 </table>

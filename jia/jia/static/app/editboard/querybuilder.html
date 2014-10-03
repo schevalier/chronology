@@ -5,15 +5,11 @@
         <button class="btn btn-danger" ng-click="delete(step)">
           &times;
         </button>
-        <step step="step"
-              schemas="schemas"
-              index="$index">
-        </step>
+        <step></step>
       </div>
     </li>
-    <li>
-      <step step="nextStep" newop="true"></step>
+    <li ng-repeat="step in [nextStep]">
+      <step></step>
     </li>
   </ul>
 </div>
-

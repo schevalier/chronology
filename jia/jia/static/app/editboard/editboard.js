@@ -1,21 +1,15 @@
-var app = angular.module('jia.boards', ['ngSanitize',
-                                        'ui.codemirror',
-                                        'ui.bootstrap',
-                                        'ui.bootstrap.datetimepicker',
-                                        'ui.select',
-                                        'selecter',
-                                        'jia.querybuilder',
-                                        'jia.vis.timeseries',
-                                        'jia.vis.table',
-                                        'jia.vis.gauge',
-                                        'jia.vis.barchart'
-                                       ]);
-
-app.config(['$interpolateProvider', function($interpolateProvider) {
-  // Using {[ ]} to avoid collision with server-side {{ }}.
-  $interpolateProvider.startSymbol('{[');
-  $interpolateProvider.endSymbol(']}');
-}]);
+var app = angular.module('jia.editboard', ['ngSanitize',
+                                           'ui.codemirror',
+                                           'ui.bootstrap',
+                                           'ui.bootstrap.datetimepicker',
+                                           'ui.select',
+                                           'selecter',
+                                           'jia.querybuilder',
+                                           'jia.vis.timeseries',
+                                           'jia.vis.table',
+                                           'jia.vis.gauge',
+                                           'jia.vis.barchart'
+                                          ]);
 
 // Add data to acceptable hrefs for CSV to be generated client side
 app.config(['$compileProvider', function($compileProvider) {
@@ -370,7 +364,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   $scope.forkModal = function () {
     $scope.forkName = 'Fork of ' + $scope.boardData.title;
     $scope.forkModalInstance = $modal.open({
-      templateUrl: '/static/partials/namefork.html',
+      templateUrl: 'static/app/editboard/modals/namefork.html',
       scope: $scope   
     });
   };
@@ -403,7 +397,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     scope.bucketWidthHelpText = $scope.bucketWidthHelpText;
     scope.timeScales = $scope.timeScales;
     $modal.open({
-      templateUrl: '/static/partials/precompute.html',
+      templateUrl: 'static/app/editboard/modals/precompute.html',
       scope: scope
     });
   };
@@ -661,7 +655,9 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
 app.directive('visualization', function ($http, $compile) {
   var linker = function(scope, element, attrs) {
     scope.$watch('module', function () {
-      $http.get(['static', 'visualizations', scope.module.meta.title, scope.module.meta.template].join('/'))
+      $http.get(['static/app/visualizations',
+                 scope.module.meta.title,
+                 scope.module.meta.template].join('/'))
         .success(function(data, status, headers, config) {
           element.html(data);
           $compile(element.contents())(scope);

@@ -122,11 +122,8 @@ qb.directive('querybuilder', function () {
   
   return {
     restrict: 'E',
-    templateUrl: '/static/partials/querybuilder.html',
+    templateUrl: '/static/app/editboard/querybuilder.html',
     controller: controller,
-    scope: {
-      panel: '='
-    }
   };
 });
 
@@ -141,19 +138,19 @@ qb.directive('step', function ($http, $compile) {
    * :param newop: Boolean specifying if this is an active query step or a
    * "New Operation..." select element.
    */
-  var linker = function (scope, element, attrs) {
-    scope.$watch(function () {
-      return scope.step.operation;
-    }, function (newVal, oldVal) {
-      if (!scope.newop && typeof newVal != 'undefined') {
-        $http.get(['static', 'partials', 'operators',
+  var linker = function (scope, element, attrs, ngModel) {
+    if (scope.step.operation) {
+      scope.$watch(function () {
+        return scope.step.operation;
+      }, function (newVal, oldVal) {
+        $http.get(['static/app/editboard/operators',
                    scope.step.operation.operator + '.html'].join('/'))
           .success(function(data, status, headers, config) {
             $(element).find('div.args').html(data);
             $compile(element.contents())(scope);
           });
-      }
-    });
+      });
+    }
   }
 
   var controller = ['$scope', function($scope) {
@@ -190,16 +187,20 @@ qb.directive('step', function ($http, $compile) {
       }
     ];
 
-    // Keep track of all new fields created during this step
-    $scope.step.fields = [];
-
-    if (typeof $scope.schemas != 'undefined') {
-      $scope.schemaIn = $scope.schemas[$scope.index];
-      $scope.schemas[$scope.index + 1] = {}; 
+    // If the step is not the "New operation..." add control, then it will
+    // have an operation
+    if ($scope.step.operation) {
+      // Keep track of all new schema properties created during this step
+      $scope.step.fields = [];
+    
+      // Initialize the output schema
+      $scope.schemas[$scope.$index + 1] = {}; 
 
       // Changes to schemaIn require an update to the output schema in index+1
-      $scope.$watch('schemaIn', function (newVal, oldVal) {
-        $scope.schemaIn = newVal;
+      $scope.$watch(function () {
+        return $scope.schemas[$scope.$index];
+      }, function (newVal, oldVal) {
+        $scope.schemas[$scope.$index] = newVal;
         $scope.updateSchema();
       });
 
@@ -207,77 +208,73 @@ qb.directive('step', function ($http, $compile) {
       $scope.$watch('step.fields', function () {
         $scope.updateSchema();
       }, true);
+
+      $scope.addOperand = function (operands) {
+        operands.push({});
+      };
+
+      $scope.removeOperand = function (idx, operands) {
+        operands.splice(idx, 1);
+      }
+
+      $scope.replaceSchema = function () {
+        /*
+         * Create ouptut schema set containing only the new properties defined
+         * in this query step
+         */
+        var schemaOut = {};
+        for (var field in $scope.step.fields) {
+          schemaOut[$scope.step.fields[field]] = true;
+        }
+        $scope.schemas[$scope.$index + 1] = schemaOut;
+      };
+
+      $scope.mergeSchema = function () {
+        /*
+         * Create output schema set containing the properties in the input
+         * schema set in addition to the new properties defined in this query
+         * step.
+         */
+        var schemaOut = angular.extend({}, $scope.schemas[$scope.$index]);
+        for (var field in $scope.step.fields) {
+          schemaOut[$scope.step.fields[field]] = true;
+        }
+        $scope.schemas[$scope.$index + 1] = schemaOut;
+      };
+      
+      $scope.updateSchema = function () {
+        /*
+         * Select schema transform type based on the type of operation being
+         * performed in this step.
+         */
+        if ($scope.step.operation.operator == 'aggregate') {
+          $scope.replaceSchema();
+        }
+        else if ($scope.step.operation.operator == 'transform') {
+          $scope.mergeSchema();
+        }
+        else {
+          $scope.schemas[$scope.index + 1] = $scope.schemas[$scope.$index];
+        }
+      };
+
+      // If the operation type changes, the output schema needs an update
+      $scope.$watch(function () {
+        return $scope.step.operation;
+      }, function (newVal, oldVal) {
+        if (newVal) {
+          $scope.updateSchema();
+        }
+      });
     }
-
-    $scope.addOperand = function (operands) {
-      operands.push({});
-    };
-
-    $scope.removeOperand = function (idx, operands) {
-      operands.splice(idx, 1);
-    }
-
-    $scope.replaceSchema = function () {
-      /*
-       * Create ouptut schema set containing only the new properties defined in
-       * this query step
-       */
-      var schemaOut = {};
-      for (var field in $scope.step.fields) {
-        schemaOut[$scope.step.fields[field]] = true;
-      }
-      $scope.schemas[$scope.index + 1] = schemaOut;
-    };
-
-    $scope.mergeSchema = function () {
-      /*
-       * Create output schema set containing the properties in the input schema
-       * set in addition to the new properties defined in this query step.
-       */
-      var schemaOut = angular.extend({}, $scope.schemaIn);
-      for (var field in $scope.step.fields) {
-        schemaOut[$scope.step.fields[field]] = true;
-      }
-      $scope.schemas[$scope.index + 1] = schemaOut;
-    };
-    
-    $scope.updateSchema = function () {
-      /*
-       * Select schema transform type based on the type of operation being
-       * performed in this step.
-       */
-      if ($scope.step.operation.operator == 'aggregate') {
-        $scope.replaceSchema();
-      }
-      else if ($scope.step.operation.operator == 'transform') {
-        $scope.mergeSchema();
-      }
-      else {
-        $scope.schemas[$scope.index + 1] = $scope.schemaIn;
-      }
-    };
-
-    // If the operation type changes, the output schema needs an update
-    $scope.$watch(function () {
-      return $scope.step.operation;
-    }, function (newVal, oldVal) {
-      if (newVal) {
-        $scope.updateSchema();
-      }
-    });
   }];
 
   return {
     restrict: "E",
-    templateUrl: '/static/partials/step.html',
+    templateUrl: '/static/app/editboard/step.html',
     controller: controller,
     link: linker,
-    scope: {
-      step: '=',
-      schemas: '=',
-      index: '=',
-      newop: '='
-    }
+    scope: true
   };
 });
 
@@ -288,8 +285,67 @@ qb.directive('cpf', function () {
    * See top of file for detailed information on the structure of the CPF
    * model.
    *
-   * :param arg: CPF model
    */
+  var linker = function (scope, elem, attrs, ngModel) {
+    // If no ng-model was supplied then nothing needs to be done.
+    if (!ngModel) return;
+
+    // Build a CPF data structure and upate the ng-model when the user changes
+    // any of the inputs.
+    scope.$watch(function () {
+      return [scope.func,
+              scope.type,
+              scope.name,
+              scope.value,
+              scope.args];
+    }, function () {
+      var args = [];
+      if (!scope.type) return;
+      _.each(scope.args, function (arg, index) {
+        var type = scope.func.options[index].type;
+        var cpf = {
+          'cpf_type': type
+        };
+        if (type == 'property') {
+          cpf['property_name'] = arg;
+        }
+        else if (type == 'constant') {
+          cpf['constant_value'] = arg;
+        }
+        args.push(cpf);
+      });
+      var newVal = {
+        cpf_type: scope.type.type,
+        function_name: scope.func.value,
+        function_args: args,
+        property_name: scope.name,
+        constant_value: scope.value
+      };
+      ngModel.$setViewValue(newVal);
+    }, true);
+
+    var model = ngModel.$modelValue;
+    if (!model) {
+      ngModel.$setViewValue({});
+    }
+    else if (model.cpf_type) {
+      scope.type = findObjectInListBasedOnKey(scope.types, 'type',
+                                              model.cpf_type);
+      scope.func = findObjectInListBasedOnKey(scope.functions, 'value',
+                                               model.function_name);
+      _.each(model.function_args, function (arg, index) {
+        if (typeof model.property_name != 'undefined') {
+          scope.args.push(arg.property_name);
+        }
+        else if (typeof model.constant_value != 'undefined') {
+          scope.args.push(arg.constant_value);
+        }
+      });
+      scope.name = model.property_name;
+      scope.value = model.constant_value;
+    }
+  };
+
   var controller = ['$scope', function ($scope) {
     $scope.functions = [
       {
@@ -386,79 +442,38 @@ qb.directive('cpf', function () {
     ];
     $scope.type = $scope.types[0];
     $scope.args = [];
-    
-    if (!$scope.arg || $scope.arg.property_only) {
-      $scope.arg = {};
-    }
-    else if ($scope.arg.cpf_type) {
-      $scope.type = findObjectInListBasedOnKey($scope.types, 'type',
-                                               $scope.arg.cpf_type);
-      $scope.func = findObjectInListBasedOnKey($scope.functions, 'value',
-                                               $scope.arg.function_name);
-      _.each($scope.arg.function_args, function (arg, index) {
-        if (typeof arg.property_name != 'undefined') {
-          $scope.args.push(arg.property_name);
-        }
-        else if (typeof arg.constant_value != 'undefined') {
-          $scope.args.push(arg.constant_value);
-        }
-      });
-      $scope.name = $scope.arg.property_name;
-      $scope.value = $scope.arg.constant_value;
-    }
-
-    $scope.$watch(function () {
-      return [$scope.func,
-              $scope.type,
-              $scope.name,
-              $scope.value,
-              $scope.args];
-    }, function () {
-      var args = [];
-      if (!$scope.type) return;
-      _.each($scope.args, function (arg, index) {
-        var type = $scope.func.options[index].type;
-        var cpf = {
-          'cpf_type': type
-        };
-        if (type == 'property') {
-          cpf['property_name'] = arg;
-        }
-        else if (type == 'constant') {
-          cpf['constant_value'] = arg;
-        }
-        args.push(cpf);
-      });
-      $scope.arg.cpf_type = $scope.type.type;
-      $scope.arg.function_name = $scope.func.value;
-      $scope.arg.function_args = args;
-      $scope.arg.property_name = $scope.name;
-      $scope.arg.constant_value = $scope.value;
-    }, true);
-
   }];
 
   return {
     restrict: "E",
-    templateUrl: '/static/partials/operators/cpf.html',
+    templateUrl: '/static/app/editboard/inputs/cpf.html',
     controller: controller,
-    scope: {
-      arg: '='
-    }
+    link: linker,
+    scope: true,
+    require: '?ngModel'
   };
 });
 
 qb.directive('op', function () {
   /*
-   * Basic filter operator type select element
-   *
-   * :param arg: Model to store operator
+   * Basic filter operator type select element (lt, gt, gte, eq, etc)
    */
-  var linker = function (scope, element, attrs) {
-    if (scope.arg) {
-      var type = scope.arg;
+  var linker = function (scope, element, attrs, ngModel) {
+    if (!ngModel) return;
+
+    if (ngModel.$modelValue) {
+      var type = ngModel.$modelValue;
       scope.type = findObjectInListBasedOnKey(scope.types, 'value', type);
     }
+    else {
+      ngModel.$setViewValue(scope.type.value);
+    }
+
+    scope.$watch('type', function () {
+      if (scope.type != undefined) {
+        ngModel.$setViewValue(scope.type.value);
+      }
+    });
   };
 
   var controller = ['$scope', function ($scope) {
@@ -473,40 +488,38 @@ qb.directive('op', function () {
       {name: 'matches regex', value: 'regex'}
     ];
     $scope.type = $scope.types[0];
-
-    if (!$scope.arg) {
-      $scope.arg = $scope.type.value;
-    }
-
-    $scope.$watch('type', function () {
-      if ($scope.type != undefined) {
-        $scope.arg = $scope.type.value;
-      }
-    });
   }];
 
   return {
     restrict: "E",
-    templateUrl: '/static/partials/operators/op.html',
+    templateUrl: '/static/app/editboard/inputs/op.html',
     controller: controller,
     link: linker,
-    scope: {
-      arg: '='
-    }
+    require: '?ngModel',
+    scope: true
   };
 });
 
 qb.directive('aggtype', function () {
   /*
    * Provides a dropdown list of aggregation types
-   *
-   * :param arg: Model to store selected value
    */
-  var linker = function (scope, element, attrs) {
-    if (scope.arg) {
-      var val = scope.arg;
+  var linker = function (scope, element, attrs, ngModel) {
+    if (!ngModel) return;
+
+    if (ngModel.$modelValue) {
+      var val = ngModel.$modelValue;
       scope.aggType = findObjectInListBasedOnKey(scope.aggTypes, 'value', val);
     }
+    else {
+      ngModel.$setViewValue({});
+    }
+
+    scope.$watch('aggType', function () {
+      if (scope.aggType != undefined) {
+        ngModel.$setViewValue(scope.aggType.value);
+      }
+    });
   };
 
   var controller = ['$scope', function ($scope) {
@@ -519,26 +532,15 @@ qb.directive('aggtype', function () {
       {name: 'Value count', value: 'Valuecount'}
     ];
     $scope.aggType = $scope.aggTypes[3];
-
-    if (!$scope.arg) {
-      $scope.arg = {};
-    }
-
-    $scope.$watch('aggType', function () {
-      if ($scope.aggType != undefined) {
-        $scope.arg = $scope.aggType.value;
-      }
-    });
   }];
 
   return {
     restrict: "E",
-    templateUrl: '/static/partials/operators/aggtype.html',
+    templateUrl: '/static/app/editboard/inputs/aggtype.html',
     controller: controller,
     link: linker,
-    scope: {
-      arg: '='
-    }
+    require: '?ngModel',
+    scope: true
   };
 });
 
@@ -546,82 +548,81 @@ qb.directive('value', function () {
   /*
    * Thin wrapper around <input>
    *
-   * :param arg: Model to update with <input> contents
-   * :param altersSchema: (optional) Contains a reference to a query `step` if
-   * the directive is being used to add a property to the schema.
    * :param placeholder: (optional) Placeholder text for <input>
    * :param type: (optional) TODO(derek): Not implemented
+   * :param altersSchema: (optional) Indicates that this value is creating a
+   * new property on the schema
+   *
+   * Example:
+   * <value alters-schema placeholder="New field" type="text"></value>
    *
    */
-  var linker = function (scope, element, attrs) {
-    scope.val = scope.arg;
-  };
- 
+
   // Behaves statically because a directive's factory function is invoked only
   // once, when the compiler matches the directive for the first time.
   var id = 0;
-  var controller = ['$scope', function ($scope) {
-    // Get unique ID from incrementing static `id`
-    var uid = id++;
-    $scope.$watch('val', function () {
-      $scope.arg = $scope.val;
-      if ($scope.altersSchema) {
-        $scope.altersSchema.fields[uid] = $scope.val;
-      }
-    });
-
-    if (!$scope.arg) {
-      $scope.arg = '';
+  
+  var linker = function (scope, element, attrs, ngModel) {
+    if (attrs['placeholder']) {
+      $(element).find('input').attr('placeholder', attrs['placeholder']);
     }
-  }];
 
+    if (ngModel) {
+      if (ngModel.$modelValue) {
+        scope.val = ngModel.$modelValue;
+      }
+      else {
+        ngModel.$setViewValue('');
+      }
+
+      // Get unique ID from incrementing static `id`
+      var uid = id++;
+      scope.$watch('val', function () {
+        ngModel.$setViewValue(scope.val);
+        if (attrs['alters-schema']) {
+          scope.step.fields[uid] = scope.val;
+        }
+      });
+    }
+  };
+ 
   return {
     restrict: "E",
-    templateUrl: '/static/partials/operators/input.html',
-    controller: controller,
+    templateUrl: '/static/app/editboard/inputs/input.html',
     link: linker,
-    scope: {
-      arg: '=',
-      altersSchema: '=?',
-      placeholder: '=?',
-      type: '=?'
-    }
+    scope: true,
+    require: '?ngModel'
   };
 });
 
 qb.directive('direction', function () {
   /*
    * Sort order (asc/desc) select element
-   *
-   * :param arg: Model to store direction
    */
-  var linker = function (scope, element, attrs) {
-    scope.direction = scope.arg;
-  };
-
-  var controller = ['$scope', function ($scope) {
-    $scope.directions = [
+  var linker = function (scope, element, attrs, ngModel) {
+    scope.directions = [
       {name: 'Ascending', type: 'asc'},
       {name: 'Descending', type: 'desc'}
     ];
-
-    $scope.$watch('direction', function () {
-      $scope.arg = $scope.direction;
-    });
-
-    if (!$scope.arg) {
-      $scope.arg = $scope.directions[0];
+    
+    if (ngModel.$viewValue) {
+      scope.direction = ngModel.$viewValue;
     }
-  }];
+    else {
+      scope.direction = scope.directions[0];
+    }
+
+    scope.$watch('direction', function () {
+      ngModel.$setViewValue(scope.direction);
+    });
+  };
 
   return {
     restrict: "E",
-    templateUrl: '/static/partials/operators/direction.html',
-    controller: controller,
+    templateUrl: '/static/app/editboard/inputs/direction.html',
     link: linker,
-    scope: {
-      arg: '='
-    }
+    scope: true,
+    require: '?ngModel'
   };
 });
 
@@ -634,12 +635,14 @@ qb.directive('property', function () {
    */
   var controller = ['$scope', function ($scope) {
     $scope.$watch('schema', function (newVal, oldVal) {
-      $scope.properties = Object.keys($scope.schema);
+      if (newVal) {
+        $scope.properties = Object.keys($scope.schema);
+      }
     });
   }];
   return {
     restrict: 'E',
-    templateUrl: '/static/partials/operators/property.html',
+    templateUrl: '/static/app/editboard/inputs/property.html',
     controller: controller,
     scope: {
       model: '=',

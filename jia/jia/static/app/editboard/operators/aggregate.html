@@ -1,0 +1,44 @@
+<div class="operator-arg-set"
+     ng-repeat="aggregate in step.operation.operands.aggregates">
+  <aggtype ng-model="aggregate.agg_type"></aggtype>
+  <span ng-if="aggregate.agg_type == 'count'">
+    of <cpf ng-model="aggregate.agg_on" type="property"></cpf>
+  </span>
+  <span ng-if="aggregate.agg_type != 'count'">
+    of <cpf ng-model="aggregate.agg_on"></cpf>
+  </span>
+  <div class="eol-group">
+    Store result in
+    <value placeholder="new field"
+           ng-model="aggregate.alias"
+           alters-schema>
+    </value>
+    <button class="btn btn-danger btn-xs"
+            ng-click="removeOperand($index, step.operation.operands.aggregates)">
+      &times;
+    </button>
+  </div>
+</div>
+<button class="btn btn-primary btn-xs"
+        ng-click="addOperand(step.operation.operands.aggregates)">
+  <span class="glyphicon glyphicon-plus"></span>
+  Add aggregate
+</button>
+<div><br><strong>Group by</strong></div>
+<div class="step.operation-arg-set"
+     ng-repeat="group in step.operation.operands.groups" >
+  <cpf ng-model="group.field"></cpf>
+  <div class="eol-group">
+    Store result in
+    <value ng-model="group.alias" alters-schema></value>
+  </div>
+  <button class="btn btn-danger btn-xs"
+          ng-click="removeOperand($index, step.operation.operands.groups)">
+    &times;
+  </button>
+</div>
+<button class="btn btn-primary btn-xs"
+        ng-click="addOperand(step.operation.operands.groups)">
+  <span class="glyphicon glyphicon-plus"></span>
+  Add group 
+</button>
