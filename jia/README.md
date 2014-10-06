@@ -27,10 +27,10 @@ Once you have Kronos and Metis running, configure Jia.
 ```bash
 cd chronology/jia
 sudo pip install -r requirements.txt
-cp settings.cfg.template settings.cfg
+cp settings.py.template settings.py
 ```
 
-Edit `settings.cfg` to your liking. Most settings should be fairly
+Edit `settings.py` to your liking. Most settings should be fairly
 straightforward. Be sure to set `KRONOS_URL` and `METIS_URL` to reflect the
 ports you chose when setting those up.
 
@@ -48,9 +48,13 @@ in the `ALLOWED_EMAILS` setting. You can add individual email addresses here,
 or whitelist an entire regex, which can be useful if your company uses Google
 Apps.
 
-When you are done configuring, simply run `make` to start the Jia server.
-Visit [http://localhost:8152](http://localhost:8152) (or whatever port you
-configured Jia to run on) in a browser and you should see this:
+When you are done configuring, simply run
+```
+./runserver.py --config settings.py
+```
+to start the Jia server. Visit [http://localhost:8152](http://localhost:8152)
+(or whatever port you configured Jia to run on) in a browser and you should see
+this:
 
 ![Step 1](docs/getting-started/img/step1.png)
 
@@ -170,7 +174,8 @@ The Jia task scheduler can be used to enable the precomputation of long-running
 queries so the results are always ready when you visit the dashboard.
 
 ### Running
-Be sure to modify the relevant settings in `settings.cfg`
+The scheduler settings can be edited in Jia's settings file. You can create a
+copy from `settings.py.template`.
 
 ```
 # Precompute settings
@@ -189,6 +194,10 @@ for details).
 ```
 $ python runscheduler.py
 ```
+
+#### `runscheduler.py` options
+* `--config` Specify a config file to override default settings.
+* `--port` Specify a port to run the scheduler on.
 
 ### Scheduling
 In addition to precompute tasks, you can send the scheduler any Python code
