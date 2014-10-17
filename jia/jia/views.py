@@ -2,12 +2,12 @@ import binascii
 import os
 
 from flask import redirect
-from flask import request
+from flask import request, session
 from flask import render_template
 from jia import app
 from jia.auth import require_auth
 from jia.decorators import json_endpoint
-from jia.models import Board
+from jia.models import Board, User
 from jia.compute import QueryCompute, enable_precompute, disable_precompute
 from jia.utils import get_seconds
 from pykronos import KronosClient
@@ -31,7 +31,9 @@ def index():
     template = 'index.html'
   else:
     template = os.path.join('build', 'index.html')
-  return render_template(template, pycode=allow_pycode)
+
+  user = User.query.get(session['user'])
+  return render_template(template, pycode=allow_pycode, user=user)
 
 
 @app.route('/<board_id>', methods=['GET'])

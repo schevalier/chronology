@@ -1,6 +1,7 @@
 import os
 import re
-APPROOT = os.path.dirname(os.path.realpath(__file__))
+from os.path import dirname as parent
+APPROOT = parent(parent(parent((os.path.realpath(__file__)))))
 
 # Basic configuration settings
 DEBUG = True
@@ -37,10 +38,10 @@ SQLALCHEMY_DATABASE_URI = 'sqlite:///%s/app.db' % APPROOT
 
 # Google authentication to protect your board from random users
 ALLOWED_EMAILS = map(re.compile, [
-  # Only user IDs matching regexes in this list will be allowed to use Jia
+  # Only user IDs matching regexes in this list will be allowed to create
+  # accounts 
   '.+@YOUR_DOMAIN.COM$',
 ])
-ENABLE_GOOGLE_AUTH = False
 GOOGLE_CLIENT_ID = ''
 GOOGLE_CLIENT_SECRET = ''
 # Set http://yourdomain.com/google_callback as an authorized redirect URI
