@@ -48,6 +48,12 @@ def require_auth(fn):
   return decorated
 
 
+@app.route('/logout')
+def logout():
+  session.clear()
+  render_template('logout.html')
+
+
 @app.route('/google_callback')
 def google_callback():
   if 'code' in request.args:
