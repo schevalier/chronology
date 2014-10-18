@@ -552,7 +552,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
 
   $scope.formatDateTime = function (datetime) {
     if (typeof datetime == 'string') {
-      datetime = moment(datetime).format($scope.dateTimeFormat);
+      datetime = moment(new Date(datetime)).format($scope.dateTimeFormat);
     }
     return String(datetime).split(' ').slice(0, 5).join(' ');
   };
