@@ -1,16 +1,19 @@
 import binascii
 import os
 
+from flask import Blueprint
+from flask import current_app
 from flask import redirect
 from flask import request, session
 from flask import render_template
-from jia import app
 from jia.auth import require_auth
 from jia.decorators import json_endpoint
 from jia.models import Board, User
 from jia.compute import QueryCompute, enable_precompute, disable_precompute
 from jia.utils import get_seconds
 from pykronos import KronosClient
+
+app = Blueprint('app', __name__)
 
 
 @app.route('/status', methods=['GET'])
@@ -26,8 +29,9 @@ def status():
 @app.route('/', methods=['GET'])
 @require_auth
 def index():
-  allow_pycode = str(app.config['ALLOW_PYCODE']).lower()
-  if app.config['DEBUG']:
+  print "INDEX"
+  allow_pycode = str(current_app.config['ALLOW_PYCODE']).lower()
+  if current_app.config['DEBUG']:
     template = 'index.html'
   else:
     template = os.path.join('build', 'index.html')
@@ -51,12 +55,12 @@ def redirect_old_board_url(board_id=None):
 @json_endpoint
 @require_auth
 def streams():
-  client = KronosClient(app.config['KRONOS_URL'],
-                        namespace=app.config['KRONOS_NAMESPACE'])
-  kronos_streams = client.get_streams(namespace=app.config['KRONOS_NAMESPACE'])
-  kronos_streams = sorted(kronos_streams)
+  kc = KronosClient(current_app.config['KRONOS_URL'],
+                    namespace=current_app.config['KRONOS_NAMESPACE'])
+  kstreams = kc.get_streams(namespace=current_app.config['KRONOS_NAMESPACE'])
+  kstreams = sorted(kstreams)
   return {
-    'streams': kronos_streams,
+    'streams': kstreams,
   }
 
 
@@ -64,10 +68,10 @@ def streams():
 @json_endpoint
 @require_auth
 def infer_schema(stream_name=None):
-  client = KronosClient(app.config['KRONOS_URL'],
-                        namespace=app.config['KRONOS_NAMESPACE'])
-  schema = client.infer_schema(stream_name,
-                               namespace=app.config['KRONOS_NAMESPACE'])
+  kc = KronosClient(current_app.config['KRONOS_URL'],
+                    namespace=current_app.config['KRONOS_NAMESPACE'])
+  schema = kc.infer_schema(stream_name,
+                           namespace=current_app.config['KRONOS_NAMESPACE'])
   return schema
    
    

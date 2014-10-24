@@ -2,7 +2,7 @@ import copy
 import json
 import metis.core.query.aggregate
 import metis.core.query.value
-from jia import app
+from flask import current_app
 from metis.core.query.aggregate import GroupBy
 from metis.core.query.condition import Condition
 from metis.core.query.stream import KronosStream
@@ -81,7 +81,7 @@ def limit(query_plan, operands):
 
 def create_metis_query_plan(query, start_time, end_time):
   query = copy.deepcopy(query)
-  host = app.config['KRONOS_URL']
+  host = current_app.config['KRONOS_URL']
   query_plan = KronosStream(host, query['stream'], start_time, end_time)
   operators = {
     'transform': transform,

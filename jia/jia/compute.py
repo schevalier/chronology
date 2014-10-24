@@ -3,7 +3,7 @@ import json
 import requests
 import sys
 import traceback
-from jia import app
+from flask import current_app
 from jia.common.time import datetime_to_epoch_time
 from jia.common.time import datetime_to_kronos_time
 from jia.common.time import epoch_time_to_kronos_time
@@ -87,6 +87,12 @@ class QueryCompute(object):
     :param untrusted_time: Optional untrusted time interval in seconds
     :param metis: Send `query` to metis for computation
     """
+    try:
+      self._app = current_app
+      self._app.config  # The above line won't fail, but this one will
+    except RuntimeError:
+      from scheduler import get_app 
+      self._app = get_app() 
     self._query = query
     self._bucket_width = bucket_width
     self._untrusted_time = untrusted_time
@@ -95,8 +101,8 @@ class QueryCompute(object):
                                                                   bucket_width)
 
     self._cache_client = KronosClient(
-        app.config['CACHE_KRONOS_URL'],
-        namespace=app.config['CACHE_KRONOS_NAMESPACE'],
+        self._app.config['CACHE_KRONOS_URL'],
+        namespace=self._app.config['CACHE_KRONOS_NAMESPACE'],
         blocking=False, sleep_block=0.2)
 
     # The query is sent through as an unused unique_id argument so that the
@@ -107,7 +113,7 @@ class QueryCompute(object):
 
     if self._metis:
       query_func = self._run_metis
-    elif app.config['ALLOW_PYCODE']:
+    elif self._app.config['ALLOW_PYCODE']:
       query_func = self._run_query
     else:
       raise ValueError("`metis` must be `True` if ALLOW_PYCODE is not enabled")
@@ -116,7 +122,7 @@ class QueryCompute(object):
       bucket_width_timedelta = datetime.timedelta(seconds=bucket_width)
       self._query_cache = QueryCache(self._cache_client, query_func,
                                      bucket_width_timedelta,
-                                     app.config['CACHE_KRONOS_NAMESPACE'],
+                                     self._app.config['CACHE_KRONOS_NAMESPACE'],
                                      query_function_kwargs=unique)
 
   def _get_timeframe_bounds(self, timeframe, bucket_width):
@@ -183,8 +189,8 @@ class QueryCompute(object):
     :param unique_id: An unused flag that allows the scheduler to hash this
     function uniquely based on its args when it passes through
     """
-    client = KronosClient(app.config['KRONOS_URL'],
-                          namespace=app.config['KRONOS_NAMESPACE'],
+    client = KronosClient(self._app.config['KRONOS_URL'],
+                          namespace=self._app.config['KRONOS_NAMESPACE'],
                           blocking=False,
                           sleep_block=0.2)
 
@@ -210,7 +216,7 @@ class QueryCompute(object):
     start_time = datetime_to_kronos_time(start_time)
     end_time = datetime_to_kronos_time(end_time)
     q = create_metis_query_plan(self._query, start_time, end_time)
-    r = requests.post("%s/1.0/query" % app.config['METIS_URL'], data=q)
+    r = requests.post("%s/1.0/query" % self._app.config['METIS_URL'], data=q)
     return json.loads('[%s]' % (',').join(r.text.splitlines()))
 
   def compute(self, use_cache=True):

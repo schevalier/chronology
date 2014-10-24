@@ -5,8 +5,8 @@ import random
 import gevent
 
 from functools import wraps
+from flask import current_app
 from flask import request
-from scheduler import app
 from scheduler.auth import create_token
 
 try:
@@ -47,7 +47,7 @@ def token_protected_endpoint(function):
 
     data = dict(request.form)
     del data['auth_token']
-    correct_token = create_token(app.config['SECRET_KEY'], data)
+    correct_token = create_token(current_app.config['SECRET_KEY'], data)
 
     if _compare_digest(auth_token, correct_token):
       return function(*args, **kwargs)

@@ -4,13 +4,16 @@ import binascii
 import json
 import os
 
+from flask import Blueprint
+from flask import current_app
 from flask import request
-from scheduler import app
 from scheduler.models import Task
 from scheduler.decorators import token_protected_endpoint
 
+scheduler = Blueprint('scheduler', __name__)
 
-@app.route("/schedule", methods=['POST'])
+
+@scheduler.route("/schedule", methods=['POST'])
 @token_protected_endpoint
 def schedule():
   """HTTP endpoint for scheduling tasks
@@ -36,10 +39,11 @@ def schedule():
     else:
       other_task.active = False
       other_task.save()
-      app.scheduler.cancel(other_task.id)
+      current_app.scheduler.cancel(other_task.id)
 
   if new_task.active:
-    app.scheduler.schedule({
+    print current_app.scheduler.schedule
+    current_app.scheduler.schedule({
       'id': task_id,
       'code': new_task.code,
       'interval': new_task.interval
@@ -53,7 +57,7 @@ def schedule():
   })
 
 
-@app.route("/cancel", methods=['POST'])
+@scheduler.route("/cancel", methods=['POST'])
 @token_protected_endpoint
 def cancel():
   """HTTP endpoint for canceling tasks
@@ -73,14 +77,14 @@ def cancel():
   task.delete()
 
   if task.active:
-    app.scheduler.cancel(task_id)
+    current_app.scheduler.cancel(task_id)
 
     code = task.code
     other_task = Task.query.filter_by(code=code).order_by('interval').first()
     if other_task:
       other_task.active = True
       other_task.save()
-      app.scheduler.schedule({
+      current_app.scheduler.schedule({
         'id': other_task.id,
         'code': other_task.code,
         'interval': other_task.interval

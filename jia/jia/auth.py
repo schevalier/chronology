@@ -2,12 +2,14 @@ import functools
 import urllib
 import requests
 
+from flask import Blueprint
+from flask import current_app
 from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
 from flask import session
-from jia import app, db
+from jia import db
 from jia.models import User
 
 auth_uri = 'https://accounts.google.com/o/oauth2/auth'
@@ -22,9 +24,11 @@ User {} is not allowed.
 Revoke access on this account before trying again</a>.
 """
 
+auth = Blueprint('auth', __name__)
+
 
 def http_scheme():
-  if app.config['FORCE_SSL']:
+  if current_app.config['FORCE_SSL']:
     return 'https'
   else:
     return 'http'
@@ -37,9 +41,10 @@ def require_auth(fn):
     if not 'user' in session:
       params = dict(response_type='code',
                     scope=' '.join(scope),
-                    client_id=app.config['GOOGLE_CLIENT_ID'],
+                    client_id=current_app.config['GOOGLE_CLIENT_ID'],
                     approval_prompt='auto',
-                    redirect_uri=url_for('google_callback', _external=True,
+                    redirect_uri=url_for('auth.google_callback',
+                                         _external=True,
                                          _scheme=http_scheme()))
       url = auth_uri + '?' + urllib.urlencode(params)
       session['next'] = request.path
@@ -48,16 +53,16 @@ def require_auth(fn):
   return decorated
 
 
-@app.route('/google_callback')
+@auth.route('/google_callback')
 def google_callback():
   if 'code' in request.args:
     code = request.args.get('code')
-    redirect_to = session.pop('next', url_for('index', _external=True,
+    redirect_to = session.pop('next', url_for('app.index', _external=True,
                                               _scheme=http_scheme()))
     data = dict(code=code,
-                client_id=app.config['GOOGLE_CLIENT_ID'],
-                client_secret=app.config['GOOGLE_CLIENT_SECRET'],
-                redirect_uri=url_for('google_callback', _external=True,
+                client_id=current_app.config['GOOGLE_CLIENT_ID'],
+                client_secret=current_app.config['GOOGLE_CLIENT_SECRET'],
+                redirect_uri=url_for('auth.google_callback', _external=True,
                                      _scheme=http_scheme()),
                 grant_type='authorization_code')
     r = requests.post(token_uri, data=data)
@@ -72,7 +77,7 @@ def google_callback():
     else:
       if not user_info['verified_email']:
         return render_template('verify.html')
-      for pattern in app.config['ALLOWED_EMAILS']:
+      for pattern in current_app.config['ALLOWED_EMAILS']:
         if pattern.match(user_info['email']):
           user = User()
           user.name = user_info['name']

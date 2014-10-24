@@ -50,7 +50,11 @@ Apps.
 
 When you are done configuring, simply run
 ```
-./runserver.py --config settings.py
+./manage.py --config settings.py db upgrade
+```
+to initialize the database, then
+```
+./manage.py --config settings.py runserver
 ```
 to start the Jia server. Visit [http://localhost:8152](http://localhost:8152)
 (or whatever port you configured Jia to run on) in a browser and you should see
@@ -188,16 +192,30 @@ SCHEDULER_PORT = 8157
 SCHEDULER_DATABASE_URI = 'sqlite:///%s/scheduler.db' % APPROOT
 ```
 
-Always use the following command to start the scheduler. Never serve the
-scheduler app from another WSGI server (see the top of runscheduler.py
-for details).
+Before running the scheduler for the first time, the database must be initialized.
+This only needs to be done once.
+
 ```
-$ python runscheduler.py
+$ ./scheduler.py --config settings.py db upgrade
 ```
 
-#### `runscheduler.py` options
-* `--config` Specify a config file to override default settings.
-* `--port` Specify a port to run the scheduler on.
+Always use the following command to start the scheduler. Never serve the
+scheduler app from another WSGI server (see the top of [commands/runscheduler.py](commands/runscheduler.py)
+for details).
+```
+$ ./scheduler.py --config settings.py runserver
+```
+
+#### Scheduler options
+* `--config` Specify a config file to override default settings. Must immediately follow `./scheduler.py`.
+* `--port` Specify a port to run the scheduler on. Must follow the `runserver` command.
+
+Example:
+```
+$ ./scheduler.py --config settings.py runserver --port 8999
+```
+
+Try `./scheduler.py --help` for more info.
 
 ### Scheduling
 In addition to precompute tasks, you can send the scheduler any Python code
