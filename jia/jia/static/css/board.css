@@ -152,6 +152,10 @@ cpf, op, aggop, value, prop {
   vertical-align: middle;
 }
 
+cpf value {
+  margin-bottom: 0;
+}
+
 .operator-arg-set {
   margin-bottom: 5px;
 }
@@ -671,4 +675,11 @@ div.visualization-container {
 
 .reverse-order {
   margin-top: 10px;
+}
+
+.vqb-invalid button,
+.vqb-invalid input,
+input.vqb-invalid {
+  border: solid 1px red !important;
+  background: #ffeeee;
 }

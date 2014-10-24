@@ -122,11 +122,14 @@
     </div>
     <div class="code-box">
       <div class="error log alert alert-danger"
-           ng-if="panel.cache.log.errors.length">
+           ng-if="panel.cache.log.errors.length ||
+                  VQBHasErrors(panel) && panel.cache.hasBeenRun">
         <div class="alert-icon">
           <span class="glyphicon glyphicon-remove-sign"></span>
         </div>
         <ul>
+          <li ng-repeat="(message, count) in panel.cache.query_builder.validation"
+              ng-bind="message"></li>
           <li ng-repeat="message in panel.cache.log.errors"
               ng-bind-html="message"></li>
         </ul>
@@ -222,7 +225,9 @@
 
       <div class="code-controls query-builder"
            ng-show="panel.data_source.display">
-        <div class="stream">
+        <div class="stream"
+             ng-class="{'vqb-invalid': !panel.data_source.query.stream &&
+                                       panel.cache.hasBeenRun}">
           <ui-select ng-model="panel.data_source.query.stream"
                      theme="bootstrap">
             <ui-select-match placeholder="Stream">

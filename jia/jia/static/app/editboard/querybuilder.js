@@ -67,20 +67,123 @@
  * `schemas[index + 1]`. Because each step `$watch`es its input, and each
  * step's input is the previous step's output, a change anywhere will
  * immediately flow through all the following steps.
- * 
+ *
+ *
+ * Validation
+ * ----------
+ * A validation object for the query builder is located at:
+ * `panel.cache.query_builder.validation`. The keys of this object are the
+ * validation complaint strings and the values are integer counts. Each time
+ * the same complaint is filed, the count increments. This way, duplicate
+ * validation failures (e.g. 'Field cannot be blank') are not displayed
+ * multiple times to the user. The message disappears when all complaints of
+ * that type have been revoked.
+ *
+ * vqbInvalid() can be called on a directive's scope to check if an error state
+ * should be displayed in the UI (directive invalid && query has been run).
  */
-
 
 
 var qb = angular.module('jia.querybuilder', []);
 
-function findObjectInListBasedOnKey(list, keyName, keyVal) {
+qb.value('findObjectInListBasedOnKey', function (list, keyName, keyVal) {
   for (var i = 0; i < list.length; i++) {
     if (list[i][keyName] == keyVal) {
       return list[i];
     }
   }
-}
+});
+
+qb.value('makeComplaint', function (validation, complaint) {
+  /*
+   * File a complaint to a validation log. A count of each complaint type is
+   * maintained so that the complaint can be removed from the log when the
+   * number of remaining occurrences reaches 0.
+   *
+   * :param validation: A validation object. The keys are the complaints and
+   * the values are the counts.
+   * :param complaint: A string containing the validation complaint to be
+   * shown to the user.
+   */
+  if (complaint in validation) {
+    validation[complaint]++;
+  }
+  else {
+    validation[complaint] = 1;
+  }
+});
+
+qb.value('revokeComplaint', function (validation, complaint) {
+  /*
+   * Opposite of `makeComplaint`
+   *
+   * :param validation: A validation object. The keys are the complaints and
+   * the values are the counts.
+   * :param complaint: A string containing the validation complaint to be
+   * shown to the user.
+   */
+  if (validation[complaint]) {
+    validation[complaint]--;
+    if (validation[complaint] == 0) {
+      delete validation[complaint];
+    }
+  }
+});
+
+qb.value('EMPTY_COMPLAINT', 'One or more required fields are blank.');
+qb.value('POS_INT_COMPLAINT', 'Limit must be a positive integer.');
+
+qb.factory('nonEmpty', ['makeComplaint', 'revokeComplaint', 'EMPTY_COMPLAINT',
+/*
+ * Creates a validator for use with an ngModel $parser. Checks to make sure
+ * model's value is defined and non-empty.
+ */
+function (makeComplaint, revokeComplaint, EMPTY_COMPLAINT) {
+  return function (ngModel, validation, viewValue) {
+    var complaint = 'One or more required fields are blank.';
+    // If viewValue is undfined, some other validation failed. Therefore it's
+    // not blank!
+    if (typeof viewValue == 'undefined' || viewValue) {
+      if (ngModel.$error['complete']) {
+        revokeComplaint(validation, EMPTY_COMPLAINT);
+      }
+      ngModel.$setValidity('complete', true);
+      return viewValue;
+    }
+    else {
+      if (!ngModel.$error['complete']) {
+        makeComplaint(validation, EMPTY_COMPLAINT);
+      }
+      ngModel.$setValidity('complete', false);
+      return undefined;
+    }
+  };
+}]);
+
+qb.factory('posInt', ['makeComplaint', 'revokeComplaint', 'POS_INT_COMPLAINT',
+/*
+ * Creates a validator for use with an ngModel $parser. Zero is counted as a
+ * positive integer.
+ */
+function (makeComplaint, revokeComplaint, POS_INT_COMPLAINT) {
+  return function (ngModel, validation, viewValue) {
+    var num = ~~Number(viewValue);
+    if (String(num) === viewValue && num >= 0) {
+      if (ngModel.$error['posInteger']) {
+        revokeComplaint(validation, POS_INT_COMPLAINT);
+      }
+      ngModel.$setValidity('posInteger', true);
+      return viewValue;
+    }
+    else {
+      if (!ngModel.$error['posInteger']) {
+        makeComplaint(validation, POS_INT_COMPLAINT);
+      }
+      ngModel.$setValidity('posInteger', false);
+      return undefined;
+    }
+  };
+}]);
 
 qb.directive('querybuilder', function () {
   var controller = ['$scope', function($scope) {
@@ -109,6 +212,8 @@ qb.directive('querybuilder', function () {
 
         $scope.query.steps.push(newStep);
         $scope.nextStep = {};
+
+        $scope.panel.cache.hasBeenRun = false;
       }
     });
 
@@ -130,28 +235,7 @@ qb.directive('querybuilder', function () {
 qb.directive('step', function ($http, $compile) {
   /*
    * Single query step
-   * 
-   * :param step: Reference to step model
-   * :param schemas: Reference to schemas list for query (schema is different
-   * at each step)
-   * :param index: Zero-based index of this step in the query
-   * :param newop: Boolean specifying if this is an active query step or a
-   * "New Operation..." select element.
    */
-  var linker = function (scope, element, attrs, ngModel) {
-    if (scope.step.operation) {
-      scope.$watch(function () {
-        return scope.step.operation;
-      }, function (newVal, oldVal) {
-        $http.get(['static/app/editboard/operators',
-                   scope.step.operation.operator + '.html'].join('/'))
-          .success(function(data, status, headers, config) {
-            $(element).find('div.args').html(data);
-            $compile(element.contents())(scope);
-          });
-      });
-    }
-  }
 
   var controller = ['$scope', function($scope) {
     $scope.operations = [
@@ -192,7 +276,11 @@ qb.directive('step', function ($http, $compile) {
     if ($scope.step.operation) {
       // Keep track of all new schema properties created during this step
       $scope.step.fields = [];
-    
+   
+      // Make the input schema available to children who won't necessarily have
+      // the correct $index
+      $scope.schemaIndex = $scope.$index;
+
       // Initialize the output schema
       $scope.schemas[$scope.$index + 1] = {}; 
 
@@ -242,7 +330,7 @@ qb.directive('step', function ($http, $compile) {
         $scope.schemas[$scope.$index + 1] = schemaOut;
       };
       
-      $scope.updateSchema = function () {
+      $scope.updateSchema = _.debounce(function () {
         /*
          * Select schema transform type based on the type of operation being
          * performed in this step.
@@ -254,9 +342,10 @@ qb.directive('step', function ($http, $compile) {
           $scope.mergeSchema();
         }
         else {
-          $scope.schemas[$scope.index + 1] = $scope.schemas[$scope.$index];
+          $scope.schemas[$scope.$index + 1] = $scope.schemas[$scope.$index];
         }
-      };
+      }, 500);
+      $scope.updateSchema();
 
       // If the operation type changes, the output schema needs an update
       $scope.$watch(function () {
@@ -273,12 +362,14 @@ qb.directive('step', function ($http, $compile) {
     restrict: "E",
     templateUrl: '/static/app/editboard/step.html',
     controller: controller,
-    link: linker,
     scope: true
   };
 });
 
-qb.directive('cpf', function () {
+qb.directive('cpf', ['findObjectInListBasedOnKey', 'makeComplaint',
+                     'revokeComplaint', 'EMPTY_COMPLAINT',
+function (findObjectInListBasedOnKey, makeComplaint, revokeComplaint,
+          EMPTY_COMPLAINT) {
   /*
    * Constant/property/function
    *
@@ -293,16 +384,19 @@ qb.directive('cpf', function () {
     // Build a CPF data structure and upate the ng-model when the user changes
     // any of the inputs.
     scope.$watch(function () {
-      return [scope.func,
-              scope.type,
-              scope.name,
-              scope.value,
-              scope.args];
+      return [scope.cpf.func,
+              scope.cpf.type,
+              scope.cpf.name,
+              scope.cpf.value,
+              scope.cpf.args];
     }, function () {
       var args = [];
-      if (!scope.type) return;
-      _.each(scope.args, function (arg, index) {
-        var type = scope.func.options[index].type;
+      if (!scope.cpf.type) return;
+      if (scope.cpf.args.length != scope.cpf.func.options.length) {
+        scope.cpf.args = [];
+      }
+      _.each(scope.cpf.args, function (arg, index) {
+        var type = scope.cpf.func.options[index].type;
         var cpf = {
           'cpf_type': type
         };
@@ -315,38 +409,105 @@ qb.directive('cpf', function () {
         args.push(cpf);
       });
       var newVal = {
-        cpf_type: scope.type.type,
-        function_name: scope.func.value,
+        cpf_type: scope.cpf.type.type,
+        function_name: scope.cpf.func.value,
         function_args: args,
-        property_name: scope.name,
-        constant_value: scope.value
+        property_name: scope.cpf.name,
+        constant_value: scope.cpf.value
       };
       ngModel.$setViewValue(newVal);
     }, true);
 
-    var model = ngModel.$modelValue;
-    if (!model) {
-      ngModel.$setViewValue({});
+    ngModel.$render = function () {
+      var model = ngModel.$viewValue;
+      if (!model) {
+        ngModel.$setViewValue({});
+      }
+      else if (model.cpf_type) {
+        scope.cpf.type = findObjectInListBasedOnKey(scope.types, 'type',
+                                                    model.cpf_type);
+        scope.cpf.func = findObjectInListBasedOnKey(scope.functions, 'value',
+                                                    model.function_name);
+        _.each(model.function_args, function (arg, index) {
+          if ('property_name' in arg) {
+            scope.cpf.args.push(arg.property_name);
+          }
+          else if ('constant_value' in arg) {
+            scope.cpf.args.push(arg.constant_value);
+          }
+        });
+        scope.cpf.name = model.property_name;
+        scope.cpf.value = model.constant_value;
+      }
     }
-    else if (model.cpf_type) {
-      scope.type = findObjectInListBasedOnKey(scope.types, 'type',
-                                              model.cpf_type);
-      scope.func = findObjectInListBasedOnKey(scope.functions, 'value',
-                                               model.function_name);
-      _.each(model.function_args, function (arg, index) {
-        if (typeof model.property_name != 'undefined') {
-          scope.args.push(arg.property_name);
-        }
-        else if (typeof model.constant_value != 'undefined') {
-          scope.args.push(arg.constant_value);
-        }
-      });
-      scope.name = model.property_name;
-      scope.value = model.constant_value;
-    }
+    
+    ngModel.$parsers.unshift(function (viewValue) {
+      switch (viewValue.cpf_type) {
+        case 'property':
+          if (!viewValue.property_name) {
+            if (!ngModel.$error['complete']) {
+              makeComplaint(scope.panel.cache.query_builder.validation,
+                            EMPTY_COMPLAINT);
+            }
+            ngModel.$setValidity('complete', false);
+            return undefined;
+          }
+          else {
+            if (ngModel.$error['complete']) {
+              revokeComplaint(scope.panel.cache.query_builder.validation,
+                              EMPTY_COMPLAINT);
+            }
+            ngModel.$setValidity('complete', true);
+            return viewValue;
+          }
+          break;
+        case 'constant':
+          if (!viewValue.constant_value) {
+            if (!ngModel.$error['complete']) {
+              makeComplaint(scope.panel.cache.query_builder.validation,
+                            EMPTY_COMPLAINT);
+            }
+            ngModel.$setValidity('complete', false);
+            return undefined;
+          }
+          else {
+            if (ngModel.$error['complete']) {
+              revokeComplaint(scope.panel.cache.query_builder.validation,
+                              EMPTY_COMPLAINT);
+            }
+            ngModel.$setValidity('complete', true);
+            return viewValue;
+          }
+          break;
+        case 'function':
+          if (ngModel.$error['complete']) {
+            revokeComplaint(scope.panel.cache.query_builder.validation,
+                            EMPTY_COMPLAINT);
+          }
+          ngModel.$setValidity('complete', true);
+          return viewValue;
+          break;
+      }
+    });
+
+    scope.$on('$destroy', function () {
+      if (!ngModel.$valid) {
+        revokeComplaint(scope.panel.cache.query_builder.validation,
+                        EMPTY_COMPLAINT);
+      }
+    });
+
+    scope.vqbInvalid = function () {
+      if (scope.panel.cache.hasBeenRun && !ngModel.$valid) {
+        return true;
+      }
+      return false;
+    };
   };
 
   var controller = ['$scope', function ($scope) {
+    $scope.cpf = {};
+
     $scope.functions = [
       {
         name: 'Ceiling',
@@ -433,15 +594,15 @@ qb.directive('cpf', function () {
        * or make an HTTP endpoint for determining this info
        */
     ];
-    $scope.func = $scope.functions[0];
+    $scope.cpf.func = $scope.functions[0];
 
     $scope.types = [
       {name: 'Property', type: 'property'},
       {name: 'Constant', type: 'constant'},
       {name: 'Function', type: 'function'}
     ];
-    $scope.type = $scope.types[0];
-    $scope.args = [];
+    $scope.cpf.type = $scope.types[0];
+    $scope.cpf.args = [];
   }];
 
   return {
@@ -452,21 +613,24 @@ qb.directive('cpf', function () {
     scope: true,
     require: '?ngModel'
   };
-});
+}]);
 
-qb.directive('op', function () {
+qb.directive('op', ['findObjectInListBasedOnKey',
+function (findObjectInListBasedOnKey) {
   /*
    * Basic filter operator type select element (lt, gt, gte, eq, etc)
    */
   var linker = function (scope, element, attrs, ngModel) {
     if (!ngModel) return;
 
-    if (ngModel.$modelValue) {
-      var type = ngModel.$modelValue;
-      scope.type = findObjectInListBasedOnKey(scope.types, 'value', type);
-    }
-    else {
-      ngModel.$setViewValue(scope.type.value);
+    ngModel.$render = function () {
+      if (ngModel.$viewValue) {
+        var type = ngModel.$viewValue;
+        scope.type = findObjectInListBasedOnKey(scope.types, 'value', type);
+      }
+      else {
+        ngModel.$setViewValue(scope.type.value);
+      }
     }
 
     scope.$watch('type', function () {
@@ -498,21 +662,24 @@ qb.directive('op', function () {
     require: '?ngModel',
     scope: true
   };
-});
+}]);
 
-qb.directive('aggtype', function () {
+qb.directive('aggtype', ['findObjectInListBasedOnKey',
+function (findObjectInListBasedOnKey) {
   /*
    * Provides a dropdown list of aggregation types
    */
   var linker = function (scope, element, attrs, ngModel) {
     if (!ngModel) return;
 
-    if (ngModel.$modelValue) {
-      var val = ngModel.$modelValue;
-      scope.aggType = findObjectInListBasedOnKey(scope.aggTypes, 'value', val);
-    }
-    else {
-      ngModel.$setViewValue({});
+    ngModel.$render = function () {
+      if (ngModel.$viewValue) {
+        var val = ngModel.$viewValue;
+        scope.aggType = findObjectInListBasedOnKey(scope.aggTypes, 'value', val);
+      }
+      else {
+        ngModel.$setViewValue({});
+      }
     }
 
     scope.$watch('aggType', function () {
@@ -542,14 +709,18 @@ qb.directive('aggtype', function () {
     require: '?ngModel',
     scope: true
   };
-});
+}]);
 
-qb.directive('value', function () {
+qb.directive('value', ['posInt', 'nonEmpty', 'revokeComplaint',
+                       'EMPTY_COMPLAINT', 'POS_INT_COMPLAINT',
+function (posInt, nonEmpty, revokeComplaint,
+          EMPTY_COMPLAINT, POS_INT_COMPLAINT) {
   /*
    * Thin wrapper around <input>
    *
    * :param placeholder: (optional) Placeholder text for <input>
-   * :param type: (optional) TODO(derek): Not implemented
+   * :param type: (optional) Declare type `posInt` for positive integer
+   * validation 
    * :param altersSchema: (optional) Indicates that this value is creating a
    * new property on the schema
    *
@@ -568,19 +739,49 @@ qb.directive('value', function () {
     }
 
     if (ngModel) {
-      if (ngModel.$modelValue) {
-        scope.val = ngModel.$modelValue;
-      }
-      else {
-        ngModel.$setViewValue('');
+      ngModel.$render = function () {
+        if (ngModel.$viewValue) {
+          scope.val = ngModel.$viewValue;
+        }
+        else {
+          ngModel.$setViewValue('');
+        }
+ 
+        // Get unique ID from incrementing static `id`
+        var uid = id++;
+        scope.$watch('val', function () {
+          ngModel.$setViewValue(scope.val);
+          if ('altersSchema' in attrs) {
+            scope.step.fields[uid] = scope.val;
+          }
+        });
       }
 
-      // Get unique ID from incrementing static `id`
-      var uid = id++;
-      scope.$watch('val', function () {
-        ngModel.$setViewValue(scope.val);
-        if (attrs['alters-schema']) {
-          scope.step.fields[uid] = scope.val;
+      if (attrs['type'] == 'posInt') {
+        ngModel.$parsers.unshift(function (viewValue) {
+          return posInt(ngModel, scope.panel.cache.query_builder.validation,
+                        viewValue); 
+        });
+      }
+      
+      ngModel.$parsers.unshift(function (viewValue) {
+        return nonEmpty(ngModel, scope.panel.cache.query_builder.validation,
+                        viewValue);
+      });
+
+      scope.vqbInvalid = function () {
+        if (scope.panel.cache.hasBeenRun && !ngModel.$valid) {
+          return true;
+        }
+        return false;
+      };
+
+      scope.$on('$destroy', function () {
+        if (!ngModel.$valid) {
+          revokeComplaint(scope.panel.cache.query_builder.validation,
+                          EMPTY_COMPLAINT);
+          revokeComplaint(scope.panel.cache.query_builder.validation,
+                          POS_INT_COMPLAINT);
         }
       });
     }
@@ -593,7 +794,7 @@ qb.directive('value', function () {
     scope: true,
     require: '?ngModel'
   };
-});
+}]);
 
 qb.directive('direction', function () {
   /*
@@ -605,11 +806,13 @@ qb.directive('direction', function () {
       {name: 'Descending', type: 'desc'}
     ];
     
-    if (ngModel.$viewValue) {
-      scope.direction = ngModel.$viewValue;
-    }
-    else {
-      scope.direction = scope.directions[0];
+    ngModel.$render = function () {
+      if (ngModel.$viewValue) {
+        scope.direction = ngModel.$viewValue;
+      }
+      else {
+        scope.direction = scope.directions[0];
+      }
     }
 
     scope.$watch('direction', function () {

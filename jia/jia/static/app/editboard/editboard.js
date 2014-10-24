@@ -46,8 +46,10 @@ app.config(function(uiSelectConfig) {
 app.controller('BoardController',
 ['$scope', '$http', '$location', '$timeout', '$injector', '$routeParams',
  '$sce', '$sanitize', '$modal', '$rootScope', 'BoardTransport',
+ 'makeComplaint', 'revokeComplaint',
 function ($scope, $http, $location, $timeout, $injector, $routeParams,
-          $sce, $sanitize, $modal, $rootScope, BoardTransport) {
+          $sce, $sanitize, $modal, $rootScope, BoardTransport,
+          makeComplaint, revokeComplaint) {
   // TODO(marcua): Re-add the sweet periodic UI refresh logic I cut
   // out of @usmanm's code in the Angular rewrite.
   $scope.boardId = $routeParams.boardId;
@@ -215,6 +217,10 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     }
   };
 
+  $scope.VQBHasErrors = function (panel) {
+    return Object.keys(panel.cache.query_builder.validation).length > 0;
+  };
+
   $scope.callAllSources = function() {
     _.each($scope.boardData.panels, function(panel) {
       $scope.callSource(panel);
@@ -224,6 +230,12 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   $scope.callSource = function(panel) {
     panel.cache.loading = true;
     panel.cache.log.clear();
+    panel.cache.hasBeenRun = true;
+
+    if ($scope.VQBHasErrors(panel)) {
+      panel.cache.loading = false;
+      return;
+    }
 
     $http.post('/callsource', panel.data_source)
       .success(function(data, status, headers, config) {
@@ -251,13 +263,19 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       })
       .error(function(data, status, headers, config) {
         if (status == 400) {
-          panel.cache.log.error(data.message);
-          panel.cache.log.error(data.data.name + ": " + data.data.message);
-          var traceback = "";
-          _.each(data.data.traceback, function (trace) {
-            traceback += trace;
-          });
-          panel.cache.log.error(traceback, true);
+          if (panel.data_source.source_type == 'querybuilder') {
+            panel.cache.log.error('An unexpected error occurred while running'+
+                                  ' the query.');
+          }
+          else {
+            panel.cache.log.error(data.message);
+            panel.cache.log.error(data.data.name + ": " + data.data.message);
+            var traceback = "";
+            _.each(data.data.traceback, function (trace) {
+              traceback += trace;
+            });
+            panel.cache.log.error(traceback, true);
+          }
         }
         else if (status == 500) {
           panel.cache.log.error("Internal server error");
@@ -434,7 +452,9 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     panel.display.settings = panel.cache.visualization.settings;
 
     // Give the query builder a piece of cache
-    panel.cache.query_builder = {};
+    panel.cache.query_builder = {
+      'validation': {}
+    };
 
     // Flag to toggle bootstrap dropdown menu status
     panel.cache.visualizationDropdownOpen = false;
@@ -487,6 +507,17 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       return panel.data_source.query.stream;
     }, function (newVal, oldVal) {
       $scope.updateSchema(panel);
+      
+      // Validate the existence of a stream selection
+      var missingStreamComplaint = 'No stream selected.';
+      if (!newVal) {
+        makeComplaint(panel.cache.query_builder.validation,
+                      missingStreamComplaint);
+      }
+      else {
+        revokeComplaint(panel.cache.query_builder.validation,
+                        missingStreamComplaint);
+      }
     });
 
     $scope.$watch(function () {

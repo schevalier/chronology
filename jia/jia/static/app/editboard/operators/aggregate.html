@@ -1,11 +1,13 @@
 <div class="operator-arg-set"
      ng-repeat="aggregate in step.operation.operands.aggregates">
   <aggtype ng-model="aggregate.agg_type"></aggtype>
-  <span ng-if="aggregate.agg_type == 'count'">
-    of <cpf ng-model="aggregate.agg_on" type="property"></cpf>
+  <span ng-if="aggregate.agg_type == 'Count'">
+    of <cpf ng-model="aggregate.agg_on" type="property"
+            ng-class="{'vqb-invalid': vqbInvalid()}"></cpf>
   </span>
-  <span ng-if="aggregate.agg_type != 'count'">
-    of <cpf ng-model="aggregate.agg_on"></cpf>
+  <span ng-if="aggregate.agg_type != 'Count'">
+    of <cpf ng-model="aggregate.agg_on"
+            ng-class="{'vqb-invalid': vqbInvalid()}"></cpf>
   </span>
   <div class="eol-group">
     Store result in
@@ -14,6 +16,7 @@
            alters-schema>
     </value>
     <button class="btn btn-danger btn-xs"
+            ng-if="step.operation.operands.aggregates.length > 1"
             ng-click="removeOperand($index, step.operation.operands.aggregates)">
       &times;
     </button>
@@ -27,12 +30,13 @@
 <div><br><strong>Group by</strong></div>
 <div class="step.operation-arg-set"
      ng-repeat="group in step.operation.operands.groups" >
-  <cpf ng-model="group.field"></cpf>
+  <cpf ng-model="group.field" ng-class="{'vqb-invalid': vqbInvalid()}"></cpf>
   <div class="eol-group">
     Store result in
     <value ng-model="group.alias" alters-schema></value>
   </div>
   <button class="btn btn-danger btn-xs"
+          ng-if="step.operation.operands.groups.length > 1"
           ng-click="removeOperand($index, step.operation.operands.groups)">
     &times;
   </button>
