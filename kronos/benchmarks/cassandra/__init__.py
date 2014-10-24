@@ -3,6 +3,7 @@ from cassandra.protocol import ConfigurationException
 
 from benchmarks.cassandra import settings
 
+
 def clean():
   cluster = Cluster(settings.storage['cassandra']['hosts'])
   session = cluster.connect()

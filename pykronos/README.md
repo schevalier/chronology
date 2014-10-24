@@ -1,11 +1,13 @@
 # PyKronos
 
 ## Introduction
+
 The contents of this file can be found in `demo.py` and are compiled
 into `README.md`, so you can consume the readme while running the
 Python script to understand how it works.
 
-## Importing pykronos and some useful utilities
+## Importing PyKronos And Some Useful Utilities
+
 Check out `pykronos.client` and `pykronos.common.time` for some useful
 utility functions.  PyKronos has a bunch of utilities to deal with
 `datetime` objects.
@@ -19,17 +21,17 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil.tz import tzutc
 ```
+## Creating A Client
 
-## Creating a client
 Create a Kronos client with the URL of a running server.  Optionally
 provide a `namespace` to explicitly work with events in a particular
 namespace.
 ```python
-kc = KronosClient('http://localhost:8151', namespace='demo')
+kc = KronosClient('http://localhost:8151', namespace='kronos')
 start = datetime.now(tz=tzutc())
 ```
+### A Non-blocking Client
 
-### A nonblocking client
 Pass a `blocking=False` to the KronosClient constructor for a client
 that won't block on the Kronos server when you insert data.  A
 background thread will batch up data and send it to the server.  This
@@ -39,25 +41,27 @@ defaulting to `0.1` specifies how many seconds to wait between batches
 to the server.  If the process running the client crashes before
 flushing events, those events will be lost.
 ```python
-nonblocking = KronosClient('http://localhost:8151', namespace='demo',
+nonblocking = KronosClient('http://localhost:8151', namespace='kronos',
                            blocking=False)
 ```
+## Inserting Events
 
-## Inserting data
-Insert data with the `put` command.  The argument is a dictionary of
+Insert events with the `put` command.  The argument is a dictionary of
 stream names (e.g., `yourproduct.website.pageviews`) to a list of
 JSON-encodable dictionaries to insert to each stream.
 ```python
-kc.put({'yourproduct.website.pageviews': [
-         {'source': 'http://test.com',
-          'browser': {'name': 'Firefox', 'version': 26},
-          'pages': ['page1.html', 'page2.html']}],
-        'yourproduct.website.clicks': [
-         {'user': 40, 'num_clicks': 7},
-         {'user': 42, 'num_clicks': 2}]})
+kc.put(
+  {'yourproduct.website.pageviews': [
+      {'source': 'http://test.com',
+       'browser': {'name': 'Firefox', 'version': 26},
+       'pages': ['page1.html', 'page2.html']}],
+   'yourproduct.website.clicks': [
+      {'user': 40, 'num_clicks': 7},
+      {'user': 42, 'num_clicks': 2}]
+   })
 ```
+### Optionally Add A Timestamp
 
-### Optionally add a timestamp
 By default, each event will be timestamped on the client.  If you add
 a `TIMESTAMP_FIELD` argument, you can specify the time at which each
 event ocurred.
@@ -67,9 +71,9 @@ kc.put({'yourproduct.website.clicks': [
   {'user': 35, 'num_clicks': 10, TIMESTAMP_FIELD: optional_time}]})
 
 ```
+## Retrieving Events
 
-## Retrieving data
-Retrieving data requires a stream name, a start datetime, and an end
+Retrieving events requires a stream name, a start datetime, and an end
 datetime.  Note that an `ID_FIELD` and `@TIMESTAMP_FIELD` field are
 attached to each event.  The `ID_FIELD` is a UUID1-style identifier
 with its time bits derived from the timestamp.  This allows event IDs
@@ -83,8 +87,8 @@ for event in events:
   print 'Received event', event
   last_event_id = event[ID_FIELD]
 ```
+### Event Order
 
-### Event order
 By default, events are returned in ascending order of their
 `ID_FIELD`.  Pass in an`order=ResultOrder.DESCENDING` argument to
 change this behavior to be in descending order of `ID_FIELD`.
@@ -97,8 +101,8 @@ for event in events:
   print 'Reverse event', event
   last_event_id = event[ID_FIELD]
 ```
+### Limiting Events
 
-### Limiting events
 If you only want to retrieve a limited number of events, use the
 `limit` argument.
 ```python
@@ -111,15 +115,24 @@ for event in events:
   print 'Limited event', event
   last_event_id = event[ID_FIELD]
 ```
+## Getting A List Of Streams
 
-## Getting a list of streams
 To see all streams available in this namespace, use `get_streams`.
 ```python
 for stream in kc.get_streams():
   print 'Found stream', stream
 ```
+## Inferred Schema
 
-## Deleting data
+You can retrieve a schema for a stream. The schema is inferred from the
+structure of the individual events. The schema protocol is based on JSON Schema
+v4.
+```python
+response = kc.infer_schema('yourproduct.website.clicks')
+print response['schema']
+```
+## Deleting Events
+
 Sometimes, we make an oopsie and need to delete some events.  The
 `delete` function takes similar arguments for the start and end
 timestamps to delete.
@@ -130,8 +143,6 @@ backends will not be delete-optimized.  There's nothing in the Kronos
 API that inherently makes deletes not performant, but we imagine some
 backends will make tradeoffs to optimize their write and read paths at
 the expense of fast deletes.
-
-TODO(marcua): document `start_id` logic once we nail down the semantics.
 ```python
 kc.delete('yourproduct.website.clicks',
           start + timedelta(seconds=5),

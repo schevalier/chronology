@@ -1,2 +1,5 @@
 app.db
 settings.cfg
+jia/static/build
+jia/templates/build
+node_modules

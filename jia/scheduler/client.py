@@ -4,13 +4,18 @@ import urllib
 import urllib2
 import json
 from cStringIO import StringIO
-from werkzeug import Request
+from flask import current_app
 from scheduler.auth import create_token
-from scheduler import app
+from werkzeug import Request
 
-default_key = app.config['SECRET_KEY']
-default_url = "http://%s:%s" % (app.config['SCHEDULER_HOST'],
-                                app.config['SCHEDULER_PORT'])
+def default_key():
+  default_key = current_app.config['SECRET_KEY']
+  return default_key
+
+def default_url():
+  default_url = "http://%s:%s" % (current_app.config['SCHEDULER_HOST'],
+                                  current_app.config['SCHEDULER_PORT'])
+  return default_url
 
 
 def _send_with_auth(values, secret_key, url):
@@ -29,7 +34,8 @@ def _send_with_auth(values, secret_key, url):
 
   # Simulate a Flask request because that is what will be unpacked when the
   # request is received on the other side
-  request = Request.from_values(content_length=len(data),
+  request = Request.from_values(
+    content_length=len(data),
     input_stream=StringIO(data),
     content_type='application/x-www-form-urlencoded',
     method='POST')
@@ -42,12 +48,17 @@ def _send_with_auth(values, secret_key, url):
   return json.loads(response.read())
 
 
-def schedule(code, interval, secret_key=default_key, url=default_url):
+def schedule(code, interval, secret_key=None, url=None):
   """Schedule a string of `code` to be executed every `interval`
 
   Specificying an `interval` of 0 indicates the event should only be run
   one time and will not be rescheduled.
   """
+  if not secret_key:
+    secret_key = default_key()
+  if not url:
+    url = default_url()
+
   url = '%s/schedule' % url
   values = {
     'interval': interval,
@@ -56,8 +67,13 @@ def schedule(code, interval, secret_key=default_key, url=default_url):
   return _send_with_auth(values, secret_key, url)
 
 
-def cancel(task_id, secret_key=default_key, url=default_url):
+def cancel(task_id, secret_key=None, url=None):
   """Cancel scheduled task with `task_id`"""
+  if not secret_key:
+    secret_key = default_key()
+  if not url:
+    url = default_url()
+
   url = '%s/cancel' % url
   values = {
     'id': task_id,

@@ -22,9 +22,10 @@ class KronosServerTestCase(unittest.TestCase):
     self.get_path = '%s/get' % EVENT_BASE_PATH
     self.put_path = '%s/put' % EVENT_BASE_PATH
     self.delete_path = '%s/delete' % EVENT_BASE_PATH
-    self.index_path = '%s/index' % BASE_PATH    
+    self.index_path = '%s/index' % BASE_PATH
     self.streams_path = '%s/streams' % BASE_PATH
-  
+    self.infer_schema_path = '%s/streams/infer_schema' % BASE_PATH
+
   def index(self):
     response = self.http_client.get(path=self.index_path)
     self.assertEqual(response.status_code, 200)
@@ -50,7 +51,7 @@ class KronosServerTestCase(unittest.TestCase):
   def get(self, stream, start_time, end_time, start_id=None, limit=None,
           order=None, namespace=None):
     data = {'stream': stream, 'end_time': end_time}
-    
+
     if start_id:
       data['start_id'] = start_id
     else:
@@ -82,7 +83,7 @@ class KronosServerTestCase(unittest.TestCase):
     response = marshal.loads(response.data)
     self.assertTrue(response[SUCCESS_FIELD])
     return response
-    
+
   def get_streams(self, namespace=None):
     data = {}
     if namespace is not None:
@@ -91,4 +92,12 @@ class KronosServerTestCase(unittest.TestCase):
                                      data=marshal.dumps(data),
                                      buffered=True)
     self.assertEqual(response.status_code, 200)
-    return map(marshal.loads, response.data.splitlines())
+    return response.data.splitlines()
+
+  def infer_schema(self, stream, namespace=None):
+    response = self.http_client.post(
+      self.infer_schema_path,
+      data=marshal.dumps({'stream': stream, 'namespace': namespace}),
+      buffered=True)
+    self.assertEqual(response.status_code, 200)
+    return marshal.loads(response.data)

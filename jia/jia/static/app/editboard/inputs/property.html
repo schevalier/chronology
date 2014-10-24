@@ -1,0 +1,10 @@
+<ui-select ng-model="$parent.model"    
+           theme="bootstrap">    
+  <ui-select-match>    
+    {{ $select.selected }}
+  </ui-select-match> 
+  <ui-select-choices repeat="property in properties |    
+                             filter: $select.search">    
+    <div ng-bind-html="property | highlight: $select.search"></div>    
+  </ui-select-choices>
+</ui-select>

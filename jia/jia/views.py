@@ -1,16 +1,20 @@
 import binascii
 import os
 
+from flask import Blueprint
+from flask import current_app
 from flask import redirect
-from flask import request
+from flask import request, session
 from flask import render_template
-from jia import app
 from jia.auth import require_auth
 from jia.decorators import json_endpoint
-from jia.models import Board
+from jia.models import Board, User
 from jia.compute import QueryCompute, enable_precompute, disable_precompute
 from jia.utils import get_seconds
 from pykronos import KronosClient
+
+app = Blueprint('app', __name__)
+
 
 @app.route('/status', methods=['GET'])
 def status():
@@ -21,10 +25,19 @@ def status():
 
   return "OK"
 
+
 @app.route('/', methods=['GET'])
 @require_auth
 def index():
-  return render_template('index.html')
+  print "INDEX"
+  allow_pycode = str(current_app.config['ALLOW_PYCODE']).lower()
+  if current_app.config['DEBUG']:
+    template = 'index.html'
+  else:
+    template = os.path.join('build', 'index.html')
+
+  user = User.query.get(session['user'])
+  return render_template(template, pycode=allow_pycode, user=user)
 
 
 @app.route('/<board_id>', methods=['GET'])
@@ -42,15 +55,26 @@ def redirect_old_board_url(board_id=None):
 @json_endpoint
 @require_auth
 def streams():
-  client = KronosClient(app.config['KRONOS_URL'],
-                        namespace=app.config['KRONOS_NAMESPACE'])
-  kronos_streams = client.get_streams(namespace=app.config['KRONOS_NAMESPACE'])
-  kronos_streams = sorted(kronos_streams)
+  kc = KronosClient(current_app.config['KRONOS_URL'],
+                    namespace=current_app.config['KRONOS_NAMESPACE'])
+  kstreams = kc.get_streams(namespace=current_app.config['KRONOS_NAMESPACE'])
+  kstreams = sorted(kstreams)
   return {
-    'streams': kronos_streams,
+    'streams': kstreams,
   }
 
 
+@app.route('/streams/<stream_name>', methods=['GET'])
+@json_endpoint
+@require_auth
+def infer_schema(stream_name=None):
+  kc = KronosClient(current_app.config['KRONOS_URL'],
+                    namespace=current_app.config['KRONOS_NAMESPACE'])
+  schema = kc.infer_schema(stream_name,
+                           namespace=current_app.config['KRONOS_NAMESPACE'])
+  return schema
+   
+   
 @app.route('/boards', methods=['GET'])
 @json_endpoint
 @require_auth
@@ -166,14 +190,23 @@ def delete_board(id=None):
 def callsource(id=None):
   request_body = request.get_json()
   code = request_body.get('code')
+  query = request_body.get('query')
+  metis = request_body.get('source_type') == 'querybuilder'
   precompute = request_body.get('precompute')
   timeframe = request_body.get('timeframe')
-  bucket_width = get_seconds(precompute['bucket_width']['value'],
-                             precompute['bucket_width']['scale'])
 
-  task = QueryCompute(code, timeframe, bucket_width=bucket_width)
+  if precompute['enabled']:
+    bucket_width = get_seconds(precompute['bucket_width']['value'],
+                               precompute['bucket_width']['scale']['name'])
+  else:
+    bucket_width = None
+
+  if metis:
+    code = query
+
+  task = QueryCompute(code, timeframe, bucket_width=bucket_width, metis=metis)
   events = task.compute(use_cache=precompute['enabled'])
+
   response = {}
   response['events'] = events
   return response
-

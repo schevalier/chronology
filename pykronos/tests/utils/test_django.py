@@ -7,9 +7,11 @@ from django.http import HttpRequest
 from django.http import QueryDict
 
 from pykronos.client import ID_FIELD
+from pykronos.client import LIBRARY_FIELD
 from pykronos.client import TIMESTAMP_FIELD
 from pykronos.utils.django import KronosLoggingMiddleware
 from pykronos.common.time import kronos_time_now
+
 
 class KronosLoggingMiddlewareTest(unittest.TestCase):
   @classmethod
@@ -19,7 +21,7 @@ class KronosLoggingMiddlewareTest(unittest.TestCase):
 
   def setUp(self):
     from django.conf import settings
-    
+
     self.middleware = KronosLoggingMiddleware()
     self.stream = settings.KRONOS_MIDDLEWARE['stream']
     self.request = HttpRequest()
@@ -59,7 +61,7 @@ class KronosLoggingMiddlewareTest(unittest.TestCase):
     self.middleware.process_request(self.request)
     start_high = kronos_time_now()
 
-    time.sleep(0.2) # To get some deterministic `duration`.
+    time.sleep(0.2)  # To get some deterministic `duration`.
 
     if with_exception:
       try:
@@ -94,6 +96,7 @@ class KronosLoggingMiddlewareTest(unittest.TestCase):
     self.assertEqual(len(events), 1)
     event = events[0]
     del event[ID_FIELD]
+    del event[LIBRARY_FIELD]
     self.assertEqual(event, json.loads(json.dumps(self.request._kronos_event)))
 
   def test_request_flow_with_exception(self):

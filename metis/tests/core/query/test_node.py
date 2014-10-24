@@ -19,11 +19,11 @@ class NodeTestCase(unittest.TestCase):
     self.assertEqual(Value.parse(deepcopy(constant)).to_dict(), constant)
     self.assertEqual(Value.parse(deepcopy(_property)).to_dict(), _property)
     self.assertEqual(Value.parse(deepcopy(function)).to_dict(), function)
-    
+
     kronos = {'type': 'kronos', 'host': 'localhost', 'stream': 'mystream',
               'start_time': 100, 'end_time': 200}
     self.assertEqual(Stream.parse(deepcopy(kronos)).to_dict(), kronos)
-    
+
     condition_lt = {'op': 'lt', 'left': deepcopy(_property),
                     'right': deepcopy(constant)}
     condition_eq = {'op': 'eq', 'left': deepcopy(function),
@@ -36,21 +36,21 @@ class NodeTestCase(unittest.TestCase):
                      condition_eq)
     self.assertEqual(Condition.parse(deepcopy(condition_or)).to_dict(),
                      condition_or)
-    
+
     avg = {'op': 'avg', 'arguments': [deepcopy(_property)], 'alias': 'myavg'}
     count = {'op': 'count', 'alias': 'mycount'}
     self.assertEqual(Aggregator.parse(deepcopy(avg)).to_dict(), avg)
     self.assertEqual(Aggregator.parse(deepcopy(count)).to_dict(), count)
-    
+
     group_by = deepcopy(function)
     group_by['alias'] = 'mygroup'
     group_by = [group_by]
     self.assertEqual(GroupBy.parse(deepcopy(group_by)).to_dict(), group_by)
-    
+
     project = {'type': 'project', 'fields': [deepcopy(_property)],
                'stream': deepcopy(kronos)}
     _filter = {'type': 'filter', 'condition': condition_lt,
-              'stream': deepcopy(project)}
+               'stream': deepcopy(project)}
     aggregate = {'type': 'aggregate',
                  'group_by': deepcopy(group_by),
                  'aggregates': [deepcopy(avg), deepcopy(count)],

@@ -1,5 +1,5 @@
 *.py[co]
-*.*~
+*~
 .DS_Store
 ._.DS_Store
 .coverage
@@ -13,3 +13,4 @@ incubator-spark
 stream_names
 .sass-cache
 metis/pyspark
+node_modules/*

@@ -29,12 +29,13 @@ from kronos.utils.validate import is_pos_int
 
 
 INDEX_TEMPLATE = 'index.template'
-INDEX_PATTERN = '%Y.%m.%d' # YYYY.MM.DD for Kibana.
+INDEX_PATTERN = '%Y.%m.%d'  # YYYY.MM.DD for Kibana.
 LOGSTASH_TIMESTAMP_FIELD = '@timestamp'
 
 
 def _round_datetime_down(dt):
   return dt.replace(hour=0, minute=0, second=0, microsecond=0)
+
 
 def _round_datetime_up(dt):
   kwargs = {'tzinfo': dt.tzinfo or tzutc(),
@@ -53,7 +54,7 @@ def _round_datetime_up(dt):
   if kwargs['month'] > 12:
     kwargs['month'] = 1
     kwargs['year'] += 1
-    
+
   return datetime(**kwargs)
 
 
@@ -71,14 +72,14 @@ class IndexManager(object):
     self.alias_cache = defaultdict(lambda: InMemoryLRUCache(max_items=1000))
 
     self.update()
-    
+
     self.rollover_worker = gevent.spawn(self.update_periodic)
     atexit.register(self.kill_rollover_worker)
 
   def kill_rollover_worker(self):
     if not self.rollover_worker.ready():
       self.rollover_worker.kill()
-    
+
   def update_periodic(self):
     while True:
       try:
@@ -98,7 +99,7 @@ class IndexManager(object):
                             version=version,
                             refresh=True)
       except TransportError, e:
-        if e.status_code != 409: # VersionConflictEngineException?
+        if e.status_code != 409:  # VersionConflictEngineException?
           raise
         doc = self.es.get('%s:directory' % self.index_prefix,
                           namespace,
@@ -106,7 +107,7 @@ class IndexManager(object):
 
       self.alias_cache[namespace].clear()
       return rand, doc['_version']
-    
+
     docs = self.es.mget({'ids': list(self.namespaces)},
                         index='%s:directory' % self.index_prefix,
                         doc_type='idx')
@@ -242,7 +243,7 @@ class ElasticSearchStorage(BaseStorage):
     self.index_manager.add_aliases(namespace,
                                    index,
                                    start_dts_to_add)
-  
+
   def _delete(self, namespace, stream, start_id, end_time, configuration):
     """
     Delete events with id > `start_id` and end_time <= `end_time`.
@@ -255,21 +256,24 @@ class ElasticSearchStorage(BaseStorage):
           'filter': {
             'bool': {
               'should': [
-                {'range': {TIMESTAMP_FIELD: {'gt': start_time,
-                                             'lte': end_time}}},
-                {'bool': {
-                  'must': [
-                    {'range': {ID_FIELD: {'gt': str(start_id)}}},
-                    {'term': {TIMESTAMP_FIELD: start_time}}
+                {
+                  'range': {TIMESTAMP_FIELD: {'gt': start_time,
+                                              'lte': end_time}}
+                },
+                {
+                  'bool': {
+                    'must': [
+                      {'range': {ID_FIELD: {'gt': str(start_id)}}},
+                      {'term': {TIMESTAMP_FIELD: start_time}}
                     ]
                   }
-                 }
-                ]
-              }
+                }
+              ]
             }
           }
         }
       }
+    }
     query = {'index': self.index_manager.get_index(namespace),
              'doc_type': stream,
              'body': body_query,
@@ -286,8 +290,8 @@ class ElasticSearchStorage(BaseStorage):
     except Exception, e:
       return 0, [repr(e)]
 
-  def _retrieve(self, namespace, stream, start_id,
-                  end_time, order, limit, configuration):
+  def _retrieve(self, namespace, stream, start_id, end_time, order, limit,
+                configuration):
     """
     Yield events from stream starting after the event with id `start_id` until
     and including events with timestamp `end_time`.
@@ -301,7 +305,7 @@ class ElasticSearchStorage(BaseStorage):
     end_id = uuid_from_kronos_time(end_time, _type=UUIDType.HIGHEST)
     end_id.descending = start_id.descending = descending = (
       order == ResultOrder.DESCENDING)
-    
+
     start_time = uuid_to_kronos_time(start_id)
     body_query = {
       'query': {
@@ -309,15 +313,15 @@ class ElasticSearchStorage(BaseStorage):
           'query': {'match_all': {}},
           'filter': {
             'range': {TIMESTAMP_FIELD: {'gte': start_time, 'lte': end_time}}
-            }
           }
         }
       }
+    }
     order = 'desc' if descending else 'asc'
     sort_query = [
       '%s:%s' % (TIMESTAMP_FIELD, order),
       '%s:%s' % (ID_FIELD, order)
-      ]
+    ]
 
     last_id = end_id if descending else start_id
     scroll_id = None
@@ -349,6 +353,7 @@ class ElasticSearchStorage(BaseStorage):
           continue
         last_id = _id
         event = hit['_source']
+        del event[LOGSTASH_TIMESTAMP_FIELD]
         yield json.dumps(event)
         limit -= 1
         if limit == 0:

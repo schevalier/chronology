@@ -6,6 +6,7 @@ import sys
 
 from kronos.conf import settings
 
+
 def configure():
   log_dir = settings.node.log_directory.rstrip('/')
   if not os.path.exists(log_dir):
@@ -32,4 +33,3 @@ def configure():
   # following logger so we keep on seeing 'No handlers could be found for logger
   # "elasticsearch.trace"'. Fix that by piping it to NullHandler.
   logging.getLogger('elasticsearch.trace').addHandler(logging.NullHandler())
-  

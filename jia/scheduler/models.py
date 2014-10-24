@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from scheduler import db
 
+
 class Task(db.Model):
   """Scheduled Task
 

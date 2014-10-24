@@ -26,5 +26,5 @@ class QueryUtilsTestCase(unittest.TestCase):
         Add([Property('lolcat'),
              Constant(1),
              Add([Property('hello'), Constant(2)])])
-        ),
+      ),
       ['lolcat', 'hello'])

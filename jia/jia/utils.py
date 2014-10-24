@@ -1,6 +1,6 @@
 import smtplib
-from email.mime.text import MIMEText 
-from jia import app
+from email.mime.text import MIMEText
+from flask import current_app
 
 
 def get_seconds(value, scale):
@@ -18,13 +18,12 @@ def get_seconds(value, scale):
     'months': lambda x: x * 60 * 60 * 24 * 30,
     'years': lambda x: x * 60 * 60 * 24 * 365,
   }
-
   return scales[scale](value)
 
 
 def send_mail(recipients, subject, message, from_addr=None):
   if not from_addr:
-    from_addr = app.config['SYSTEM_EMAIL']
+    from_addr = current_app.config['SYSTEM_EMAIL']
   msg = MIMEText(message)
   msg['Subject'] = subject
   msg['From'] = from_addr

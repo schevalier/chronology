@@ -3,7 +3,6 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil.tz import tzutc
 
-from metis import app
 from metis.common.time import datetime_to_kronos_time
 from metis.common.time import kronos_time_to_datetime
 from metis.common.time import kronos_time_to_epoch_time
@@ -107,7 +106,7 @@ def cohort_queryplan(plan):
   """
   cohort = plan['cohort']
   action = plan['action']
-  kronos_url = plan.get('kronos_url', app.config['KRONOS_SERVER'])
+  kronos_url = plan['kronos_url']
 
   # Calculate the start and end dates, in Kronos time, of the
   # beginning and end of the cohort and action streams that will be
@@ -134,7 +133,7 @@ def cohort_queryplan(plan):
 
   left.alias = 'cohort'
   right.alias = 'action'
-  
+
   joined = Join(left,
                 right,
                 (Condition(Condition.Op.EQ,
@@ -157,7 +156,7 @@ def cohort_queryplan(plan):
                     Constant(DateUnit.unit_to_kronos_time(action['unit']))],
                    alias='action_step')]),
     [Count([], alias='count')]
-    )
+  )
 
   aggregated = Aggregate(
     user_aggregated,
@@ -176,8 +175,8 @@ def cohort_response(plan, events):
     cohort_date = (kronos_time_to_datetime(event[TIMESTAMP_FIELD])
                    .date()
                    .isoformat())
-    step = timedelta(seconds=
-                     kronos_time_to_epoch_time(int(event['action_step'])))
+    step = timedelta(
+      seconds=kronos_time_to_epoch_time(int(event['action_step'])))
     step = getattr(step, plan['action']['unit'])
     cohort[cohort_date]['action_dates'][step] = event['cohort_actions']
   return cohort

@@ -62,7 +62,7 @@ class TestKronosAPIs(KronosServerTestCase):
     events = self.get(stream, 0, 10)
     self.assertEqual(len(events), 10)
 
-    # Test put with mapping.    
+    # Test put with mapping.
     mapping = defaultdict(list)
     streams = ('TestKronosAPIs_test_put_mapping_1',
                'TestKronosAPIs_test_put_mapping_2',
@@ -76,7 +76,7 @@ class TestKronosAPIs(KronosServerTestCase):
         self.assertEqual(num, {'num_inserted': 10})
     for stream in streams:
       events = self.get(stream, 0, 10)
-      self.assertEqual(len(events), 10)    
+      self.assertEqual(len(events), 10)
 
   def test_get(self):
     stream = 'TestKronosAPIs_test_get'
@@ -147,7 +147,7 @@ class TestKronosAPIs(KronosServerTestCase):
 
     # Test get with `limit`.
     events = self.get(stream, 0, 4, limit=2)
-    self.assertEqual(len(events), 2)    
+    self.assertEqual(len(events), 2)
     self.assertEqual(events, sorted(events,
                                     key=lambda e: TimeUUID(e[ID_FIELD])))
     self.assertEqual(events[0][TIMESTAMP_FIELD], 1)
@@ -219,6 +219,14 @@ class TestKronosAPIs(KronosServerTestCase):
       self.assertEqual(num, {'num_deleted': 2})
     self.assertEqual(len(self.get(stream, 0, 4)), 0)
 
+    # Test inclusivity of `start_time` and `end_time`.
+    self.put(stream, event1 + event2 + event3)
+    self.assertEqual(len(self.get(stream, 0, 4)), 3)
+    response = self.delete(stream, 1, 2)
+    for num in response[stream].itervalues():
+      self.assertEqual(num, {'num_deleted': 3})
+    self.assertEqual(len(self.get(stream, 0, 4)), 0)
+
     # Test delete with `start_id`.
     self.put(stream, event2 + event3)
     start_id = self.get(stream, 0, 4, limit=1)[0][ID_FIELD]
@@ -229,19 +237,6 @@ class TestKronosAPIs(KronosServerTestCase):
     events = self.get(stream, 0, 4)
     self.assertEqual(len(events), 1)
     self.assertEqual(events[0][ID_FIELD], start_id)
-
-  def test_streams(self):
-    streams = {}
-    for i in range(10):
-      n = random.randint(1, 1000)
-      stream = 'TestKronosAPIs_test_streams_{}'.format(n)
-      self.put(stream, [{TIMESTAMP_FIELD: n, n: None, 'lol': 'cat'}])
-      streams[stream] = n
-    time.sleep(0.1)
-    retrieved_streams = {stream for stream in self.get_streams()
-                         if stream.startswith('TestKronosAPIs_test_streams_')}
-    self.assertEqual(len(retrieved_streams), 10)
-    self.assertEqual(retrieved_streams, set(streams))
 
   def test_namespaces(self):
     namespace1 = 'namespace1'
@@ -279,3 +274,36 @@ class TestKronosAPIs(KronosServerTestCase):
                         for e in self.get(stream, 0, 10, namespace=namespace1)))
     self.assertTrue(all(e['ns'] == 2
                         for e in self.get(stream, 0, 10, namespace=namespace2)))
+
+  def test_streams(self):
+    streams = {}
+    for i in range(10):
+      n = random.randint(1, 1000)
+      stream = 'TestKronosAPIs_test_streams_{}'.format(n)
+      self.put(stream, [{TIMESTAMP_FIELD: n, n: None, 'lol': 'cat'}])
+      streams[stream] = n
+    time.sleep(0.1)
+    retrieved_streams = {stream for stream in self.get_streams()
+                         if stream.startswith('TestKronosAPIs_test_streams_')}
+    self.assertEqual(len(retrieved_streams), 10)
+    self.assertEqual(retrieved_streams, set(streams))
+
+  def test_infer_schema(self):
+    events = [{'a': 1, TIMESTAMP_FIELD: 1},
+              {'a': 2.3, TIMESTAMP_FIELD: 2, 'optional': False}]
+    self.put('TestKronosAPIs_test_infer_schema', events)
+    time.sleep(0.1)
+    schema = self.infer_schema('TestKronosAPIs_test_infer_schema')
+    self.assertEqual(schema['stream'], 'TestKronosAPIs_test_infer_schema')
+    self.assertEqual(schema['schema']['required'],
+                     [ID_FIELD, TIMESTAMP_FIELD, 'a'])
+    self.assertEqual(sorted(schema['schema']['properties']),
+                     [ID_FIELD, TIMESTAMP_FIELD, 'a', 'optional'])
+    self.assertEqual(schema['schema']['properties'][ID_FIELD]['type'],
+                     'string')
+    self.assertEqual(schema['schema']['properties'][TIMESTAMP_FIELD]['type'],
+                     'integer')
+    self.assertEqual(schema['schema']['properties']['a']['type'],
+                     'number')
+    self.assertEqual(schema['schema']['properties']['optional']['type'],
+                     'boolean')

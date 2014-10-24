@@ -1,17 +1,19 @@
 from __future__ import absolute_import
 
+import atexit
 import datetime
 import gevent
 import gipc
 import traceback
 import sys
 
-from common.concurrent import GIPCExecutor
 from heapq import heappush, heappop, heapify
 from jia.errors import PyCodeError
 from jia.utils import send_mail
-from scheduler import app
+from scheduler import get_app
+from scheduler.common.concurrent import GIPCExecutor
 from scheduler.models import Task
+
 
 class Scheduler(object):
   """Inteval based code execution scheduler"""
@@ -36,7 +38,10 @@ class Scheduler(object):
 
     # Load previously scheduled tasks from database
     now = datetime.datetime.now()
-    saved_schedule = Task.query.filter_by(active=True)
+
+    with get_app().app_context():
+      saved_schedule = Task.query.filter_by(active=True)
+
     for task in saved_schedule:
       new_task = {
         'id': task.id,
@@ -52,8 +57,9 @@ class Scheduler(object):
 
     # Spawn main loop and save writer for future communication
     (read, write) = gipc.pipe()
-    gevent.spawn(self._loop, read)
+    self._main_thread = gevent.spawn(self._loop, read)
     self._schedule_pipe = write
+    atexit.register(self._interrupt)
 
   def schedule(self, task):
     """Pass schedule request to the main loop
@@ -75,13 +81,16 @@ class Scheduler(object):
     self._schedule_pipe.put(('cancel', task_id))
 
   def _schedule(self, task, next_run=None):
-    now = datetime.datetime.now()
     if not next_run:
       next_run = datetime.datetime.now()
     heappush(self._task_queue, (next_run, task))
 
   def _cancel(self, task_id):
     self._pending_cancels.add(task_id)
+
+  def _interrupt(self):
+    self._main_thread.kill()
+    #TODO(derek): kill child threads
 
   def _loop(self, reader):
     """Main execution loop of the scheduler.
@@ -125,7 +134,17 @@ class Scheduler(object):
               run_at = now + datetime.timedelta(seconds=int(task['interval']))
               self._schedule(task, next_run=run_at)
           else:
-            print "ERROR:", result.exception
+            err_msg = result.exception
+            sys.stderr.write("ERROR: %s" % err_msg)
+            email_msg = 'Task %s failed at %s\n\n%s' % (
+              task['id'],
+              datetime.datetime.now(),
+              err_msg
+            )
+            send_mail(get_app().config['SCHEDULER_FAILURE_EMAILS'],
+                      'Scheduler Failure',
+                      email_msg)
+
 
 def _execute(task):
   """A wrapper around exec
@@ -135,8 +154,9 @@ def _execute(task):
   """
   print "[%s] -- %s -- START" % (datetime.datetime.now(), task['id'])
   try:
-    exec task['code'] in {}, {}
-    print "[%s] -- %s -- COMPLETE" % (datetime.datetime.now(), task['id'])
+    with get_app().app_context():
+      exec task['code'] in {}, {}
+      print "[%s] -- %s -- COMPLETE" % (datetime.datetime.now(), task['id'])
   except Exception as e:
     if isinstance(e, PyCodeError):
       err_msg = "%s: %s\n%s" % (e.data['name'], e.data['message'],
@@ -149,7 +169,7 @@ def _execute(task):
     email_msg = 'Task %s failed at %s\n\n%s' % (task['id'],
                                                 datetime.datetime.now(),
                                                 err_msg)
-    send_mail(app.config['SCHEDULER_FAILURE_EMAILS'], 'Scheduler Failure',
-              email_msg)
+    send_mail(get_app().config['SCHEDULER_FAILURE_EMAILS'],
+              'Scheduler Failure', email_msg)
   finally:
     return task

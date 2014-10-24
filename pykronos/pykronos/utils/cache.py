@@ -11,6 +11,7 @@ from pykronos.common.time import kronos_time_to_datetime
 from pykronos.common.time import kronos_time_to_epoch_time
 from dateutil.tz import tzutc
 
+
 class QueryCache(object):
   """A Kronos-based cache for expensive time series query results.
 
@@ -50,10 +51,10 @@ class QueryCache(object):
   CACHE_KEY = 'cached'
 
   def __init__(self, client, query_function, bucket_width, scratch_namespace,
-               query_function_args=[], query_function_kwargs={}):
+               query_function_args=None, query_function_kwargs=None):
     """
     Initializes the query cache.
-    
+
     :param client: A Kronos client for reading/storing computed streams.
     :param query_function: A function that, given a `start_date` and
     `end_date` that align on `bucket_width` boundaries, returns an
@@ -71,11 +72,11 @@ class QueryCache(object):
     :param query_function_kwargs: An optional dict of kwargs to send to
     query_function.
     """
-    
+
     self._client = client
     self._query_function = query_function
-    self._query_function_args = query_function_args
-    self._query_function_kwargs = query_function_kwargs
+    self._query_function_args = query_function_args or []
+    self._query_function_kwargs = query_function_kwargs or {}
     self._bucket_width = int(bucket_width.total_seconds())
     if self._bucket_width != bucket_width.total_seconds():
       raise ValueError('bucket_width can not have subsecond granularity')
@@ -103,9 +104,8 @@ class QueryCache(object):
       binascii.b2a_hex(marshal.dumps(self._query_function.func_code)),
       str(self._query_function_args),
       str(self._query_function_kwargs),
-      ]
+    ]
     return hashlib.sha512('$'.join(query_details)).hexdigest()[:20]
-
 
   def _sanity_check_time(self, start_time, end_time):
     assert isinstance(start_time, datetime)
@@ -114,7 +114,8 @@ class QueryCache(object):
     # TODO(marcua): turn these into a value error
     if (((datetime_to_epoch_time(start_time) % self._bucket_width) != 0) or
         ((datetime_to_epoch_time(end_time) % self._bucket_width) != 0)):
-      raise ValueError('start_time and end_time must be on bucket_width boundaries')
+      raise ValueError('start_time and end_time must be on bucket_width '
+                       'boundaries')
 
   def _bucket_time(self, event_time):
     """
@@ -133,20 +134,19 @@ class QueryCache(object):
     Convert an iterable of events into an iterable of lists of events
     per bucket.
     """
-    
+
     current_bucket_time = None
     current_bucket_events = None
     for event in event_iterable:
       event_bucket_time = self._bucket_time(event[TIMESTAMP_FIELD])
-      if current_bucket_time == None or current_bucket_time < event_bucket_time:
-        if current_bucket_events != None:
+      if current_bucket_time is None or current_bucket_time < event_bucket_time:
+        if current_bucket_events is not None:
           yield current_bucket_events
         current_bucket_time = event_bucket_time
         current_bucket_events = []
       current_bucket_events.append(event)
-    if current_bucket_events != None and current_bucket_events != []:
+    if current_bucket_events is not None and current_bucket_events != []:
       yield current_bucket_events
-
 
   def _cached_results(self, start_time, end_time):
     """
@@ -213,13 +213,13 @@ class QueryCache(object):
     # happened before the untrusted time.
     current_cached_bucket = None
     for required_bucket in required_buckets:
-      if current_cached_bucket == None:
+      if current_cached_bucket is None:
         try:
           current_cached_bucket = cached_bucket_iterator.next()
         except StopIteration:
           pass
       emit_events = None
-      if (current_cached_bucket != None) and (
+      if (current_cached_bucket is not None) and (
           current_cached_bucket[0] == required_bucket):
         emit_events = current_cached_bucket[1]
         current_cached_bucket = None
@@ -262,7 +262,6 @@ class QueryCache(object):
 
     for event in events:
       yield event
-
 
   def retrieve_interval(self, start_time, end_time, compute_missing=False):
     """

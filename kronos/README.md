@@ -22,7 +22,7 @@ locally:
 ```bash
 git clone https://github.com/Locu/chronology.git
 cd chronology/kronos
-make installdeps
+sudo make installdeps
 python runserver.py --port 8151 --config settings.py.template --debug
 ```
 
@@ -34,7 +34,7 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil.tz import tzutc
 from pykronos.client import KronosClient
-kc = KronosClient('http://localhost:8151', namespace='demo')
+kc = KronosClient('http://localhost:8151', namespace='kronos')
 kc.put({'yourproduct.website.clicks': [
   {'user': 35, 'num_clicks': 10}]})
 for event in kc.get('yourproduct.website.clicks',
@@ -52,15 +52,28 @@ minutes.
 If you wish to see a more detailed example of the Kronos API, check
 out the more detailed [pykronos example](../pykronos/).
 
+If you would like to run kronos as a daemon, run `setup.py` to
+install `kronosd`.
+```
+sudo python setup.py install
+```
+Configure your settings in `/etc/kronos/settings.py` and
+`/etc/kronos/uwsgi.ini`. Logs can be found in `/var/log/kronos`.
+When everything is configured to your liking, run
+```
+sudo /etc/init.d/kronos start
+```
+You can also call `stop`, `restart`, or `force-reload` on that command.
+
 ## Settings details
 
-Take a look at [settings.py.template](settings.py.template).  We tried
+Take a look at [settings.py.template](kronos/conf/default_settings.py).  We tried
 to document all of the settings pretty thoroughly.  If anything is
 unclear, [file an issue](../../../issues?state=open) and we'll clarify!
 
 ## Backends
 
-### Memory 
+### Memory
 
 The in-memory backend is mostly used for testing.  Here's a
 sample `storage` configuration for it:
@@ -104,10 +117,8 @@ on the topic.  Here are what the parameters above mean:
 
   * `hosts` is a list of Cassandra nodes to connect to.
 
-  * `keyspace_prefix` is a prefix that identifies the keys in
-    Cassandra. We typically use it to run `kronos_dev`,
-    `kronos_staging`, and `kronos_production` keyspaces on the same
-    Cassandra cluster.
+  * `keyspace_prefix` is a prefix that is applied to each [KeySpace](http://www.datastax.com/documentation/cql/3.0/cql/cql_using/create_keyspace_c.html)
+    Kronos creates. A KeySpace is created for each configured `namespace`.
 
   * `replication_factor` is the number of Cassandra nodes to replicate
     each data item to.  Note that this value is set at the
@@ -142,11 +153,68 @@ on the topic.  Here are what the parameters above mean:
 
 ### ElasticSearch
 
-** Under construction---don't use it yet **
+Our ElasticSearch backend is designed to work well with [Kibana](http://www.elasticsearch.org/overview/kibana/).
+Most implementations of a time-series storage layers on top of ElasticSearch
+will create a new index per day (or some time interval); e.g. [Logstash](http://logstash.net/)
+does this. Our approach is a little different. We keep on writing events to an
+index till the number of events in it exceeds a certain limit and then rollover
+to a new index. In order to keep track of what indices contain data for what
+time ranges, we use ElasticSearch's [aliasing](http://www.elasticsearch.org/guide/xen/elasticsearch/reference/current/indices-aliases.html)
+feature to assign an alias for each day that the index might contain data for.
+This approach lets us be compatible with Kibana while at the same time
+controlling the number of indices being created over time. Here's a sample
+`storage` configuration:
+
+```python
+storage = {
+  'elasticsearch': {
+    'backend': 'elasticsearch.ElasticSearchStorage',
+    'hosts': [{'host': 'localhost', 'port': 9200}],
+    'index_template': 'kronos_test',
+    'index_prefix': 'kronos_test',
+    'shards': 1,
+    'replicas': 0,
+    'force_refresh': True,
+    'read_size': 10,
+    'rollover_size': 100,
+    'rollover_check_period_seconds': 2
+  }
+}
+```
+
+Here are what the parameters above mean:
+
+  * `hosts` is a list of ElasticSearch nodes to connect to.
+
+  * `index_template` is the name of the [template](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-templates.html)
+    Kronos creates in ElasticSearch. [This](kronos/storage/elasticsearch/index.template)
+    template is applied to all indices Kronos creates.
+
+  * `index_prefix` is a name prefix for all indices Kronos creates.
+
+  * `shards` is the number of shards Kronos creates for each index.
+
+  * `replicas` is the number of replicas Kronos creates for each index.
+
+  * `force_refresh` will flush the index being written to at the end of each
+    `put` request. This shouldn't be enabled for production environments; it
+    probably will hose your ElasticSearch cluster.
+
+  * `read_size` is the [scroll](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/scan-scroll.html)
+    size when retrieving events from ElasticSearch. It amounts to the number of
+    events fetched from ElasticSearch per request.
+
+  * `rollover_size` is the number of events after which Kronos will create a
+    new index and start writing events into the new index. This size is merely
+    a hint. Kronos periodically checks the number of events in the index it is
+    writing to and rolls it over when the number exceeds `rollover_size`.
+
+  * `rollover_check_period_seconds` is the interval after which a Kronos
+    instance checks to see if the index needs to be rolled over.
 
 ### S3
 
-** Under construction---don't use it yet **
+*Under construction -- check back later.*
 
 ## Deployment
 
@@ -213,7 +281,7 @@ difficult consistency and latency tradeoffs.  We imagine that many
 `delete` implementations, if implemented, will not be as performant or
 consistent as their `put` and `get` cousins.
 
-### Time-based 
+### Time-based
 
 Every event happens at a particular time.  You can insert events that
 happen at particular times (regardless of the current wall clock time)

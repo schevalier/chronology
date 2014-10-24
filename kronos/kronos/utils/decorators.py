@@ -21,10 +21,11 @@ ENDPOINTS = {}
 # decorator below for the various serving modes?
 _serving_mode_endpoints = {
   ServingMode.ALL: frozenset({'index', 'put_events', 'get_events',
-                              'delete_events', 'list_streams'}),
-  ServingMode.READONLY: frozenset({'index', 'get_events', 'list_streams'}),
+                              'delete_events', 'get_streams', 'infer_schema'}),
+  ServingMode.READONLY: frozenset({'index', 'get_events', 'get_streams',
+                                   'infer_schema'}),
   ServingMode.COLLECTOR: frozenset({'index', 'put_events'}),
-  }
+}
 
 
 def is_remote_allowed(remote):
@@ -50,7 +51,7 @@ def endpoint(url, methods=['GET']):
     # Always allow OPTIONS since CORS requests will need it.
     methods = set(methods)
     methods.add('OPTIONS')
-    
+
     @wraps(function)
     def wrapper(environment, start_response):
       try:
@@ -65,7 +66,7 @@ def endpoint(url, methods=['GET']):
                            'endpoint.'],
             SUCCESS_FIELD: False,
             TOOK_FIELD: '%fms' % (1000 * (time.time() - start_time))
-            })
+          })
         req_method = environment['REQUEST_METHOD']
 
         # If the request method is not allowed, return 405.
@@ -77,11 +78,11 @@ def endpoint(url, methods=['GET']):
             ERRORS_FIELD: ['%s method not allowed' % req_method],
             SUCCESS_FIELD: False,
             TOOK_FIELD: '%fms' % (1000 * (time.time() - start_time))
-            })
+          })
 
         headers = []
         remote_origin = environment.get('HTTP_ORIGIN')
-        
+
         if req_method == 'OPTIONS':
           # This is a CORS preflight request so check that the remote domain is
           # allowed and respond with appropriate CORS headers.
@@ -89,10 +90,11 @@ def endpoint(url, methods=['GET']):
           if is_remote_allowed(remote_origin):
             headers.extend([
               ('Access-Control-Allow-Origin', remote_origin),
-              ('Access-Control-Allow-Methods', ', '.join(methods)),
+              ('Access-Control-Allow-Credentials', 'true'),
               ('Access-Control-Allow-Headers', ', '.join(
-                ('Accept', 'Content-Type', 'Origin', 'X-Requested-With')))
-              ])
+                ('Accept', 'Content-Type', 'Origin', 'X-Requested-With'))),
+              ('Access-Control-Allow-Methods', ', '.join(methods))
+            ])
           # We just tell the client that CORS is ok. Client will follow up
           # with another request to get the answer.
           start_response('200 OK', headers)
@@ -101,7 +103,8 @@ def endpoint(url, methods=['GET']):
         # All POST bodies must be json, so decode it here.
         if req_method == 'POST':
           try:
-            environment['json'] = marshal.loads(environment['wsgi.input'].read())
+            environment['json'] = marshal.loads(environment['wsgi.input']
+                                                .read())
           except ValueError:
             start_response('400 Bad Request',
                            [('Content-Type', 'application/json')])
@@ -109,8 +112,8 @@ def endpoint(url, methods=['GET']):
               ERRORS_FIELD: ['Request body must be valid JSON.'],
               SUCCESS_FIELD: False,
               TOOK_FIELD: '%fms' % (1000 * (time.time() - start_time))
-              })
-        
+            })
+
         # All responses are JSON.
         headers.append(('Content-Type', 'application/json'))
 
@@ -130,7 +133,7 @@ def endpoint(url, methods=['GET']):
           ERRORS_FIELD: [repr(e)],
           SUCCESS_FIELD: False,
           TOOK_FIELD: '%fms' % (1000 * (time.time() - start_time))
-          })
+        })
 
     if settings.profile:
       wrapper = profile(wrapper)

@@ -30,7 +30,7 @@ class BaseStorage(object):
 
   def is_alive(self):
     raise NotImplementedError('Must implement `is_alive` method for %s' %
-                              self.__class__.__name__)    
+                              self.__class__.__name__)
 
   def insert(self, namespace, stream, events, configuration):
     self._insert(namespace, stream, events, configuration)
@@ -42,11 +42,12 @@ class BaseStorage(object):
   def delete(self, namespace, stream, start_time, end_time, start_id,
              configuration):
     if not start_id:
-      start_id = uuid_from_kronos_time(start_time, _type=UUIDType.LOWEST)
+      start_id = uuid_from_kronos_time(start_time - 1,
+                                       _type=UUIDType.HIGHEST)
     else:
       start_id = TimeUUID(start_id)
     if uuid_to_kronos_time(start_id) > end_time:
-      return 0      
+      return 0
     return self._delete(namespace, stream, start_id, end_time, configuration)
 
   def _delete(self, stream, start_id, end_time, configuration, namespace):
@@ -57,7 +58,7 @@ class BaseStorage(object):
                configuration, order=ResultOrder.ASCENDING, limit=sys.maxint):
     """
     Retrieves all the events for `stream` from `start_time` (inclusive) till
-    `end_time` (inclusive). Alternatively to `start_time`, `start_id` can be 
+    `end_time` (inclusive). Alternatively to `start_time`, `start_id` can be
     provided, and then all events from `start_id` (exclusive) till `end_time`
     (inclusive) are returned. `start_id` should be used in cases when the client
     got disconnected from the server before all the events in the requested
@@ -72,9 +73,9 @@ class BaseStorage(object):
       start_id = TimeUUID(start_id)
     if uuid_to_kronos_time(start_id) > end_time:
       return []
-    return self._retrieve(namespace, stream, start_id, end_time, order, limit, 
+    return self._retrieve(namespace, stream, start_id, end_time, order, limit,
                           configuration)
-  
+
   def _retrieve(self, namespace, stream, start_id, end_time, order, limit,
                 configuration):
     raise NotImplementedError('Must implement `_retrieve` method for %s.' %
@@ -91,7 +92,8 @@ class BaseStorage(object):
     """
       helper method used to clear the db during testing
     """
-    raise NotImplementedError('Must implement `_clear` method for %s' % self.__class__.__name__)
+    raise NotImplementedError('Must implement `_clear` method for %s' %
+                              self.__class__.__name__)
 
   def stop(self):
     """ The backend will be removed from the router. Stop any background

@@ -1,0 +1,37 @@
+<div class="modal-header">
+  <button type="button" class="close" ng-click="$close()" aria-hidden="true">
+    &times;
+  </button>
+  <h4 class="modal-title">Precompute Settings</h4>
+</div>
+<div class="modal-body precompute-settings">
+  Bucket width
+  <button class="btn btn-primary btn-sm btn-help"
+          popover="{{ bucketWidthHelpText }}"
+          popover-placement="bottom">
+    <span class="fa fa-question"></span>
+  </button>
+  <input type="number"
+         class="form-control"
+         ng-model="panel.data_source.precompute.bucket_width.value">
+  <selecter model="panel.data_source.precompute.bucket_width.scale"
+            options="timeScales">
+  </selecter>
+  <div class="untrusted-time"
+       ng-if="panel.data_source.timeframe.mode.value == 'recent'">
+    Trust data older than
+    <input type="number" class="form-control"
+           ng-model="panel.data_source.precompute.untrusted_time.value">
+    <selecter model="panel.data_source.precompute.untrusted_time.scale"
+              options="timeScales">
+    </selecter>
+  </div>
+</div>
+<div class="modal-footer"> 
+  <button type="button" class="btn btn-primary"
+          ng-click="$close()">
+    Done
+  </button>
+</div>
+
+

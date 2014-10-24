@@ -1,4 +1,17 @@
+import errno
+import os
 import sys
+
+# uWSGI is started by root, but this process runs as the kronos user.
+# This casuses permissions issues on the python egg cache, so we need to
+# create our own to avoid that.
+_KRONOS_EGG_CACHE = os.path.join(os.environ['HOME'], '.kronos_egg_cache')
+try:
+  os.mkdir(_KRONOS_EGG_CACHE)
+except OSError as e:
+  if e.errno != errno.EEXIST:
+    raise e
+os.environ['PYTHON_EGG_CACHE'] = _KRONOS_EGG_CACHE
 
 # If running as service, we must call all these patch functions.
 if 'gevent.monkey' not in sys.modules:
@@ -28,10 +41,11 @@ from kronos.core.validator import validate_stream
 from kronos.storage.router import router
 from kronos.utils.decorators import endpoint
 from kronos.utils.decorators import ENDPOINTS
+from kronos.utils.streams import infer_schema as _infer_schema
 
 log = logging.getLogger(__name__)
 
-  
+
 @endpoint('/1.0/index')
 def index(environment, start_response, headers):
   """
@@ -48,7 +62,7 @@ def index(environment, start_response, headers):
   for name, backend in router.get_backends():
     response['storage'][name] = {'alive': backend.is_alive(),
                                  'backend': settings.storage[name]['backend']}
-  
+
   start_response('200 OK', headers)
   return response
 
@@ -102,7 +116,7 @@ def put_events(environment, start_response, headers):
       result.get()
       response[stream][backend] = {
         'num_inserted': len(events_to_insert[stream])
-        }
+      }
     except Exception, e:
       log.exception('put_events: insertion to backend `%s` failed.', backend)
       success = False
@@ -145,7 +159,7 @@ def get_events(environment, start_response, headers):
     log.exception('get_events: stream validation failed for `%s`',
                   request_json.get('stream'))
     start_response('400 Bad Request', headers)
-    yield marshal.dumps({ERRORS_FIELD : [repr(e)],
+    yield marshal.dumps({ERRORS_FIELD: [repr(e)],
                          SUCCESS_FIELD: False})
     return
 
@@ -196,7 +210,7 @@ def delete_events(environment, start_response, headers):
       end_time : ending_time_as_kronos_time,
       start_id : only_delete_events_with_id_gte_me,
     }
-  Either start_time or start_id should be specified. 
+  Either start_time or start_id should be specified.
   """
   request_json = environment['json']
   try:
@@ -204,9 +218,9 @@ def delete_events(environment, start_response, headers):
     validate_stream(stream)
   except Exception, e:
     log.exception('delete_events: stream validation failed for `%s`.',
-              request_json.get('stream'))
+                  request_json.get('stream'))
     start_response('400 Bad Request', headers)
-    return {ERRORS_FIELD : [repr(e)]}
+    return {ERRORS_FIELD: [repr(e)]}
 
   namespace = request_json.get('namespace', settings.default_namespace)
   backends = router.backends_to_mutate(namespace, stream)
@@ -239,15 +253,15 @@ def delete_events(environment, start_response, headers):
 
   response = {request_json['stream']: response,
               SUCCESS_FIELD: success}
-  
+
   start_response('200 OK', headers)
   return response
 
 
 @endpoint('/1.0/streams', methods=['POST'])
-def list_streams(environment, start_response, headers):
+def get_streams(environment, start_response, headers):
   """
-  List all streams and their properties that can be read from Kronos right now.
+  List all streams that can be read from Kronos right now.
   POST body should contain a JSON encoded version of:
     { namespace: namespace_name (optional)
     }
@@ -259,8 +273,31 @@ def list_streams(environment, start_response, headers):
     for stream in backend.streams(namespace):
       if stream.startswith(prefix) and stream not in streams_seen_so_far:
         streams_seen_so_far.add(stream)
-        yield '{0}\r\n'.format(marshal.dumps(stream))
+        yield '{0}\r\n'.format(stream)
   yield ''
+
+
+@endpoint('/1.0/streams/infer_schema', methods=['POST'])
+def infer_schema(environment, start_response, headers):
+  """
+  Return the inferred schema of the requested stream.
+  POST body should contain a JSON encoded version of:
+    { stream: stream_name,
+      namespace: namespace_name (optional)
+    }
+  """
+  stream = environment['json']['stream']
+  namespace = environment['json'].get('namespace') or settings.default_namespace
+
+  start_response('200 OK', headers)
+  schema = _infer_schema(namespace, stream)
+  response = {
+    'stream': stream,
+    'namespace': namespace,
+    'schema': schema,
+    SUCCESS_FIELD: True
+  }
+  return response
 
 
 def application(environment, start_response):

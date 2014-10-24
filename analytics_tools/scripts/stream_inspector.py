@@ -37,6 +37,9 @@ def main(args):
     elif args.type == 'one-per-line':
       for event in results:
         print event
+    elif args.type == 'json-per-line':
+      for event in results:
+        print json.dumps(event)
   elif args.display == 'csv':
     writer = csv.DictWriter(sys.stdout, args.fields)
     if not args.remove_header:
@@ -68,7 +71,7 @@ def process_args():
   parser.add_argument('--end',
                       required=True,
                       help=('When to end retrieving? (format: '
-                            '2003-09-25T10:49:41.5-03:00)'))  
+                            '2003-09-25T10:49:41.5-03:00)'))
   parser.add_argument('--stream',
                       required=True,
                       help='The name of the stream to analyze')
@@ -83,7 +86,7 @@ def process_args():
       'print',
       help='Print the events, one per line, or JSON array')
   print_parser.add_argument('--type',
-                            choices=('json', 'one-per-line'),
+                            choices=('json', 'json-per-line', 'one-per-line'),
                             default='one-per-line')
   field_parser = subparsers.add_parser('csv',
                                        help=('Project out fields and print '
@@ -110,7 +113,7 @@ def process_args():
                                 type=int,
                                 required=True,
                                 help='The number of seconds to bucket events into')
-                                           
+
 
   args = parser.parse_args()
   args.start = parse(args.start)

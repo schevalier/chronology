@@ -21,6 +21,8 @@ def json_endpoint(function):
                             status=200,
                             mimetype='application/json')
         return response
+      except PyCodeError:
+        raise
       except:
         _, exception, tb = sys.exc_info()
         raise PyCodeError(exception, traceback.format_tb(tb))

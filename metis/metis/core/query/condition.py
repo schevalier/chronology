@@ -8,7 +8,7 @@ class Condition(Node):
     LT = 'lt'
     LTE = 'lte'
     GT = 'gt'
-    GTE ='gte'
+    GTE = 'gte'
     EQ = 'eq'
     CONTAINS = 'contains'
     IN = 'in'
@@ -55,7 +55,7 @@ class Condition(Node):
 
   def __and__(self, other):
     return self._combine_with(other, AndCondition)
-    
+
   def __or__(self, other):
     return self._combine_with(other, OrCondition)
 

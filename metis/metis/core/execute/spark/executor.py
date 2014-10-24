@@ -14,11 +14,9 @@ from copy import deepcopy
 
 from metis import app
 from metis.core.execute.base import Executor
-from metis.core.execute.utils import cast_to_number
 from metis.core.execute.utils import generate_filter
 from metis.core.execute.utils import get_properties_accessed_by_value
 from metis.core.execute.utils import get_value
-from metis.core.query.aggregate import Aggregator
 from metis.core.query.condition import Condition
 
 IGNORE_FILES_RE = re.compile('^.*\.pyc$', re.I)
@@ -41,7 +39,7 @@ def _copy_lib_for_spark_workers(file_path):
 def _setup_pyspark():
   # Set SPARK_HOME environment variable.
   os.putenv('SPARK_HOME', app.config['SPARK_HOME'])
-  # From Python docs: Calling putenv() directly does not change os.environ, so 
+  # From Python docs: Calling putenv() directly does not change os.environ, so
   # it's better to modify os.environ. Also some platforms don't support
   # os.putenv. We'll just do both.
   os.environ['SPARK_HOME'] = app.config['SPARK_HOME']
@@ -54,22 +52,35 @@ class SparkExecutor(Executor):
     # Setup PySpark. This is needed until PySpark becomes available on PyPI,
     # after which we can simply add it to requirements.txt.
     _setup_pyspark()
-    from pyspark import SparkContext
+    from pyspark.conf import SparkConf
+    from pyspark.context import SparkContext
+    from pyspark.serializers import MarshalSerializer
 
     # Create a temporary .zip lib file for Metis, which will be copied over to
     # Spark workers so they can unpickle Metis functions and objects.
     metis_lib_file = tempfile.NamedTemporaryFile(suffix='.zip', delete=False)
     metis_lib_file.close()
     _copy_lib_for_spark_workers(metis_lib_file.name)
-    
+
     # Also ship the Metis lib file so worker nodes can deserialize Metis
     # internal data structures.
-    self.context = SparkContext(app.config['SPARK_MASTER'],
-                                'Metis',
-                                pyFiles=[metis_lib_file.name])
+    conf = SparkConf()
+    conf.setMaster(app.config['SPARK_MASTER'])
+    conf.setAppName('chronology:metis')
+    parallelism = int(app.config.get('SPARK_PARALLELISM', 0))
+    if parallelism:
+      conf.set('spark.default.parallelism', parallelism)
+    self.context = SparkContext(conf=conf,
+                                pyFiles=[metis_lib_file.name],
+                                serializer=MarshalSerializer())
 
     # Delete temporary Metis lib file.
     os.unlink(metis_lib_file.name)
+
+    # We'll use this to parallelize fetching events in KronosStream.
+    # The default of 8 is from:
+    # https://spark.apache.org/docs/latest/configuration.html
+    self.parallelism = parallelism or 8
 
   def __getstate__(self):
     # Don't pickle the `SparkContext` object.
@@ -81,76 +92,34 @@ class SparkExecutor(Executor):
     return rdd.collect()
 
   def execute_kronos_stream(self, node):
-    # TODO(usmanm): Read time slices of events in parallel from worker nodes.
-    from pykronos import KronosClient
+    delta = (node.end_time - node.start_time) / self.parallelism
 
-    client = KronosClient(node.host, blocking=True)
-    events = client.get(node.stream,
-                        node.start_time,
-                        node.end_time,
-                        namespace=node.namespace)
-    return self.context.parallelize(events)
+    def get_events(i):
+      from pykronos import KronosClient
+      client = KronosClient(node.host, blocking=True)
+      start_time = node.start_time + (i * delta)
+      if i == self.parallelism - 1:
+        end_time = node.end_time
+      else:
+        end_time = start_time + delta - 1
+      return list(client.get(node.stream,
+                             start_time,
+                             end_time,
+                             namespace=node.namespace))
+
+    # XXX(usmanm): Does this preserve ordering? I ran a few simulations and it
+    # seems like ordering is preserved. Need to test on a multi-node cluster as
+    # well.
+    return self.context.parallelize(range(self.parallelism)).flatMap(get_events)
 
   def execute_aggregate(self, node):
-    def group(event):
-      # `key` can only be strings in Spark if you want to use `reduceByKey`.
-      new_event = {value.alias: get_value(event, value)
-                   for value in node.group_by.values}
-      key = json.dumps(new_event, sort_keys=True)
-      for aggregate in node.aggregates:
-        arguments = aggregate.arguments
-        if aggregate.op == Aggregator.Op.COUNT:
-          if not len(arguments):
-            value = 1
-          else:
-            value = 0 if get_value(event, arguments[0]) is None else 1
-        elif aggregate.op == Aggregator.Op.SUM:
-          value = cast_to_number(get_value(event, arguments[0]), 0)
-        elif aggregate.op == Aggregator.Op.MIN:
-          value = cast_to_number(get_value(event, arguments[0]), float('inf'))
-        elif aggregate.op == Aggregator.Op.MAX:
-          value = cast_to_number(get_value(event, arguments[0]), -float('inf'))
-        elif aggregate.op == Aggregator.Op.AVG:
-          value = cast_to_number(get_value(event, arguments[0]), None)
-          if value is None:
-            value = (0, 0)
-          else:
-            value = (value, 1)
-        new_event[aggregate.alias] = value
-      return (key, new_event)
-
-    def _reduce(event1, event2):
-      event = deepcopy(event1)
-      for aggregate in node.aggregates:
-        alias = aggregate.alias
-        if aggregate.op in (Aggregator.Op.COUNT, Aggregator.Op.SUM):
-          value = event1[alias] + event2[alias]
-        elif aggregate.op == Aggregator.Op.MIN:
-          value = min(event1[alias], event2[alias])
-        elif aggregate.op == Aggregator.Op.MAX:
-          value = max(event1[alias], event2[alias])
-        elif aggregate.op == Aggregator.Op.AVG:
-          value = (event1[alias][0] + event2[alias][0],
-                   event1[alias][1] + event2[alias][1])
-        event[alias] = value
-      return event
-
     def finalize(event):
       # `event` is of the form (key, event).
-      event = deepcopy(event[1])
-      for aggregate in node.aggregates:
-        if aggregate.op == Aggregator.Op.AVG:
-          alias = aggregate.alias
-          value = event[alias]
-          if not value[1]:
-            event[alias] = None
-          else:
-            event[alias] = value[0] / float(value[1])
-      return event
+      return node.finalize_func(event[1])
 
     return (self.execute(node.stream)
-            .map(group)
-            .reduceByKey(_reduce)
+            .map(node.group_func)
+            .reduceByKey(node.reduce_func)
             .map(finalize))
 
   def execute_filter(self, node):
@@ -214,7 +183,7 @@ class SparkExecutor(Executor):
 
     def setup_join():
       eq_join_key_values = []
-      
+
       # TODO(usmanm): Right now we only optimize if the conditional is an EQ or
       # if its an AND and has some EQ in the top level. We don't do any
       # recursive searching in condition trees. Improve that.
@@ -232,7 +201,7 @@ class SparkExecutor(Executor):
           condition.conditions = filter_conditions
         else:
           condition = None
-      elif _type != Condition.Type.OR: # Ignore ORs for now.
+      elif _type != Condition.Type.OR:  # Ignore ORs for now.
         value = get_equijoin_key_values(condition)
         if value:
           eq_join_key_values.append(value)
@@ -271,7 +240,7 @@ class SparkExecutor(Executor):
     return (self.execute(node.stream)
             .keyBy(lambda e: tuple(get_value(e, field)
                                    for field in node.fields))
-            .sortByKey(ascending=not node.reverse)
+            .sortByKey(ascending=node.order == node.ResultOrder.ASCENDING)
             .map(lambda e: e[1]))
 
   def execute_project(self, node):
@@ -283,4 +252,4 @@ class SparkExecutor(Executor):
       for field in node.fields:
         new_event[field.alias] = get_value(event, field)
       return new_event
-    return self.execute(node.stream).map(project)
+    return self.execute(node.stream).map(node.map_func)

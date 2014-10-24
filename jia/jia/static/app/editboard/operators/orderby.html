@@ -1,0 +1,20 @@
+<div class="operator-arg-set"
+     ng-repeat="field in step.operation.operands.fields">
+  <cpf ng-model="field.name"
+       exclude="constant"
+       ng-class="{'vqb-invalid': vqbInvalid()}">
+  </cpf>
+  <button class="btn btn-danger btn-xs"
+          ng-if="step.operation.operands.fields.length > 1"
+          ng-click="removeOperand($index, step.operation.operands.fields)">
+    &times;
+  </button>
+</div>
+<button class="btn btn-primary btn-xs"
+        ng-click="addOperand(step.operation.operands.fields)">
+  <span class="glyphicon glyphicon-plus"></span>
+  Add order by
+</button>
+<div class="reverse-order">
+  <direction ng-model="step.operation.operands.order"></direction>
+</div>

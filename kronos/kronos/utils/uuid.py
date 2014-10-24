@@ -21,4 +21,4 @@ def uuid_from_kronos_time(time, _type=UUIDType.RANDOM):
 
 
 LOWEST_UUID = timeuuid_from_time(0, UUIDType.LOWEST)
-HIGHEST_UUID = timeuuid_from_time(2**60 - 1, UUIDType.HIGHEST)
+HIGHEST_UUID = timeuuid_from_time(2 ** 60 - 1, UUIDType.HIGHEST)

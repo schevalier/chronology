@@ -14,12 +14,12 @@ REQUIREMENTS = [
   line.strip() for line in open(os.path.join(os.path.dirname(__file__),
                                              'requirements.txt')).readlines()
   if not line.startswith('git+')
-  ]
+]
 DEPDENDENCY_LINKS = [
   line.strip() for line in open(os.path.join(os.path.dirname(__file__),
                                              'requirements.txt')).readlines()
   if line.startswith('git+')
-  ]
+]
 
 # Add dependency_links to requires:
 for link in DEPDENDENCY_LINKS:
@@ -52,7 +52,7 @@ setup(name='kronos',
       author_email='devs@locu.com',
       cmdclass={
         'install': KronosInstall
-        },
+      },
       classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
@@ -60,8 +60,7 @@ setup(name='kronos',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
-        ],
+      ],
       scripts=[
         'run_kronos.py'
-        ]
-      )
+      ])

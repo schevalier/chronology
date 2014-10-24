@@ -41,6 +41,7 @@ Example usage:
   executor.shutdown()
 """
 
+
 # Monkey patch the default encoder for GIPC, so we can serialize functions
 # and pass them across IPC.
 def _gipc_encoder(obj):
@@ -84,7 +85,7 @@ class AbstractExecutor(object):
     task_id = self.current_task_id
     self.current_task_id += 1
     return Task(task_id, func, args, kwargs)
-  
+
   def async(self, func):
     """
     Decorator that will execute `func` asynchronously using this Executor and
@@ -204,7 +205,7 @@ class GIPCExecutor(AbstractExecutor):
     # use the `wait` function?
     results = self.results
     pool = Pool(size=len(self.procs))
-    
+
     def _read_loop(pipe):
       while True:
         result = pipe.get()
@@ -228,12 +229,12 @@ class GIPCExecutor(AbstractExecutor):
     # Event to indicate that there are some tasks in flight and so write_loop
     # should start waiting on their results.
     tasks_in_flight = Event()
-    
+
     def on_kill(signum, frame):
       pipe.put(None)
       return
 
-    signal.signal(signal.SIGINT, on_kill) # When server is terminated.
+    signal.signal(signal.SIGINT, on_kill)  # When server is terminated.
 
     def signal_tasks_in_flight():
       if not tasks_in_flight.is_set():
@@ -254,7 +255,7 @@ class GIPCExecutor(AbstractExecutor):
         result_to_id[task.result] = task.id
         executor._submit(task)
         signal_tasks_in_flight()
-        
+
     read_greenlet = Greenlet.spawn(read_loop)
 
     def write_loop():
@@ -292,7 +293,7 @@ class GIPCExecutor(AbstractExecutor):
     self.result_pool.join()
     for proc in self.procs:
       proc.join()
-  
+
   def _submit(self, task):
     pipe = self.pipes.next()
     self.results[task.id] = task.result

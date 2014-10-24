@@ -37,7 +37,7 @@ def execute_process_async(func, *args, **kwargs):
 def wait(results, num=None, timeout=None):
   """
   Wait for results of async executions to become available/ready.
-  
+
   `results`: List of AsyncResult instances returned by one of
              `execute_greenlet_async` or `execute_process_async`.
   `num`: Number of results to wait for. None implies wait for all results.

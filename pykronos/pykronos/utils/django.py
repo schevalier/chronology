@@ -15,11 +15,11 @@ class KronosLoggingMiddleware(object):
   FORWARDED_IP_FIELDS = {'HTTP_X_FORWARDED_FOR',
                          'HTTP_X_FORWARDED_HOST',
                          'HTTP_X_FORWARDED_SERVER'}
-  
+
   def __init__(self):
     from django.conf import settings
     from django.core.exceptions import ImproperlyConfigured
-    
+
     if not hasattr(settings, 'KRONOS_MIDDLEWARE'):
       raise ImproperlyConfigured
     kronos_config = settings.KRONOS_MIDDLEWARE
@@ -37,7 +37,7 @@ class KronosLoggingMiddleware(object):
     self.namespace = kronos_config.get('namespace')
     self.log_exception_stack_trace = kronos_config.get(
         'log_exception_stack_trace', False)
-    self.fail_silently = kronos_config.get('fail_silently', False)
+    self.fail_silently = kronos_config.get('fail_silently', True)
 
   def _get_ip(self, request):
     if not KronosLoggingMiddleware.FORWARDED_IP_FIELDS & set(request.META):
@@ -45,7 +45,7 @@ class KronosLoggingMiddleware(object):
     for field in KronosLoggingMiddleware.FORWARDED_IP_FIELDS:
       if field in request.META:
         return request.META[field].split(',')[-1].strip()
-  
+
   def process_request(self, request):
     request._kronos_event = {
       'start_time': time.time(),
@@ -53,7 +53,7 @@ class KronosLoggingMiddleware(object):
       'method': request.method.upper(),
       'path': request.path,
       'client_ip': self._get_ip(request)
-      }
+    }
     get_dict = request.GET.dict()
     if get_dict:
       request._kronos_event['get_params'] = get_dict
@@ -93,5 +93,5 @@ class KronosLoggingMiddleware(object):
         log.error('Failed to log event to Kronos.', exc_info=True)
       else:
         raise
-    
+
     return response

@@ -22,7 +22,7 @@ class Event(dict):
 
   def __eq__(self, other):
     return self.__cmp__(other) == 0
-  
+
   def __cmp__(self, other):
     return cmp(self.id, other.id)
 
@@ -37,14 +37,14 @@ class InMemoryStorage(BaseStorage):
   SETTINGS_VALIDATORS = {
     'max_items': is_pos_int,
   }
-  
+
   def __init__(self, name, namespaces, **settings):
     super(InMemoryStorage, self).__init__(name, namespaces, **settings)
     self.db = defaultdict(lambda: defaultdict(list))
 
   def is_alive(self):
     return True
-  
+
   def _insert(self, namespace, stream, events, configuration):
     """
     `stream` is the name of a stream and `events` is a list of
@@ -57,7 +57,7 @@ class InMemoryStorage(BaseStorage):
       while len(self.db[namespace][stream]) >= max_items:
         self.db[namespace][stream].pop(0)
       bisect.insort(self.db[namespace][stream], Event(_id, event))
-    
+
   def _delete(self, namespace, stream, start_id, end_time, configuration):
     """
     Delete events with id > `start_id` and end_time <= `end_time`.
@@ -96,9 +96,9 @@ class InMemoryStorage(BaseStorage):
     if stream_events[lo] == start_id_event:
       lo += 1
     hi = bisect.bisect_right(stream_events, end_id_event)
-    
+
     if order == ResultOrder.DESCENDING:
-      index_it = xrange(hi-1, lo-1, -1)
+      index_it = xrange(hi - 1, lo - 1, -1)
     else:
       index_it = xrange(lo, hi)
 

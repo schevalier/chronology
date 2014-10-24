@@ -16,7 +16,7 @@ from tests.conf import default_settings
 settings.update(default_settings)
 
 # Disable log handlers.
-import kronos.app
+import kronos.app  # noqa
 logging.root.handlers[:] = []
 logging.root.addHandler(logging.NullHandler())
 
@@ -30,7 +30,7 @@ TESTS = {
                               'elasticsearch',)),
   'conf': ('tests/conf', ('memory', )),
   'elasticsearch': ('tests/storage/elasticsearch', ('elasticsearch', )),
-  }
+}
 
 
 def use_backend(backend_name):
@@ -41,10 +41,10 @@ def use_backend(backend_name):
       '': {
         'backends': {
           backend_name: None
-          },
+        },
         'read_backend': backend_name
-        }
       }
+    }
   router.reload()
 
 

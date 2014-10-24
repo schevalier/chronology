@@ -16,3 +16,5 @@ readme: clean
 	python pykronos/common/readmeify.py < demo.py > README.md
 installdeps:
 	sudo pip install -r requirements.txt
+lint: clean
+	flake8 .

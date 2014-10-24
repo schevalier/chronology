@@ -15,13 +15,17 @@ This repository contains three loosely coupled projects:
 
 * [Jia](jia/) is a visualization, dashboarding, and data
   exploration tool.  It can speak with Kronos and Metis.  It answers
-  questions for humans, rather than for developers.
+  questions for humans, rather than just developers.
 
 ## Get running in 5 minutes
 
-Each of the links above has a "Get running in 5 minutes" section.  If
+Each of these projects has a "Get running in 5 minutes" section. If
 you can't get started with one of these systems in five minutes,
 contact us and we'll make sure you can!
+
+* [Getting started with Kronos](kronos/README.md#get-running-in-5-minutes)
+* [Getting started with Metis](metis/README.md#get-running-in-5-minutes)
+* [Getting started with Jia](jia/README.md#get-running-in-5-minutes)
 
 ## Contributing
 
@@ -69,7 +73,7 @@ reviewer comments 'LGTM' (looks good to me), bring the code into
 master with the following command (from your `feature-branch`):
 
 ```
-./push_branch.sh
+./push_branch.sh <commit message>
 ```
 
 Many many thanks for contributing!
