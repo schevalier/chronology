@@ -1,0 +1,4 @@
+.. _kronosjs:
+
+Kronos.js
+=========

@@ -48,14 +48,14 @@ def _get_errors(json_dict):
 
 class KronosClient(object):
   """
-  Initialize a Kronos client that can connect to a server at `http_url`
+  Initialize a Kronos client that can connect to a server at ``http_url``
 
-  Put requests are non-blocking if `blocking`=False.
-  If non-blocking, `sleep_block` specifies the frequency of
-    a background thread that flushes events to the server.
+  Put requests are non-blocking if ``blocking=False``.
+  If non-blocking, ``sleep_block`` specifies the frequency of
+  a background thread that flushes events to the server.
 
-  `chunk_size` is the number of bytes read at once into memory when fetching
-  events. For best performance it should be set equal to the `node.flush_size`
+  ``chunk_size`` is the number of bytes read at once into memory when fetching
+  events. For best performance it should be set equal to the ``node.flush_size``
   setting of the Kronos server.
   """
 
@@ -96,6 +96,7 @@ class KronosClient(object):
     PutThread().start()
 
   def flush(self):
+    """Needs documentation"""
     if self._blocking:
       return
     old_queue = None
@@ -144,25 +145,28 @@ class KronosClient(object):
     return response
 
   def index(self):
+    """Needs documentation"""
     return self._make_request(self._index_url)
 
   def put(self, event_dict, namespace=None):
     """
-    Sends a dictionary of `event_dict` of the form {stream_name:
-    [event, ...], ...}  to the server.
+    Sends a dictionary of ``event_dict`` of the form ``{stream_name:
+    [event, ...], ...}``  to the server.
 
-    The `blocking` parameter allows the request to block until the
+    The ``blocking`` parameter allows the request to block until the
     server responds, and returns some information on the response.
     Here's an example:
 
-    {u'stream_name_1': 3, u'stream_name_2': 1, u'@took': u'1ms'}
-      -> put 3 events on stream_name_1
-      -> put 1 event on stream_name_2
-      -> put took 1ms to complete
+    .. code-block:: python
 
-    If `blocking` is false and the process running the client ends
+        {u'stream_name_1': 3, u'stream_name_2': 1, u'@took': u'1ms'}
+          -> put 3 events on stream_name_1
+          -> put 1 event on stream_name_2
+          -> put took 1ms to complete
+
+    If ``blocking`` is false and the process running the client ends
     before flushing the pending data to the server, you might lose
-    that data.  Calling `flush` will block until all pending data has
+    that data.  Calling ``flush`` will block until all pending data has
     been acknowledged by the server.
     """
     # Copy the input, in case we need to modify it by adding a timestamp.
@@ -203,12 +207,12 @@ class KronosClient(object):
   def get(self, stream, start_time, end_time, start_id=None, limit=None,
           order=ResultOrder.ASCENDING, namespace=None, timeout=None):
     """
-    Queries a stream with name `stream` for all events between `start_time` and
-    `end_time` (both inclusive).  An optional `start_id` allows the client to
-    restart from a failure, specifying the last ID they read; all events that
-    happened after that ID will be returned. An optional `limit` limits the
-    maximum number of events returned.  An optional `order` requests results in
-    `ASCENDING` or `DESCENDING` order.
+    Queries a stream with name ``stream`` for all events between ``start_time``
+    and ``end_time`` (both inclusive).  An optional ``start_id`` allows the
+    client to restart from a failure, specifying the last ID they read; all
+    events that happened after that ID will be returned. An optional ``limit``
+    limits the maximum number of events returned.  An optional ``order``
+    requests results in ``ASCENDING`` or ``DESCENDING`` order.
     """
     if isinstance(start_time, types.StringTypes):
       start_time = parse(start_time)
@@ -266,10 +270,10 @@ class KronosClient(object):
 
   def delete(self, stream, start_time, end_time, start_id=None, namespace=None):
     """
-    Delete events in the stream with name `stream` that occurred between
-    `start_time` and `end_time` (both inclusive).  An optional `start_id` allows
-    the client to delete events starting from after an ID rather than starting
-    at a timestamp.
+    Delete events in the stream with name ``stream`` that occurred between
+    ``start_time`` and ``end_time`` (both inclusive).  An optional ``start_id``
+    allows the client to delete events starting from after an ID rather than
+    starting at a timestamp.
     """
     if isinstance(start_time, types.StringTypes):
       start_time = parse(start_time)
@@ -325,19 +329,21 @@ class KronosClient(object):
                    namespace=None):
     """
     Logs each call to the function as an event in the stream with name
-    `stream_name`. If `log_stack_trace` is set, it will log the stack trace
-    under the `stack_trace` key. `properties` is an optional mapping fron key
-    name to some function which expects the same arguments as the function
-    `function` being decorated. The event will be populated with keys in
-    `properties` mapped to the return values of the
-    `properties[key_name](*args, **kwargs)`.
+    ``stream_name``. If ``log_stack_trace`` is set, it will log the stack trace
+    under the ``stack_trace`` key. ``properties`` is an optional mapping fron
+    key name to some function which expects the same arguments as the function
+    ``function`` being decorated. The event will be populated with keys in
+    ``properties`` mapped to the return values of the
+    ``properties[key_name](*args, **kwargs)``.
     Usage:
 
-      @kronos_client.log_function('mystreamname',
-                                  properties={'a': lambda x, y: x,
-                                              'b': lambda x, y: y})
-      def myfunction(a, b):
-        <some code here>
+    .. code-block:: python
+
+        @kronos_client.log_function('mystreamname',
+                                    properties={'a': lambda x, y: x,
+                                                'b': lambda x, y: y})
+        def myfunction(a, b):
+          <some code here>
     """
     namespace = namespace or self.namespace
 
@@ -367,13 +373,14 @@ class KronosClient(object):
   def log_scope(self, stream_name, properties={}, log_scope_stack_trace=False,
                 log_exception_stack_trace=False, namespace=None):
     """
-    Identical to `log_function` except that `log_scope` is used to log blocks
-    of code. The API is identical except that keys in `properties` are mapped to
-    real values rather than getter functions. Usage:
+    Identical to ``log_function`` except that ``log_scope`` is used to log
+    blocks of code. The API is identical except that keys in ``properties`` are
+    mapped to real values rather than getter functions. Usage:
 
-      with kronos_client.log_scope('mystreamname', properties={ 'lol':'cat' },
-                                   log_scope_stack_trace=True):
-        <some code here>
+    .. code-block:: python
+        with kronos_client.log_scope('mystreamname', properties={ 'lol':'cat' },
+                                     log_scope_stack_trace=True):
+          <some code here>
     """
     start_time = time.time()
     namespace = namespace or self.namespace

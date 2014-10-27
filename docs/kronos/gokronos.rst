@@ -1,0 +1,5 @@
+.. _gokronos:
+
+GoKronos
+========
+
