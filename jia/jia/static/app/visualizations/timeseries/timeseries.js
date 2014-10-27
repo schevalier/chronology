@@ -15,14 +15,36 @@ module.factory('timeseries', function () {
       "//cdnjs.cloudflare.com/ajax/libs/d3/3.4.1/d3.min.js",
       "//cdnjs.cloudflare.com/ajax/libs/rickshaw/1.4.6/rickshaw.min.js",
       "//ngyewch.github.io/angular-rickshaw/rickshaw.js"
-    ],
+    ]
 
   };
 
   var visualization = function () {
 
     this.meta = meta;
-    this.series = [{name: 'series', data: [{x: 0, y: 0}]}];
+    this.data = [];
+    this.chart = {
+      data: {
+        xs: {},
+        columns: []
+      },
+      legend: {},
+      point: {
+        show: true 
+      },
+      tooltip: {
+        grouped: false
+      },
+      axis: {
+        x: {
+          type: 'timeseries',
+          tick: {
+            format: '%d-%m-%Y %H:%M:%S %Z',
+            count: 20 
+          }
+        }
+      }
+    };
 
     this.settings = {
       requiredFields: {
@@ -34,19 +56,10 @@ module.factory('timeseries', function () {
       }
     };
 
-    this.timeseriesOptions = {
-      renderer: 'line',
-      width: parseInt($('.panel').width() * .73),
-      interpolation: 'linear'
+    this.showAll = function () {
+      
     };
 
-    this.timeseriesFeatures = {
-      palette: 'spectrum14',
-      xAxis: {},
-      yAxis: {},
-      hover: {},
-    };
-    
     this.setData = function (data, msg) {
       // `data` should contain an `events` property, which is a list
       // of Kronos-like events.  An event has at least two fields `@time`
@@ -55,40 +68,41 @@ module.factory('timeseries', function () {
       // attribute will split the event stream into different
       // groups/series.  All events in the same `@series` will be
       // plotted on their own line.
-
-      // TODO(marcua): do a better job of resizing the plot given the
-      // legend size.
-      this.timeseriesOptions.width = parseInt($('.panel').width() * .73);
+      this.data = data;
 
       var timeField = this.settings.requiredFields['X-Axis'];
       var valueField = this.settings.requiredFields['Y-Axis'];
       var groupField = this.settings.optionalFields['Series'];
 
-      var compare = function (a, b) {
-        return a[timeField] - b[timeField];
-      }
-
-      data.events.sort(compare);
-
       var series = _.groupBy(data.events, function(event) {
         return event[groupField] || 'series';
       });
-      delete this.timeseriesFeatures.legend;
+      this.series = Object.keys(series);
 
-      if (_.size(series) > 0) {
-        series = _.map(series, function(events, seriesName) {
-          return {name: seriesName, data: _.map(events, function(event) {
-            return {x: event[timeField] * 1e-7, y: event[valueField]};
-          })}
-        });
-        if (_.size(series) > 1) {
-          this.timeseriesFeatures.legend = {toggle: true, highlight: true};
-        }
-      } else {
-        series = [{name: 'series', data: [{x: 0, y: 0}]}];
+      if (_.size(series) > 1) {
+        this.chart.legend['show'] = true;
       }
+      else {
+        this.chart.legend['show'] = false;
+      }
+      
+      var chartData = this.chart.data;
+      _.each(series, function (events, key) {
+        chartData.xs[key] = 'x' + key;
+        
+        var x = ['x' + key];
+        var y = [key];
 
-      this.series = series;
+        _.each(events, function(value, index) {
+          var d = new Date(0);
+          d.setUTCSeconds(value[timeField] * 1e-7);
+          x.push(d);
+          y.push(value[valueField]);
+        });
+
+        chartData.columns.push(x);
+        chartData.columns.push(y);
+      });
     }
   }
 

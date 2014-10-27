@@ -1,0 +1,40 @@
+Thu 16 October 2014
+===================
+c3.js from https://github.com/masayuki0812/c3 @ 313ed15dd14e31ff410939ce6af3a6974ab0c77d
+was modified to add necessary functionality for the timeseries visualization in Jia.
+The resulting minified JS has temporarily been added to lib/modified until a future
+release of c3.js supports this functionality.
+
+A pull request has been made: https://github.com/masayuki0812/c3/pull/633
+
+diff --git a/c3.js b/c3.js
+index d5eca1b..34a187e 100644
+--- a/c3.js
++++ b/c3.js
+@@ -2281,15 +2281,23 @@
+                 selectedData = sameXData.map(function (d) {
+                     return $$.addName(d);
+                 });
+-                $$.showTooltip(selectedData, mouse);
++
++                if (config.tooltip_grouped) {
++                    $$.showTooltip(selectedData, mouse);
++                }
++                else {
++                    $$.showTooltip([closest], mouse);
++                }
+ 
+                 // expand points
+                 if (config.point_focus_expand_enabled) {
+                     $$.expandCircles(closest.index, closest.id, true);
+                 }
+ 
+-                // Show xgrid focus line
+-                $$.showXGridFocus(selectedData);
++                if (config.tooltip_grouped) {
++                    // Show xgrid focus line
++                    $$.showXGridFocus(selectedData);
++                }
+ 
+                 // Show cursor as pointer if point is close to mouse position
+                 if ($$.dist(closest, mouse) < 100) {

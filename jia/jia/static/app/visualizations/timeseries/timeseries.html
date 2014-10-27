@@ -1,4 +1,11 @@
-<rickshaw rickshaw-options="module.timeseriesOptions"
-          rickshaw-features="module.timeseriesFeatures"
-          rickshaw-series="module.series">
-</rickshaw>
+<c3 chart="module.chart"></c3>
+<div class="legend-control" ng-show="module.chart.legend.show">
+  <button ng-click="module.chart.instance.show(module.series)"
+          class="btn">
+    Show All
+  </button>
+  <button ng-click="module.chart.instance.hide(module.series)"
+          class="btn">
+    Hide All
+  </button>
+</div>
