@@ -7,7 +7,7 @@ module.factory('gauge', function () {
     readableTitle: 'Gauge',
     template: 'gauge.html',
     css: [
-      '/static/visualizations/gauge/gauge.css'
+      '/static/app/board/visualizations/gauge/gauge.css'
     ]
   };
 

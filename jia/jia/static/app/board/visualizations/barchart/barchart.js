@@ -7,7 +7,7 @@ module.factory('barchart', function () {
     readableTitle: 'Bar Chart',
     template: 'barchart.html',
     css: [
-      '/static/visualizations/barchart/barchart.css'
+      '/static/app/board/visualizations/barchart/barchart.css'
     ],
   };
 
