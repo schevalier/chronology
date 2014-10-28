@@ -29,7 +29,6 @@ def status():
 @app.route('/', methods=['GET'])
 @require_auth
 def index():
-  print "INDEX"
   allow_pycode = str(current_app.config['ALLOW_PYCODE']).lower()
   if current_app.config['DEBUG']:
     template = 'index.html'
