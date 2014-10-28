@@ -12,7 +12,7 @@ angular.module('angular-c3', [])
           var container = $compile('<div></div>')(scope);
           element.append(container);
           scope.chart['bindto'] = container[0];
-          scope.chart['instance'] = c3.generate(scope.chart);
+          var chart = c3.generate(scope.chart);
         }
         
         scope.$watch('chart', function (val, prev) {
