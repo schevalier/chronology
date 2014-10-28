@@ -48,10 +48,15 @@ angular.module('angular-rickshaw', [])
                         var mainEl = angular.element(element);
                         mainEl.append(graphEl);
                         mainEl.empty();
+
                         var graphEl = $compile('<div></div>')(scope);
                         mainEl.append(graphEl);
+
                         var settings = getSettings(graphEl[0]);
                         graph = new Rickshaw.Graph(settings);
+
+                        var legendEl = $compile('<div></div>')(scope);
+                        mainEl.append(legendEl);
 
                         if (scope.features && scope.features.hover) {
                             var hoverConfig = {
@@ -67,8 +72,6 @@ angular.module('angular-rickshaw', [])
                                 settings.series[i].color = palette.color();
                             }
                         }
-
-                        graph.render();
 
                         if (scope.features && scope.features.xAxis) {
                             var xAxisConfig = {
@@ -94,8 +97,6 @@ angular.module('angular-rickshaw', [])
                         }
 
                         if (scope.features && scope.features.legend) {
-                            var legendEl = $compile('<div></div>')(scope);
-                            mainEl.append(legendEl);
 
                             var legend = new Rickshaw.Graph.Legend({
                                 graph: graph,
@@ -114,6 +115,13 @@ angular.module('angular-rickshaw', [])
                                 });
                             }
                         }
+
+                        var dynamicResize = _.debounce(function () {
+                            graph.configure({width: $(mainEl).width() - $(legendEl).innerWidth()});
+                            graph.render();
+                        }, 100);
+                        dynamicResize();
+                        $(window).resize(dynamicResize);
                     }
 
                     scope.$watch('options', function(newValue, oldValue) {

@@ -37,11 +37,13 @@ module.factory('timeseries', function () {
     this.timeseriesOptions = {
       renderer: 'line',
       width: parseInt($('.panel').width() * .73),
-      interpolation: 'linear'
+      interpolation: 'linear',
+      padding: {top: .2, bottom: .1},
+      min: 'auto'
     };
 
     this.timeseriesFeatures = {
-      palette: 'spectrum14',
+      palette: 'munin',
       xAxis: {},
       yAxis: {},
       hover: {},
@@ -55,10 +57,6 @@ module.factory('timeseries', function () {
       // attribute will split the event stream into different
       // groups/series.  All events in the same `@series` will be
       // plotted on their own line.
-
-      // TODO(marcua): do a better job of resizing the plot given the
-      // legend size.
-      this.timeseriesOptions.width = parseInt($('.panel').width() * .73);
 
       var timeField = this.settings.requiredFields['X-Axis'];
       var valueField = this.settings.requiredFields['Y-Axis'];
