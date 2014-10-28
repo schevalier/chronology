@@ -683,15 +683,3 @@ input.vqb-invalid {
   border: solid 1px red !important;
   background: #ffeeee;
 }
-
-.legend-control {
-  margin-left: 10px;
-}
-
-.c3-circles .c3-circle {
-  display: none;
-}
-
-.c3-circles .c3-circle._expanded_ {
-  display: block;
-}
