@@ -227,7 +227,7 @@ qb.directive('querybuilder', function () {
   
   return {
     restrict: 'E',
-    templateUrl: '/static/app/editboard/querybuilder.html',
+    templateUrl: '/static/app/board/querybuilder.html',
     controller: controller,
   };
 });
@@ -360,7 +360,7 @@ qb.directive('step', function ($http, $compile) {
 
   return {
     restrict: "E",
-    templateUrl: '/static/app/editboard/step.html',
+    templateUrl: '/static/app/board/step.html',
     controller: controller,
     scope: true
   };
@@ -607,7 +607,7 @@ function (findObjectInListBasedOnKey, makeComplaint, revokeComplaint,
 
   return {
     restrict: "E",
-    templateUrl: '/static/app/editboard/inputs/cpf.html',
+    templateUrl: '/static/app/board/inputs/cpf.html',
     controller: controller,
     link: linker,
     scope: true,
@@ -656,7 +656,7 @@ function (findObjectInListBasedOnKey) {
 
   return {
     restrict: "E",
-    templateUrl: '/static/app/editboard/inputs/op.html',
+    templateUrl: '/static/app/board/inputs/op.html',
     controller: controller,
     link: linker,
     require: '?ngModel',
@@ -703,7 +703,7 @@ function (findObjectInListBasedOnKey) {
 
   return {
     restrict: "E",
-    templateUrl: '/static/app/editboard/inputs/aggtype.html',
+    templateUrl: '/static/app/board/inputs/aggtype.html',
     controller: controller,
     link: linker,
     require: '?ngModel',
@@ -789,7 +789,7 @@ function (posInt, nonEmpty, revokeComplaint,
  
   return {
     restrict: "E",
-    templateUrl: '/static/app/editboard/inputs/input.html',
+    templateUrl: '/static/app/board/inputs/input.html',
     link: linker,
     scope: true,
     require: '?ngModel'
@@ -822,7 +822,7 @@ qb.directive('direction', function () {
 
   return {
     restrict: "E",
-    templateUrl: '/static/app/editboard/inputs/direction.html',
+    templateUrl: '/static/app/board/inputs/direction.html',
     link: linker,
     scope: true,
     require: '?ngModel'
@@ -845,7 +845,7 @@ qb.directive('property', function () {
   }];
   return {
     restrict: 'E',
-    templateUrl: '/static/app/editboard/inputs/property.html',
+    templateUrl: '/static/app/board/inputs/property.html',
     controller: controller,
     scope: {
       model: '=',
