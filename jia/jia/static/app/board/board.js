@@ -234,6 +234,9 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   };
 
   $scope.VQBHasErrors = function (panel) {
+    if (panel.data_source.source_type != 'querybuilder') {
+      return false;
+    }
     return Object.keys(panel.cache.query_builder.validation).length > 0;
   };
 

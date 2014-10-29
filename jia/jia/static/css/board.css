@@ -683,3 +683,20 @@ input.vqb-invalid {
   border: solid 1px red !important;
   background: #ffeeee;
 }
+
+rickshaw {
+  position: relative;
+}
+
+.rickshaw_legend {
+  position: absolute;
+  right: 0;
+}
+
+svg text {
+  stroke: none;
+}
+
+.x_tick.plain {
+  color: #000;
+}

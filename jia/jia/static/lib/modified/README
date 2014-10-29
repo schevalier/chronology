@@ -1,0 +1,9 @@
+Thu 28 October 2014
+-------------------
+https://github.com/ngyewch/angular-rickshaw @ 9358ccd61bb2c6aae5e040db33bdd08932602adb
+was modified to support automatic debounced redrawing of Rickshaw charts on
+window resize.
+
+A dependency to Underscore.js was added since Jia depends on it anyway. This
+is okay, because the changes here are not generally applicable enough to be
+pull-requested.
