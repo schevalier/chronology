@@ -212,6 +212,26 @@ Here are what the parameters above mean:
   * `rollover_check_period_seconds` is the interval after which a Kronos
     instance checks to see if the index needs to be rolled over.
 
+### SQLite
+
+The SQLite implementation is intended for easy initial deployment and testing,
+but is not suitable for production. The implementation stores all events in a
+single table with various indices to speed access. Here is a sample configuration:
+
+```python
+storage = {
+  'sqlite': {
+    'backend': 'sqlite.SqliteStorage',
+    'sqlite_database_path': '/tmp/kronos.sqlite',
+  }
+}
+```
+
+There is only one option for the SQLite backend: the path to the database file.
+
+  * `sqlite_database_path` The path to the database storing the events. The
+    database will get created if it is missing.
+
 ### S3
 
 *Under construction -- check back later.*

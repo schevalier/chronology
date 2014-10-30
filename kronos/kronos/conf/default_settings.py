@@ -34,6 +34,10 @@ storage = {
     'backend': 'memory.InMemoryStorage',
     'max_items': 100000,
   },
+  'sqlite': {
+    'backend': 'sqlite.SqliteStorage',
+    'sqlite_database_path': '/tmp/kronos.sqlite',
+  },
 }
 
 # Default namespace for clients that don't specify one on their requests.
