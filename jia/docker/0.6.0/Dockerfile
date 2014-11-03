@@ -4,14 +4,14 @@
 FROM ubuntu:14.04
 
 RUN apt-get update
-RUN apt-get install -y software-properties-common        
+RUN apt-get install -y software-properties-common
 RUN apt-add-repository -y ppa:chris-lea/node.js
 RUN apt-get update
 RUN apt-get install -y git python2.7 python-setuptools python-dev libevent-dev \
     nodejs supervisor python-pandas
 RUN git clone https://github.com/Locu/chronology.git chronology
 WORKDIR chronology/jia
-RUN git checkout de2001303d2e9c8c2287c9f8ead652e7516b10fc
+RUN git checkout 7b77fb32f846ea5dd8bd83296720aba3edc8f04c
 RUN easy_install pip
 RUN pip install -r requirements.txt
 RUN npm install -g grunt-cli
