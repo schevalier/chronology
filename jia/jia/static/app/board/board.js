@@ -25,7 +25,7 @@ app.factory('BoardTransport', function () {
     title: '',
     panels: []
   };
-  var data = emptyBoard;
+  var data = angular.copy(emptyBoard);
   return {
     setData: function (newData) {
       data = newData;
@@ -34,7 +34,7 @@ app.factory('BoardTransport', function () {
       return data;
     },
     reset: function () {
-      data = emptyBoard;
+      data = angular.copy(emptyBoard);
     }
   };
 });
