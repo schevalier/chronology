@@ -37,11 +37,16 @@ assert_single_arg "$@"
 git checkout master
 echo "> Pulling new changes from origin/master..."
 git pull origin master
-echo "> Merging $branch into master..."
+echo "> Squashing all changes in $branch into a single commit..."
 git merge --squash "$branch"
-echo "> Committing..."
+git branch -D "$branch"
+git checkout -b "$branch"
 git commit -am "$1"
+echo "> Force pushing commit to origin/$branch..."
+git push origin "$branch" --force
 echo "> Pushing commit to origin/master..."
+git checkout master
+git merge "$branch"
 git push origin master
 echo "> Cleaning up feature branch..."
 git branch -D "$branch"
