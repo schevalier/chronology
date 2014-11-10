@@ -70,9 +70,10 @@ class AbstractExecutor(object):
   An abstract class that provides methods to execute calls asynchronously. It
   should not be used directly, but through its concrete subclasses.
   """
-  def __init__(self):
+  def __init__(self, force_kill_on_shutdown=False):
     self.current_task_id = 0
     self.running = True
+    self.force_kill_on_shutdown = force_kill_on_shutdown
     atexit.register(self.shutdown)
 
   def __enter__(self):
@@ -145,8 +146,8 @@ class GreenletExecutor(AbstractExecutor):
   multiplexed on a single pthread, do NOT use this for compute-bound
   callables. Try using the GIPCExecutor instead.
   """
-  def __init__(self, num_greenlets=50):
-    super(GreenletExecutor, self).__init__()
+  def __init__(self, num_greenlets=50, **kwargs):
+    super(GreenletExecutor, self).__init__(**kwargs)
     self.pool = Pool(size=num_greenlets)
     self.task_queue = Queue()
     self.num_ready = 0
@@ -154,7 +155,10 @@ class GreenletExecutor(AbstractExecutor):
   def _shutdown(self):
     for _ in xrange(len(self.pool)):
       self.task_queue.put(None)
-    self.pool.join()
+    if self.force_kill_on_shutdown:
+      self.pool.kill()
+    else:
+      self.pool.join()
 
   def _worker_loop(self):
     try:
@@ -186,8 +190,9 @@ class GIPCExecutor(AbstractExecutor):
   Only use functions which don't have sockets and/or other process-dependant
   resources in their closure.
   """
-  def __init__(self, num_procs=multiprocessing.cpu_count(), num_greenlets=50):
-    super(GIPCExecutor, self).__init__()
+  def __init__(self, num_procs=multiprocessing.cpu_count(), num_greenlets=50,
+               **kwargs):
+    super(GIPCExecutor, self).__init__(**kwargs)
     self.procs = []
     self.pipes = []
     self.results = {}
@@ -290,9 +295,14 @@ class GIPCExecutor(AbstractExecutor):
     for _ in xrange(len(self.procs)):
       pipe = self.pipes.next()
       pipe.put(None)
-    self.result_pool.join()
-    for proc in self.procs:
-      proc.join()
+    if self.force_kill_on_shutdown:
+      self.result_pool.kill()
+      for proc in self.procs:
+        proc.terminate()
+    else:
+      self.result_pool.join()
+      for proc in self.procs:
+        proc.join()
 
   def _submit(self, task):
     pipe = self.pipes.next()

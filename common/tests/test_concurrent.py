@@ -91,3 +91,19 @@ class ExecutorTest(unittest.TestCase):
     self.assertTrue(wait_duration >= 0.2)
     self.assertTrue(wait_duration <= 0.25)
     self.assertEqual(result, 'lolcat')
+
+  def test_force_kill_on_shutdown(self):
+    for force_kill in (True, False):
+      executors = [GreenletExecutor(num_greenlets=1,
+                                    force_kill_on_shutdown=force_kill),
+                   GIPCExecutor(num_procs=1, num_greenlets=1,
+                                force_kill_on_shutdown=force_kill)]
+      start_time = time.time()
+      for executor in executors:
+        executor.submit(lambda: gevent.sleep(0.2))
+        executor.shutdown()
+      wait_duration = time.time() - start_time
+      if force_kill:
+        self.assertTrue(wait_duration < 0.4)
+      else:
+        self.assertTrue(wait_duration > 0.4)
