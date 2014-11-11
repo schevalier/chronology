@@ -1,14 +1,14 @@
 <div class="operator-arg-set"
      ng-repeat="field in step.operation.operands.fields">
+  <a class="remove-arg"
+     ng-if="step.operation.operands.fields.length > 1"
+     ng-click="removeOperand($index, step.operation.operands.fields)">
+    <span class="glyphicon glyphicon-remove"></span>
+  </a>
   <cpf ng-model="field.name"
        exclude="constant"
        ng-class="{'vqb-invalid': vqbInvalid()}">
   </cpf>
-  <button class="btn btn-danger btn-xs"
-          ng-if="step.operation.operands.fields.length > 1"
-          ng-click="removeOperand($index, step.operation.operands.fields)">
-    &times;
-  </button>
 </div>
 <button class="btn btn-primary btn-xs"
         ng-click="addOperand(step.operation.operands.fields)">

@@ -1,0 +1,31 @@
+.sidebar {
+  position: fixed;
+  top: $toolbar-height;
+  left: 0;
+  bottom: 0;
+  width: $sidebar-width;
+  padding: 0 15px 25px 15px;
+  color: $light-blue;
+  background: $wet-asphalt;
+  .title {
+    font-size: 11px;
+    margin: 25px 0 10px 0;
+  }
+  ul {
+    padding: 0;
+    list-style-type: none;
+    li {
+      padding: 10px 0;
+      a {
+        color: $light-blue;
+        span {
+          margin-right: 10px;
+          font-size: 11px;
+        }
+      }
+      a:hover {
+        text-decoration: none;
+      }
+    }
+  }
+}

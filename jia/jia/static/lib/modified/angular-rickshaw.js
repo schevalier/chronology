@@ -55,8 +55,6 @@ angular.module('angular-rickshaw', [])
                         var settings = getSettings(graphEl[0]);
                         graph = new Rickshaw.Graph(settings);
 
-                        var legendEl = $compile('<div></div>')(scope);
-                        mainEl.append(legendEl);
 
                         if (scope.features && scope.features.hover) {
                             var hoverConfig = {
@@ -97,7 +95,8 @@ angular.module('angular-rickshaw', [])
                         }
 
                         if (scope.features && scope.features.legend) {
-
+                            var legendEl = $compile('<div></div>')(scope);
+                            mainEl.append(legendEl);
                             var legend = new Rickshaw.Graph.Legend({
                                 graph: graph,
                                 element: legendEl[0]
@@ -117,7 +116,24 @@ angular.module('angular-rickshaw', [])
                         }
 
                         var dynamicResize = _.debounce(function () {
-                            graph.configure({width: $(mainEl).width() - $(legendEl).innerWidth()});
+                            var width;
+                            if (typeof legendEl != 'undefined') {
+                                width = $(mainEl).width() - $(legendEl).innerWidth();
+                                var ul = $(legendEl).find('ul');
+                                if (ul.innerHeight() > 250) {
+                                    graph.configure({
+                                        width: width,
+                                        height: ul.innerHeight()
+                                    });
+                                }
+                                else {
+                                    graph.configure({width: width});
+                                }
+                            }
+                            else {
+                                width = $(mainEl).width();
+                                graph.configure({width: width});
+                            }
                             graph.render();
                         }, 100);
                         dynamicResize();

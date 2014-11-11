@@ -1,17 +1,20 @@
 <div class="btn-group">
-  <selecter model="cpf.type" options="types" class="cpf"></selecter>
-  <input type="text"
-         class="form-control"
-         ng-if="cpf.type.type == 'constant'"
-         ng-model="cpf.value">
-  <property model="cpf.name"
-            schema="schemas[schemaIndex]"
-            ng-if="cpf.type.type == 'property'">
-  </property>
-  <selecter model="cpf.func"
-            options="functions"
-            ng-if="cpf.type.type == 'function'">
-  </selecter>
+  <div class="cpf-row">
+    <selecter model="cpf.type" options="types" class="cpf"></selecter>
+    <div class="constant-input" ng-if="cpf.type.type == 'constant'">
+      <input type="text"
+             class="form-control"
+             ng-model="cpf.value">
+    </div>
+    <property model="cpf.name"
+              schema="schemas[schemaIndex]"
+              ng-if="cpf.type.type == 'property'">
+    </property>
+    <selecter model="cpf.func"
+              options="functions"
+              ng-if="cpf.type.type == 'function'">
+    </selecter>
+  </div>
 </div>
 <value type="text"
        ng-if="cpf.type.type == 'function'"

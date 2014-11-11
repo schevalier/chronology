@@ -5,6 +5,7 @@ var app = angular.module('jia.board', ['ngSanitize',
                                        'ui.select',
                                        'selecter',
                                        'jia.querybuilder',
+                                       'jia.navigation',
                                        'jia.vis.timeseries',
                                        'jia.vis.table',
                                        'jia.vis.gauge',
@@ -62,10 +63,10 @@ app.config(function(uiSelectConfig) {
 app.controller('BoardController',
 ['$scope', '$http', '$location', '$timeout', '$injector', '$routeParams',
  '$sce', '$sanitize', '$modal', '$rootScope', 'BoardTransport', 'BoardService',
- 'makeComplaint', 'revokeComplaint',
+ 'ToolbarButtonService', 'makeComplaint', 'revokeComplaint',
 function ($scope, $http, $location, $timeout, $injector, $routeParams,
           $sce, $sanitize, $modal, $rootScope, BoardTransport, BoardService,
-          makeComplaint, revokeComplaint) {
+          ToolbarButtonService, makeComplaint, revokeComplaint) {
   // TODO(marcua): Re-add the sweet periodic UI refresh logic I cut
   // out of @usmanm's code in the Angular rewrite.
   $scope.boardId = $routeParams.boardId;
@@ -398,21 +399,31 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       });
   };
 
-  $scope.forkModal = function () {
-    $scope.forkName = 'Fork of ' + $scope.boardData.title;
-    $scope.forkModalInstance = $modal.open({
-      templateUrl: 'static/app/board/modals/namefork.html',
-      scope: $scope   
+  $scope.panelSettingsModal = function (panel) {
+    var scope = $scope.$new();
+    scope.panel = panel;
+    $scope.panelSettingsModalInstance = $modal.open({
+      templateUrl: 'static/app/board/modals/panelsettings.html',
+      scope: scope,
+      size: 'lg'
     });
   };
 
-  $scope.forkBoard = function (newTitle) {
-    var forkData = {};
-    jQuery.extend(forkData, $scope.boardData); 
-    forkData['title'] = newTitle;
-    BoardTransport.setData(forkData);
+  $scope.duplicateBoardModal = function () {
+    $scope.duplicateBoardName = 'Duplicate of ' + $scope.boardData.title;
+    $scope.duplicateBoardModalInstance = $modal.open({
+      templateUrl: 'static/app/board/modals/nameduplicate.html',
+      scope: $scope 
+    });
+  };
+
+  $scope.duplicateBoard = function (newTitle) {
+    var copyData = {};
+    jQuery.extend(copyData, $scope.boardData); 
+    copyData['title'] = newTitle;
+    BoardTransport.setData(copyData);
     $location.path('/boards/new');
-    $scope.forkModalInstance.close();
+    $scope.duplicateBoardModalInstance.close();
   };
   
   $scope.deleteBoard = function () {
@@ -422,21 +433,10 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
         .success(function (data, status, headers, config) {
           if (data.status == 'success') {
             $scope.deleting = true;
-            $location.path('/boards/new');
+            $location.path('/boards');
           }
         });
     }
-  };
-
-  $scope.precomputeModal = function (panel) {
-    scope = $rootScope.$new();
-    scope.panel = panel;
-    scope.bucketWidthHelpText = $scope.bucketWidthHelpText;
-    scope.timeScales = $scope.timeScales;
-    $modal.open({
-      templateUrl: 'static/app/board/modals/precompute.html',
-      scope: scope
-    });
   };
 
   $scope.initPanel = function(panel) {
@@ -596,6 +596,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   $scope.addPanel = function() {
     $scope.boardData.panels.unshift($scope.newPanelObj());
     $scope.initPanel($scope.boardData.panels[0]);
+    $scope.panelSettingsModal($scope.boardData.panels[0]);
   };
   
   $scope.dateTimeFormat = 'MMM DD YYYY HH:mm:ss';
@@ -665,8 +666,11 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     $scope.boardData = BoardTransport.getData();
     BoardTransport.reset();
     if ($scope.boardData.panels.length) {
-      // If it is coming from a fork, it needs to be saved.
+      // If it is coming from a duplication, it needs to be saved.
       $scope.saveBoard();
+    }
+    else {
+      $scope.addPanel();
     }
   }
 
@@ -690,7 +694,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     }
   });
 
-  Mousetrap.bind(['ctrl+s', 'meta+s'], function(e) {
+  Mousetrap.bindGlobal(['ctrl+s', 'meta+s'], function(e) {
     if (e.preventDefault) {
       e.preventDefault();
     } else {
@@ -699,6 +703,43 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     }
     $scope.saveBoard();
   });
+
+  $scope.saveHidden = function () {
+    return $scope.boardId == 'new' && !$scope.boardHasChanges;
+  };
+
+  $scope.saveDisabled = function () {
+    if ($scope.boardId == 'new') {
+      return false;
+    }
+    return !$scope.boardHasChanges;
+  };
+
+  $scope.duplicateDeleteHidden = function () {
+    return $scope.boardId == 'new';
+  };
+
+  ToolbarButtonService.setButtons([
+    {
+      'title': 'Save',
+      'icon': 'ti-save',
+      'action': $scope.saveBoard,
+      'disabled': $scope.saveDisabled,
+      'hidden': $scope.saveHidden
+    },
+    {
+      'title': 'Duplicate',
+      'icon': 'ti-files',
+      'action': $scope.duplicateBoardModal,
+      'hidden': $scope.duplicateDeleteHidden
+    },
+    {
+      'title': 'Delete',
+      'icon': 'ti-trash',
+      'action': $scope.deleteBoard,
+      'hidden': $scope.duplicateDeleteHidden
+    }
+  ]);
 }]);
 
 app.directive('visualization', function ($http, $compile) {

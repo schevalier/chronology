@@ -1,7 +1,8 @@
 var jia = angular.module('jia', [
   'ngRoute',
   'jia.board',
-  'jia.boardlist'
+  'jia.boardlist',
+  'jia.navigation'
 ]);
 
 jia.config(['$routeProvider',
@@ -16,7 +17,7 @@ jia.config(['$routeProvider',
         controller: 'BoardController'
       }).
       otherwise({
-        redirectTo: '/boards/new'
+        redirectTo: '/boards'
       });
   }
 ]);

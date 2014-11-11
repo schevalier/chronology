@@ -1,0 +1,70 @@
+::-moz-selection {
+  background: #fe57a1;
+  color: #fff;
+  text-shadow: none;
+}
+
+::selection {
+  background: #fe57a1;
+  color: #fff;
+  text-shadow: none;
+}
+
+body {
+  padding: 50px 0 0 200px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 100;
+  background: #f1f4f9;
+}
+
+.stage {
+  padding: 20px;
+}
+
+.loader {
+  font-size: 32px;
+  text-align: center;
+  padding: 32px;
+  color: $jia-blue;
+}
+
+.btn {
+  font-weight: 100;
+}
+
+.engraved {
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.okay {
+  color: $emerald;
+}
+
+.warn {
+  color: $orange;
+}
+
+.danger {
+  color: $alizarin;
+}
+
+.selecter-selected:after {
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid #000;
+}
+
+.dropdown-menu a {
+  cursor: pointer;
+}
+
+input.small-int {
+  display: inline-block;
+  width: 80px;
+}
+
+.selecter {
+  margin: 0;
+}

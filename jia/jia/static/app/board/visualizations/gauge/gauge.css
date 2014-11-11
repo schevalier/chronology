@@ -1,9 +1,6 @@
 .gauge {
-  padding: 0 20px;
-  display: inline-block;
-  height: 80px;
+  margin: 15px;
   font-size: 3em;
   text-align: center;
-  line-height: 80px;
-  margin-left: 10px;
+  color: #34495e;
 }

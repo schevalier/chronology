@@ -1,0 +1,37 @@
+.panel-default {
+  border-radius: 0;
+  .panel-heading {
+    position: relative;
+    padding: 0px;
+    background-color: $peter-river;
+    color: white;
+    border-radius: 0;
+    border: none;
+    border-bottom: none;
+    .title {
+      display: block;
+      font-size: 13px;
+      padding: 7px;
+    }
+    .buttons {
+      position: absolute;
+      top: 0px;
+      right: 4px;
+      font-size: 14px;
+      a {
+        position: relative;
+        top: 7px;
+        padding: 7px 4px 7px 4px;
+        color: $white;
+        cursor: pointer;
+        &:hover {
+          text-decoration: none;
+        }
+      }
+    }
+  }
+  visualization {
+    display: block;
+    width: 100%;
+  }
+}

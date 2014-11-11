@@ -1,15 +1,8 @@
-<div>
-  <ul class="steps">
-    <li ng-repeat="step in panel.data_source.query.steps">
-      <div class="btn-group">
-        <button class="btn btn-danger" ng-click="delete(step)">
-          &times;
-        </button>
-        <step></step>
-      </div>
-    </li>
-    <li ng-repeat="step in [nextStep]">
-      <step></step>
-    </li>
-  </ul>
-</div>
+<ul class="steps">
+  <li ng-repeat="step in panel.data_source.query.steps" class="row">
+    <step></step>
+  </li>
+  <li ng-repeat="step in [nextStep]" class="row">
+    <step></step>
+  </li>
+</ul>

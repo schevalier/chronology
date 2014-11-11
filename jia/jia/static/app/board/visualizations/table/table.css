@@ -1,0 +1,9 @@
+.table-vis-container {
+  overflow-x: scroll;
+}
+.table-vis-container table.table {
+  margin-bottom: 0px;
+}
+.table-vis-container .ng-table-pager {
+  padding-left: 10px;
+}
