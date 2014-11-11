@@ -1,0 +1,263 @@
+<div class="modal-header contains-input">
+  <button type="button" class="close" ng-click="$close()" aria-hidden="true">
+    &times;
+  </button>
+  <span class="input-bar">
+    <input ng-model="panel.title" placeholder="Untitled panel">
+  </span>
+</div>
+<div class="visualization-container">
+  <div class="loader" ng-show="panel.cache.loading">
+    <span class="fa fa-circle-o-notch fa-spin"></span>
+  </div>
+  <visualization ng-repeat="visualization in panel.cache.visualizations"
+                 module="visualization"
+                 ng-if="!panel.cache.schemaNeedsTransform &&
+                        panel.cache.data.events.length &&
+                        !panel.cache.loading &&
+                        visualization.meta.title == panel.display.display_type">
+    <div class="loader">
+      <span class="fa fa-circle-o-notch fa-spin"></span>
+    </div>
+  </visualization>
+</div>
+<div class="code-box">
+  <div class="error log alert alert-danger"
+       ng-if="panel.cache.log.errors.length ||
+              VQBHasErrors(panel) && panel.cache.hasBeenRun">
+    <div class="alert-icon">
+      <span class="glyphicon glyphicon-remove-sign"></span>
+    </div>
+    <ul>
+      <li ng-repeat="(message, count) in panel.cache.query_builder.validation"
+          ng-bind="message"></li>
+      <li ng-repeat="message in panel.cache.log.errors"
+          ng-bind-html="message"></li>
+    </ul>
+  </div>
+  <div class="warn log alert alert-warning"
+       ng-if="panel.cache.log.warns.length">
+    <div class="alert-icon">
+      <span class="glyphicon glyphicon-exclamation-sign"></span>
+    </div>
+    <ul>
+      <li ng-repeat="message in panel.cache.log.warns"
+          ng-bind-html="message"></li>
+    </ul>
+  </div>
+  <div class="info log alert alert-info"
+       ng-if="panel.cache.log.infos.length">
+    <div class="alert-icon">
+      <span class="glyphicon glyphicon-info-sign"></span>
+    </div>
+    <ul>
+      <li ng-repeat="message in panel.cache.log.infos"
+          ng-bind-html="message"></li>
+    </ul>
+  </div>
+  <tabset>
+    <tab>
+      <tab-heading>
+        <i class="ti-filter"></i> Query
+      </tab-heading>
+      <div class="code-controls query-builder">
+        <div ng-if="showCodeToggle" class="code-toggle">
+          <label>
+            <input type="checkbox"
+                   ng-model="panel.cache.query_builder.code">
+            Pycode query
+          </label>
+        </div>
+        <div class="row">
+          <div class="stream col-xs-12"
+               ng-class="{'vqb-invalid': !panel.data_source.query.stream &&
+                                         panel.cache.hasBeenRun}">
+            <ui-select ng-model="panel.data_source.query.stream" theme="bootstrap">
+              <ui-select-match placeholder="Stream">
+                {{ $select.selected }}
+                <span class="input-fade"></span> 
+              </ui-select-match>
+              <ui-select-choices repeat="stream in streams | filter: $select.search">
+                <div ng-bind-html="stream | highlight: $select.search"></div>
+              </ui-select-choices>
+            </ui-select>
+          </div>
+        </div>
+        <div class="timeframe row">
+          <div class="col-xs-12 col-sm-4">
+            <selecter model="panel.data_source.timeframe.mode"
+                      options="timeframeModes">
+            </selecter>
+          </div>
+          <div class="col-xs-12 col-sm-4">
+            <input type="number" class="form-control"
+                   ng-model="panel.data_source.timeframe.value"
+                   ng-if="panel.data_source.timeframe.mode.value == 'recent'">
+          </div>
+          <div class="col-xs-12 col-sm-4">
+            <selecter model="panel.data_source.timeframe.scale"
+                      options="timeScales"
+                      ng-if="panel.data_source.timeframe.mode.value == 'recent'">
+            </selecter>
+          </div>
+          <div class="dropdown dtp-container col-xs-4"
+               ng-if="panel.data_source.timeframe.mode.value == 'range'">
+            <a class="dropdown-toggle" id="dt_from" role="button">
+              <input type="text" class="form-control"
+                     ng-model="panel.data_source.timeframe.from">
+            </a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+              <datetimepicker ng-model="panel.data_source.timeframe.from"
+                              datetimepicker-config="{ dropdownSelector: '#dt_from' }">
+              </datetimepicker>
+            </ul>
+          </div>
+          <div class="dropdown dtp-container col-xs-4"
+               ng-if="panel.data_source.timeframe.mode.value == 'range'">
+            <a class="dropdown-toggle" id="dt_to" role="button"> 
+              <input type="text" class="form-control"
+                     ng-model="panel.data_source.timeframe.to">
+            </a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+              <datetimepicker ng-model="panel.data_source.timeframe.to"
+                              datetimepicker-config="{ dropdownSelector: '#dt_to' }">
+              </datetimepicker>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <querybuilder ng-if="panel.data_source.source_type == 'querybuilder'">
+      </querybuilder>
+
+      <div ui-codemirror="editorOptions"
+           ng-model="panel.data_source.code"
+           class="code"
+           ng-if="panel.data_source.source_type == 'pycode'"
+           ui-refresh="panel.data_source.display">
+      </div>
+
+      <button type="button" class="btn btn-success run-btn navbar-btn"
+              ng-click="callSource(panel)">
+        <span class="ti-reload fa-spin"
+              ng-show="panel.cache.loading"></span>
+        <span class="glyphicon glyphicon-play"
+              ng-hide="panel.cache.loading"></span> Run Query
+      </button>
+    </tab>
+    <tab>
+      <tab-heading>
+        <i class="ti-bar-chart"></i> Visualization
+      </tab-heading>
+      <div class="code-controls">
+        <div class="btn-group"
+             dropdown is-open="panel.cache.visualizationDropdownOpen">
+          <button type="button"
+                  class="btn btn-primary dropdown-toggle display-type-btn navbar-btn"
+                  ng-disabled="disabled">
+            {{ panel.cache.visualization.meta.readableTitle }}
+            <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li ng-repeat="visualization in visualizations"
+                ng-click="changeVisualization(panel, visualization)">
+              <a>{{ visualization.meta.readableTitle }}</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="schema-transform">
+        <div class="form-horizontal"> 
+          <div class="input-label"
+               ng-if="Object.keys(panel.display.settings.requiredFields).length">
+               Required inputs:
+          </div>
+          <div class="form-group"
+               ng-repeat="(key, value) in panel.display.settings.requiredFields">
+            <label class="col-xs-1 control-label">{{ key }}:</label>
+            <div class="col-xs-3">
+              <property model="panel.display.settings.requiredFields[key]"
+                        schema="panel.cache.schemas[panel.cache.schemas.length - 1]">
+              </property>
+            </div>
+          </div>
+          <div class="input-label"
+               ng-if="Object.keys(panel.display.settings.optionalFields).length">
+            Optional inputs:
+          </div>
+          <div class="form-group"
+               ng-repeat="(key, value) in panel.display.settings.optionalFields">
+            <label class="col-xs-1 control-label">{{ key }}:</label>
+            <div class="col-xs-3">
+              <property model="panel.display.settings.optionalFields[key]"
+                        schema="panel.cache.schemas[panel.cache.schemas.length - 1]">
+              </property>
+            </div>
+          </div>
+        </div>
+      </div>
+    </tab>
+    <tab>
+      <tab-heading>
+        <i class="ti-harddrives"></i> Computation
+      </tab-heading>
+      <div class="computation-tab">
+        <label>
+          <input type="checkbox"
+                 ng-model="panel.data_source.autorefresh.enabled">
+          Autorefresh
+        </label>
+        <div class="refresh-interval animate-show"
+             ng-show="panel.data_source.autorefresh.enabled">
+          <input ng-model="panel.data_source.autorefresh.interval"
+                 class="form-control small-int"
+                 type="number"> sec
+        </div>
+        <div class="precompute">
+          <label class="toggle">
+            <input type="checkbox"
+                   ng-model="panel.data_source.precompute.enabled">
+            Precompute
+          </label>
+          <div class="options animate-show"
+               ng-show="panel.data_source.precompute.enabled">
+            Bucket width
+            <button class="btn btn-primary btn-xs btn-help"
+                    popover="{{ bucketWidthHelpText }}"
+                    popover-placement="bottom">
+              <span class="fa fa-question"></span>
+            </button>
+            <div class="row">
+              <div class="col-xs-6">
+                <input type="number"
+                       class="form-control"
+                       ng-model="panel.data_source.precompute.bucket_width.value">
+              </div>
+              <selecter model="panel.data_source.precompute.bucket_width.scale"
+                        options="timeScales"
+                        class="col-xs-6">
+              </selecter>
+            </div>
+            <div class="untrusted-time row"
+                 ng-if="panel.data_source.timeframe.mode.value == 'recent'">
+              <div class="col-xs-12">Trust data older than</div>
+              <div class="col-xs-6">
+                <input type="number" class="form-control"
+                       ng-model="panel.data_source.precompute.untrusted_time.value">
+              </div>
+              <selecter model="panel.data_source.precompute.untrusted_time.scale"
+                        options="timeScales"
+                        class="col-xs-6">
+              </selecter>
+            </div>
+          </div>
+        </div>
+      </div>
+    </tab>
+  </tabset>
+</div>
+<div class="modal-footer"> 
+  <button type="button" class="btn btn-primary" ng-click="$close()">
+    <i class="ti-check"></i> Done
+  </button>
+</div>

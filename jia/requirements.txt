@@ -8,5 +8,5 @@ flask-sslify==0.1.4
 gevent==1.0.1
 greenlet==0.4.2
 gipc==0.4.0
-pykronos==0.6.0
+pykronos==0.6.2
 werkzeug==0.9.6

@@ -2,31 +2,36 @@
 <html lang="en" ng-app="jia">
   <head>
     <meta charset="utf-8">
-    <title>Jia -- Dashboard for the Chronology Project</title>
+    <title>Jia</title>
     <link rel="icon" type="image/png" href="/static/img/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Cambo">
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:700,300,600,400">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
     <!-- build:css /static/build/css/jia.css -->
     <link rel="stylesheet" href="/static/lib/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/lib/bootflat/css/bootflat.css">
-    <link rel="stylesheet" href="/static/lib/css/codemirror.css"/>
-    <link rel="stylesheet" href="/static/lib/css/codemirror-mdn-like.css"/>
-    <link rel="stylesheet" href="/static/lib/css/datetimepicker.css"/>
-    <link rel="stylesheet" href="/static/lib/css/select.min.css"/>
+    <link rel="stylesheet" href="/static/lib/css/codemirror.css">
+    <link rel="stylesheet" href="/static/lib/css/codemirror-mdn-like.css">
+    <link rel="stylesheet" href="/static/lib/css/datetimepicker.css">
+    <link rel="stylesheet" href="/static/lib/css/select.min.css">
     <link rel="stylesheet" href="/static/lib/css/rickshaw.min.css">
     <link rel="stylesheet" href="/static/lib/css/ng-table.min.css">
     <link rel="stylesheet" href="/static/lib/css/c3.css">
+    <link rel="stylesheet" href="/static/lib/css/jquery.fs.selecter.min.css">
+    <link rel="stylesheet" href="/static/lib/css/themify-icons.css">
     <link rel="stylesheet" href="/static/app/board/visualizations/gauge/gauge.css">
-    <link rel="stylesheet" href="/static/css/board.css">
+    <link rel="stylesheet" href="/static/app/board/visualizations/table/table.css">
+    <link rel="stylesheet" href="/static/css/style.css">
     <!-- endbuild -->
   </head>
 
   <body>
     <div ng-include="'/static/app/ui/toolbar.html'"></div>
-    <div ng-view></div>
+    <div ng-include="'/static/app/ui/sidebar.html'"></div>
+    <div ng-view class="stage"></div>
     <script>
       var JIA_ALLOW_PYCODE = <% pycode %>;
+      var JIA_USER = <% user | safe %>;
     </script>
     <!-- build:js /static/build/js/jia.js -->
     <!-- 3rd party libs -->
@@ -35,6 +40,7 @@
     <script src="/static/lib/js/angular-sanitize.min.js"></script>
     <script src="/static/lib/js/angular-route.min.js"></script>
     <script src="/static/lib/js/mousetrap.min.js"></script>
+    <script src="/static/lib/js/mousetrap-global-bind.min.js"></script>
     <script src="/static/lib/js/codemirror.min.js"></script>
     <script src="/static/lib/js/codemirror-python-mode.js"></script>
     <script src="/static/lib/js/ui-codemirror.js"></script>
@@ -42,8 +48,7 @@
     <script src="/static/lib/js/jquery.min.js"></script>
     <script src="/static/lib/js/bootstrap.min.js"></script>
     <script src="/static/lib/js/icheck.min.js"></script>
-    <script src="/static/lib/bootflat/js/jquery.fs.selecter.min.js"></script>
-    <script src="/static/lib/bootflat/js/jquery.fs.stepper.min.js"></script>
+    <script src="/static/lib/js/jquery.fs.selecter.min.js"></script>
     <script src="/static/lib/js/moment.min.js"></script>
     <script src="/static/lib/js/datetimepicker.js"></script>
     <script src="/static/lib/js/select.min.js"></script>
@@ -53,7 +58,7 @@
 
     <!-- Timeseries -->
     <script src="/static/lib/js/d3.min.js"></script>
-    <script src="/static/lib/js/rickshaw.min.js"></script>
+    <script src="/static/lib/modified/rickshaw.min.js"></script>
     <script src="/static/lib/modified/angular-rickshaw.js"></script>
     <script src="/static/app/board/visualizations/timeseries/timeseries.js"></script>
     
@@ -71,6 +76,7 @@
 
     <!-- Jia -->
     <script src="/static/app/jia.js"></script>
+    <script src="/static/app/ui/navigation.js"></script>
     <script src="/static/app/board/querybuilder.js"></script>
     <script src="/static/app/board/board.js"></script>
     <script src="/static/app/boardlist/boardlist.js"></script>

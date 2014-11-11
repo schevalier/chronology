@@ -1,8 +1,15 @@
-<selecter model="step.operation"
-          options="operations"
-          config="{label: 'New operation&hellip;', customClass: 'flat-left'}">
-</selecter>
-<div class="args"
+<div class="col-xs-12 col-sm-4">
+  <div class="btn-group">
+    <button class="btn btn-danger delete-step" ng-click="delete(step)">
+      &times;
+    </button>
+    <selecter model="step.operation"
+              options="operations"
+              config="{label: 'New operation', customClass: 'flat-left'}">
+    </selecter>
+  </div>
+</div>
+<div class="args col-xs-12 col-sm-8"
      ng-if="step.operation.operator"
      ng-include="'static/app/board/operators/' + step.operation.operator + '.html'">
 </div>

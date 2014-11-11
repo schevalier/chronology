@@ -7,3 +7,16 @@ window resize.
 A dependency to Underscore.js was added since Jia depends on it anyway. This
 is okay, because the changes here are not generally applicable enough to be
 pull-requested.
+
+Tue 4 November 2014
+-------------------
+Whatever version of rickshaw.min.js that was already in the repository was
+modified to make the points look nicer when you hover over them. By default,
+the border color on the div is the series color and the background of the div
+is just white (not visible). It was modified so that the background of the div
+is the series color and the border color is the series color with a little
+transparency in the alpha channel. This allows for the radius of the point to
+be turned up with CSS, showing the series color as a solid point with a
+lareger semi-transparent radius surrounding it. It was such an easy change, I
+typed it directly into the minified JS file, so I imagine it will not be
+difficult to maintain in the future.

@@ -141,7 +141,7 @@ qb.factory('nonEmpty', ['makeComplaint', 'revokeComplaint', 'EMPTY_COMPLAINT',
 function (makeComplaint, revokeComplaint, EMPTY_COMPLAINT) {
   return function (ngModel, validation, viewValue) {
     var complaint = 'One or more required fields are blank.';
-    // If viewValue is undfined, some other validation failed. Therefore it's
+    // If viewValue is undefined, some other validation failed. Therefore it's
     // not blank!
     if (typeof viewValue == 'undefined' || viewValue) {
       if (ngModel.$error['complete']) {
@@ -298,10 +298,12 @@ qb.directive('step', function ($http, $compile) {
       }, true);
 
       $scope.addOperand = function (operands) {
+        $scope.panel.cache.hasBeenRun = false;
         operands.push({});
       };
 
       $scope.removeOperand = function (idx, operands) {
+        $scope.panel.cache.hasBeenRun = false;
         operands.splice(idx, 1);
       }
 
@@ -738,13 +740,15 @@ function (posInt, nonEmpty, revokeComplaint,
       $(element).find('input').attr('placeholder', attrs['placeholder']);
     }
 
+    scope.val = '';
+
     if (ngModel) {
       ngModel.$render = function () {
         if (ngModel.$viewValue) {
           scope.val = ngModel.$viewValue;
         }
         else {
-          ngModel.$setViewValue('');
+          ngModel.$setViewValue(scope.val);
         }
  
         // Get unique ID from incrementing static `id`

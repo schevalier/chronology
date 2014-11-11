@@ -1,0 +1,23 @@
+.modal-header {
+  &.contains-input {
+    button.close {
+      margin-top: 3px;
+    }
+  }
+  input {
+    font-size: 20px;
+    background: none;
+    border: none;
+    outline: none;
+    width: 100%;
+  }
+}
+
+.modal-content {
+  div.code {
+    border: 1px solid #e5e5e5;
+    border-left: none;
+    border-right: none;
+    margin: 10px -15px;
+  }
+}

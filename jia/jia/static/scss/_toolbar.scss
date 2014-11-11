@@ -1,0 +1,55 @@
+$profile-pic-width: 38px;
+
+.input-bar {
+  display: block;
+  overflow: hidden;
+}
+
+.navbar-default {
+  background: $peter-river;
+  border-color: $peter-river;
+  border-bottom: none;
+  .navbar-brand {
+    &:hover, &:focus {
+      color: $white;
+    }
+    color: $white;
+  }
+  .btn-bar {
+    position: absolute;
+    left: $sidebar-width;
+    .navbar-nav > li {
+      a {
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        &.disabled {
+          color: lighten($jia-blue, 10%);
+          pointer-events: none;
+        }
+      }
+      .tooltip {
+        .tooltip-inner {
+          background-color: $navy-blue;
+          padding: 6px 10px;
+        }
+        .tooltip-arrow {
+          border-bottom-color: $navy-blue;
+        }
+      }
+    }
+  }
+  .user {
+    color: $white;
+    padding: 6px;
+    img {
+      width: $profile-pic-width;
+      border-radius: $profile-pic-width / 2;
+      margin-right: 5px;
+    }
+    .ti-angle-down {
+      font-size: 9px;
+      margin-left: 3px;
+    }
+  }
+}

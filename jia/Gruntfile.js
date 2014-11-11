@@ -3,13 +3,29 @@ module.exports = function(grunt) {
   require('time-grunt')(grunt);
 
   grunt.initConfig({
+    sass: {
+      dist: {
+        files: {
+          'jia/static/css/style.css': 'jia/static/scss/style.scss'
+        },
+        options: {
+          style: 'compressed'
+        }
+      }
+    },
+    watch: {
+      css: {
+        files: 'jia/static/scss/*.scss',
+        tasks: ['sass']
+      }
+    },
     ngtemplates: {
       jia: {
         cwd: 'jia',
-        src: 'static/partials/**/*.html',
+        src: 'static/app/**/*.html',
         dest: 'jia/static/build/js/partials.js',
         options: {
-          usemin: 'jia/static/build/js/jia.js',
+          concat: 'generated',
           prefix: '/'
         }
       }
@@ -76,11 +92,11 @@ module.exports = function(grunt) {
   });
 
   grunt.registerTask('build', [
-    'ngtemplates',
+    'sass',
     'copy',
     'useminPrepare',
-    'concat',
-    'usemin'
+    'usemin',
+    'ngtemplates',
+    'concat'
   ]);
-
 };

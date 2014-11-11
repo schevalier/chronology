@@ -1,9 +1,11 @@
-Create:
-<value placeholder="New field"
-       ng-model="step.operation.operands.newProperty"
-       alters-schema></value>
-<div class="eol-group">
-  With value:
-  <cpf ng-model="step.operation.operands.value"
-       ng-class="{'vqb-invalid': vqbInvalid()}"></cpf>
+<div class="row">
+  <div class="col-xs-12 col-md-6">
+    <cpf ng-model="step.operation.operands.value"
+         ng-class="{'vqb-invalid': vqbInvalid()}"></cpf>
+  </div>
+  <div class="col-xs-12 col-md-6">
+    <value placeholder="Store result in"
+           ng-model="step.operation.operands.newProperty"
+           alters-schema></value>
+  </div>
 </div>
