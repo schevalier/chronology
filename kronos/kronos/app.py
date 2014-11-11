@@ -2,12 +2,14 @@ import errno
 import os
 import sys
 
+from os.path import expanduser
+
 # uWSGI is started by root, but this process runs as the kronos user.
 # This casuses permissions issues on the python egg cache, so we need to
 # create our own to avoid that.
-_KRONOS_EGG_CACHE = os.path.join(os.environ['HOME'], '.kronos_egg_cache')
+_KRONOS_EGG_CACHE = os.path.join(expanduser('~'), '.kronos_egg_cache')
 try:
-  os.mkdir(_KRONOS_EGG_CACHE)
+  os.makedirs(_KRONOS_EGG_CACHE)
 except OSError as e:
   if e.errno != errno.EEXIST:
     raise e
