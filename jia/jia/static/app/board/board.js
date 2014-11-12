@@ -359,7 +359,13 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       csvString += '\n';
     }
 
-    event.target.href = headerString + encodeURIComponent(csvString);
+    if (event.target.tagName == 'SPAN') {
+      rewrite = event.target.parentNode;
+    }
+    else {
+      rewrite = event.target;
+    }
+    rewrite.href = headerString + encodeURIComponent(csvString);
   };
 
   $scope.cleanBoard = function () {
