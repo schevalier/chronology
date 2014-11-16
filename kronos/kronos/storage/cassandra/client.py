@@ -89,7 +89,7 @@ class CassandraStorage(BaseStorage):
     stream = self.get_stream(namespace, stream, configuration)
     stream.insert(events)
 
-  def _delete(self, namespace, stream, start_id, end_time, configuration):
+  def _delete(self, namespace, stream, start_id, end_id, configuration):
     """
     Delete events for `stream` between `start_id` and `end_time`.
     `stream` : The stream to delete events for.
@@ -100,11 +100,9 @@ class CassandraStorage(BaseStorage):
                       time interval.
     """
     stream = self.get_stream(namespace, stream, configuration)
-    return stream.delete(start_id,
-                         uuid_from_kronos_time(end_time,
-                                               _type=UUIDType.HIGHEST))
+    return stream.delete(start_id, end_id)
 
-  def _retrieve(self, namespace, stream, start_id, end_time, order, limit,
+  def _retrieve(self, namespace, stream, start_id, end_id, order, limit,
                 configuration):
     """
     Retrieve events for `stream` between `start_id` and `end_time`.
@@ -118,17 +116,10 @@ class CassandraStorage(BaseStorage):
                       time interval.
     """
     stream = self.get_stream(namespace, stream, configuration)
-    events = stream.iterator(start_id,
-                             uuid_from_kronos_time(end_time,
-                                                   _type=UUIDType.HIGHEST),
+    events = stream.iterator(start_id, end_id,
                              order == ResultOrder.DESCENDING, limit)
-    events = events.__iter__()
-    event = events.next()
-    # If first event's ID is equal to `start_id`, skip it.
-    if event.id != start_id:
+    for event in events:
       yield event.json
-    while True:
-      yield events.next().json
 
   def _streams(self, namespace):
     for stream_name in self.namespaces[namespace].list_streams():

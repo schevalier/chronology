@@ -5,8 +5,6 @@ from collections import defaultdict
 from kronos.conf.constants import ResultOrder
 from kronos.core import marshal
 from kronos.storage.base import BaseStorage
-from kronos.utils.uuid import uuid_from_kronos_time
-from kronos.utils.uuid import UUIDType
 from kronos.utils.validate import is_pos_int
 
 
@@ -58,50 +56,45 @@ class InMemoryStorage(BaseStorage):
         self.db[namespace][stream].pop(0)
       bisect.insort(self.db[namespace][stream], Event(_id, event))
 
-  def _delete(self, namespace, stream, start_id, end_time, configuration):
+  def _delete(self, namespace, stream, start_id, end_id, configuration):
     """
     Delete events with id > `start_id` and end_time <= `end_time`.
     """
     start_id_event = Event(start_id)
-    end_id_event = Event(uuid_from_kronos_time(end_time,
-                                               _type=UUIDType.HIGHEST))
+    end_id_event = Event(end_id)
     stream_events = self.db[namespace][stream]
 
     # Find the interval our events belong to.
     lo = bisect.bisect_left(stream_events, start_id_event)
+    hi = bisect.bisect_left(stream_events, end_id_event)
     if lo + 1 > len(stream_events):
       return 0, []
-    if stream_events[lo] == start_id_event:
-      lo += 1
-    hi = bisect.bisect_right(stream_events, end_id_event)
-
     del stream_events[lo:hi]
     return max(0, hi - lo), []
 
-  def _retrieve(self, namespace, stream, start_id, end_time, order, limit,
+  def _retrieve(self, namespace, stream, start_id, end_id, order, limit,
                 configuration):
     """
     Yield events from stream starting after the event with id `start_id` until
     and including events with timestamp `end_time`.
     """
     start_id_event = Event(start_id)
-    end_id_event = Event(uuid_from_kronos_time(end_time,
-                                               _type=UUIDType.HIGHEST))
+    end_id_event = Event(end_id)
     stream_events = self.db[namespace][stream]
 
     # Find the interval our events belong to.
     lo = bisect.bisect_left(stream_events, start_id_event)
-    if lo + 1 > len(stream_events):
-      return
-    if stream_events[lo] == start_id_event:
-      lo += 1
-    hi = bisect.bisect_right(stream_events, end_id_event)
-
-    if order == ResultOrder.DESCENDING:
-      index_it = xrange(hi - 1, lo - 1, -1)
-    else:
+    hi = bisect.bisect_left(stream_events, end_id_event)
+    if (order == ResultOrder.ASCENDING):
       index_it = xrange(lo, hi)
-
+    else:
+      if hi == len(stream_events):
+        hi -= 1
+      if lo == 0 and stream_events and stream_events[0] > start_id_event:
+        lo -= 1
+      index_it = xrange(hi, lo, -1)
+    if lo + 1 > len(stream_events):
+        return
     for i in index_it:
       if limit <= 0:
         break

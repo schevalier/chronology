@@ -1,13 +1,12 @@
 import errno
 import os
 import sys
-
-from os.path import expanduser
+import tempfile
 
 # uWSGI is started by root, but this process runs as the kronos user.
-# This casuses permissions issues on the python egg cache, so we need to
+# This causes permissions issues on the python egg cache, so we need to
 # create our own to avoid that.
-_KRONOS_EGG_CACHE = os.path.join(expanduser('~'), '.kronos_egg_cache')
+_KRONOS_EGG_CACHE = os.path.join(tempfile.gettempdir(), '.kronos_egg_cache')
 try:
   os.makedirs(_KRONOS_EGG_CACHE)
 except OSError as e:
@@ -177,6 +176,7 @@ def get_events(environment, start_response, headers):
       long(request_json.get('start_time', 0)),
       long(request_json['end_time']),
       request_json.get('start_id'),
+      request_json.get('end_id'),
       configuration,
       order=request_json.get('order', ResultOrder.ASCENDING),
       limit=limit)
@@ -235,6 +235,7 @@ def delete_events(environment, start_response, headers):
       long(request_json.get('start_time', 0)),
       long(request_json['end_time']),
       request_json.get('start_id'),
+      request_json.get('end_id'),
       conf)
   wait(statuses.values())
 

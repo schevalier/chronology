@@ -366,13 +366,13 @@ class Namespace(object):
   SELECT_ASC_STMT = """SELECT id, blob FROM stream WHERE
     key = ? AND
     id >= ? AND
-    id <= ?
+    id < ?
     ORDER BY id ASC
     LIMIT ?
     """
   SELECT_DESC_STMT = """SELECT id, blob FROM stream WHERE
     key = ? AND
-    id >= ? AND
+    id > ? AND
     id <= ?
     ORDER BY id DESC
     LIMIT ?
@@ -380,7 +380,7 @@ class Namespace(object):
   SELECT_ID_STMT = """SELECT id FROM stream WHERE
     key = ? AND
     id >= ? AND
-    id <= ?
+    id < ?
     LIMIT ?
     """
 

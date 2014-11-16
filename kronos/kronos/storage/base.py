@@ -1,11 +1,17 @@
-import sys
-
 from timeuuid import TimeUUID
 
+from kronos.conf.constants import MAX_LIMIT
 from kronos.conf.constants import ResultOrder
 from kronos.utils.uuid import uuid_from_kronos_time
-from kronos.utils.uuid import uuid_to_kronos_time
 from kronos.utils.uuid import UUIDType
+
+
+def _get_timeuuid(ktime, _id, _type=UUIDType.LOWEST):
+  if not _id:
+    _id = uuid_from_kronos_time(ktime, _type=_type)
+  else:
+    _id = TimeUUID(_id)
+  return _id
 
 
 class BaseStorage(object):
@@ -40,22 +46,20 @@ class BaseStorage(object):
                               self.__class__.__name__)
 
   def delete(self, namespace, stream, start_time, end_time, start_id,
-             configuration):
-    if not start_id:
-      start_id = uuid_from_kronos_time(start_time - 1,
-                                       _type=UUIDType.HIGHEST)
-    else:
-      start_id = TimeUUID(start_id)
-    if uuid_to_kronos_time(start_id) > end_time:
-      return 0
-    return self._delete(namespace, stream, start_id, end_time, configuration)
+             end_id, configuration):
+    start_id = _get_timeuuid(start_time, start_id)
+    end_id = _get_timeuuid(end_time, end_id)
+    if start_id >= end_id:
+      return 0, []
+    return self._delete(namespace, stream, start_id, end_id, configuration)
 
-  def _delete(self, stream, start_id, end_time, configuration, namespace):
+  def _delete(self, stream, start_id, end_id, configuration, namespace):
     raise NotImplementedError('Must implement `_delete` method for %s' %
                               self.__class__.__name__)
 
   def retrieve(self, namespace, stream, start_time, end_time, start_id,
-               configuration, order=ResultOrder.ASCENDING, limit=sys.maxint):
+               end_id, configuration, order=ResultOrder.ASCENDING,
+               limit=MAX_LIMIT):
     """
     Retrieves all the events for `stream` from `start_time` (inclusive) till
     `end_time` (inclusive). Alternatively to `start_time`, `start_id` can be
@@ -67,16 +71,18 @@ class BaseStorage(object):
 
     Returns an iterator over all JSON serialized (strings) events.
     """
-    if not start_id:
-      start_id = uuid_from_kronos_time(start_time, _type=UUIDType.LOWEST)
+    if order == ResultOrder.DESCENDING:
+      _type = UUIDType.HIGHEST
     else:
-      start_id = TimeUUID(start_id)
-    if uuid_to_kronos_time(start_id) > end_time:
+      _type = UUIDType.LOWEST
+    start_id = _get_timeuuid(start_time , start_id, _type)
+    end_id = _get_timeuuid(end_time, end_id, _type)
+    if start_id >= end_id:
       return []
-    return self._retrieve(namespace, stream, start_id, end_time, order, limit,
+    return self._retrieve(namespace, stream, start_id, end_id, order, limit,
                           configuration)
 
-  def _retrieve(self, namespace, stream, start_id, end_time, order, limit,
+  def _retrieve(self, namespace, stream, start_id, end_id, order, limit,
                 configuration):
     raise NotImplementedError('Must implement `_retrieve` method for %s.' %
                               self.__class__.__name__)

@@ -11,7 +11,6 @@ from elasticsearch import Elasticsearch
 from elasticsearch import helpers as es_helpers
 from elasticsearch.exceptions import TransportError
 from timeuuid import TimeUUID
-from timeuuid import UUIDType
 
 from kronos.common.cache import InMemoryLRUCache
 from kronos.common.time import kronos_time_to_datetime
@@ -19,7 +18,6 @@ from kronos.conf.constants import ID_FIELD, TIMESTAMP_FIELD
 from kronos.conf.constants import ResultOrder
 from kronos.core import marshal; json = marshal.get_marshaler('json')
 from kronos.storage.base import BaseStorage
-from kronos.utils.uuid import uuid_from_kronos_time
 from kronos.utils.uuid import uuid_to_kronos_time
 from kronos.utils.validate import is_bool
 from kronos.utils.validate import is_int
@@ -244,11 +242,12 @@ class ElasticSearchStorage(BaseStorage):
                                    index,
                                    start_dts_to_add)
 
-  def _delete(self, namespace, stream, start_id, end_time, configuration):
+  def _delete(self, namespace, stream, start_id, end_id, configuration):
     """
     Delete events with id > `start_id` and end_time <= `end_time`.
     """
     start_time = uuid_to_kronos_time(start_id)
+    end_time = uuid_to_kronos_time(end_id)
     body_query = {
       'query': {
         'filtered': {
@@ -258,13 +257,21 @@ class ElasticSearchStorage(BaseStorage):
               'should': [
                 {
                   'range': {TIMESTAMP_FIELD: {'gt': start_time,
-                                              'lte': end_time}}
+                                              'lt': end_time}}
                 },
                 {
                   'bool': {
                     'must': [
-                      {'range': {ID_FIELD: {'gt': str(start_id)}}},
+                      {'range': {ID_FIELD: {'gte': str(start_id)}}},
                       {'term': {TIMESTAMP_FIELD: start_time}}
+                    ]
+                  }
+                },
+                {
+                  'bool': {
+                    'must': [
+                      {'range': {ID_FIELD: {'lt': str(end_id)}}},
+                      {'term': {TIMESTAMP_FIELD: end_time}}
                     ]
                   }
                 }
@@ -290,7 +297,7 @@ class ElasticSearchStorage(BaseStorage):
     except Exception, e:
       return 0, [repr(e)]
 
-  def _retrieve(self, namespace, stream, start_id, end_time, order, limit,
+  def _retrieve(self, namespace, stream, start_id, end_id, order, limit,
                 configuration):
     """
     Yield events from stream starting after the event with id `start_id` until
@@ -298,15 +305,15 @@ class ElasticSearchStorage(BaseStorage):
     """
     indices = self.index_manager.get_aliases(namespace,
                                              uuid_to_kronos_time(start_id),
-                                             end_time)
+                                             uuid_to_kronos_time(end_id))
     if not indices:
       return
 
-    end_id = uuid_from_kronos_time(end_time, _type=UUIDType.HIGHEST)
     end_id.descending = start_id.descending = descending = (
       order == ResultOrder.DESCENDING)
 
     start_time = uuid_to_kronos_time(start_id)
+    end_time = uuid_to_kronos_time(end_id)
     body_query = {
       'query': {
         'filtered': {
@@ -323,7 +330,8 @@ class ElasticSearchStorage(BaseStorage):
       '%s:%s' % (ID_FIELD, order)
     ]
 
-    last_id = end_id if descending else start_id
+    if descending:
+      start_id, end_id = end_id, start_id
     scroll_id = None
     while True:
       size = max(min(limit, configuration['read_size']) / self.shards, 10)
@@ -349,9 +357,10 @@ class ElasticSearchStorage(BaseStorage):
 
       for hit in hits:
         _id = TimeUUID(hit['_id'], descending=descending)
-        if _id <= last_id:
+        if _id < start_id:
           continue
-        last_id = _id
+        elif _id >= end_time:
+          break
         event = hit['_source']
         del event[LOGSTASH_TIMESTAMP_FIELD]
         yield json.dumps(event)
