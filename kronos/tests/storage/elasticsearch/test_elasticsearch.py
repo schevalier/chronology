@@ -52,17 +52,17 @@ class TestElasticSearchBackend(KronosServerTestCase):
     self.assertTrue(index2 != index3)
     self.assertTrue(index1 != index3)
 
-    events = self.get('test_aliasing', time1, time3)
+    events = self.get('test_aliasing', time1, time3 + 1)
     self.assertEqual(len(events), 20)
     self.assertEqual(events, sorted(events,
                                     key=lambda e: TimeUUID(e[ID_FIELD])))
 
-    events = self.get('test_aliasing', time1, time2)
+    events = self.get('test_aliasing', time1, time2 + 1)
     self.assertEqual(len(events), 15)
     self.assertEqual(events, sorted(events,
                                     key=lambda e: TimeUUID(e[ID_FIELD])))
 
-    events = self.get('test_aliasing', time2, time3)
+    events = self.get('test_aliasing', time2, time3 + 1)
     self.assertEqual(len(events), 15)
     self.assertEqual(events, sorted(events,
                                     key=lambda e: TimeUUID(e[ID_FIELD])))

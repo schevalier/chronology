@@ -24,12 +24,12 @@ logging.root.addHandler(logging.NullHandler())
 # Mapping from test name => (<pathname of directory with test file>,
 # <backends to run test against>)
 TESTS = {
-#  'cassandra': ('tests/storage/cassandra', ('cassandra', )),
+  'cassandra': ('tests/storage/cassandra', ('cassandra', )),
   'common': ('tests/common', ('memory',
                               'cassandra',
                               'elasticsearch',)),
-#  'conf': ('tests/conf', ('memory', )),
-#  'elasticsearch': ('tests/storage/elasticsearch', ('elasticsearch', )),
+  'conf': ('tests/conf', ('memory', )),
+  'elasticsearch': ('tests/storage/elasticsearch', ('elasticsearch', )),
 }
 
 
