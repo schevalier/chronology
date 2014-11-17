@@ -359,7 +359,7 @@ class ElasticSearchStorage(BaseStorage):
         _id = TimeUUID(hit['_id'], descending=descending)
         if _id < start_id:
           continue
-        elif _id >= end_time:
+        elif _id >= end_id:
           break
         event = hit['_source']
         del event[LOGSTASH_TIMESTAMP_FIELD]

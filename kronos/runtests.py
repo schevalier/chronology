@@ -25,9 +25,9 @@ logging.root.addHandler(logging.NullHandler())
 # <backends to run test against>)
 TESTS = {
 #  'cassandra': ('tests/storage/cassandra', ('cassandra', )),
-  'common': ('tests/common', ('memory',))
-#                              'cassandra',
-#                              'elasticsearch',)),
+  'common': ('tests/common', ('memory',
+                              'cassandra',
+                              'elasticsearch',)),
 #  'conf': ('tests/conf', ('memory', )),
 #  'elasticsearch': ('tests/storage/elasticsearch', ('elasticsearch', )),
 }

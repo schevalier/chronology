@@ -268,6 +268,11 @@ class Stream(object):
       if not event_heap:
         raise StopIteration
 
+      if descending:
+        start, end = end_id, start_id
+      else:
+        start, end = start_id, end_id
+
       while event_heap or shards:
         if limit <= 0:
           raise StopIteration
@@ -276,11 +281,9 @@ class Stream(object):
           event = heapq.heappop(event_heap)
           # Note: in descending conditions below, we flip `<` for
           # `>` and `>=` for `<=` UUID comparator logic is flipped.
-          if ((not descending and event.id > end_id) or
-              (descending and event.id > start_id)):
+          if event.id > end:
             raise StopIteration
-          elif ((not descending and event.id >= start_id) or
-                (descending and event.id >= end_id)):
+          elif event.id >= start:
             limit -= 1
             yield event
 
@@ -302,8 +305,6 @@ class Stream(object):
                           shard['shard'], False,
                           MAX_LIMIT, read_size=self.read_size)
       for _id in shard.ids_iterator(start_id, end_id):
-        if _id == start_id:
-          continue
         num_deleted += 1
         batch_stmt.add(BoundStatement(self.namespace.DELETE_STMT,
                                       routing_key=shard.key,
