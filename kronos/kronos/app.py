@@ -30,6 +30,7 @@ from kronos.core.validator import validate_settings
 from kronos.conf import settings; validate_settings(settings)
 from kronos.conf import logging as klogging; klogging.configure()
 
+from kronos.common.time import kronos_time_now
 from kronos.conf.constants import ERRORS_FIELD
 from kronos.conf.constants import MAX_LIMIT
 from kronos.conf.constants import ResultOrder
@@ -139,18 +140,23 @@ def get_events(environment, start_response, headers):
   Retrieve events
   POST body should contain a JSON encoded version of:
     { namespace: namespace_name (optional),
-      stream : stream_name,
-      start_time : starting_time_as_kronos_time,
-      end_time : ending_time_as_kronos_time,
-      start_id : only_return_events_with_id_greater_than_me,
-      limit: optional_maximum_number_of_events,
-      order: ResultOrder.ASCENDING or ResultOrder.DESCENDING (default
+      stream : stream name,
+      start_time : starting time (optional, default 0),
+      end_time : ending time (optional, default: now),
+      start_id : starting id (optional),
+      end_id: ending id (optional)
+      limit: max number of events to return (optional),
+      order: ResultOrder.ASCENDING or ResultOrder.DESCENDING (optional, default:
              ResultOrder.ASCENDING)
     }
-  Either start_time or start_id should be specified. If a retrieval breaks
-  while returning results, you can send another retrieval request and specify
-  start_id as the last id that you saw. Kronos will only return events that
-  occurred after the event with that id.
+  Boundary conditions are [start_time, end_time), [start_id, end_time),
+  [start_id, end_time), [start_id, end_id). Either the id or the corresponding
+  time should be specified; if both are specified then the id is picked over
+  the timestamp.
+
+  If a retrieval breaks while returning results, you can send another retrieval
+  request and specify start_id as the last id that you saw. Kronos will only
+  return events starting with the event with the id that was specified.
   """
   request_json = environment['json']
   try:
@@ -174,7 +180,7 @@ def get_events(environment, start_response, headers):
       namespace,
       stream,
       long(request_json.get('start_time', 0)),
-      long(request_json['end_time']),
+      long(request_json.get('end_time', kronos_time_now())),
       request_json.get('start_id'),
       request_json.get('end_id'),
       configuration,
@@ -206,13 +212,15 @@ def delete_events(environment, start_response, headers):
   """
   Delete events
   POST body should contain a JSON encoded version of:
-    { namespace: namespace_name (optional),
-      stream : stream_name,
-      start_time : starting_time_as_kronos_time,
-      end_time : ending_time_as_kronos_time,
-      start_id : only_delete_events_with_id_gte_me,
+    { namespace: namespace name (optional),
+      stream : stream name,
+      start_time : starting time (optional, default 0),
+      end_time : ending time (optional, default: now),
+      start_id : starting id (optional),
+      end_id: ending id (optional)
     }
-  Either start_time or start_id should be specified.
+  The semantics of start_time, end_time, start_id and end_id are identical
+  to get_events.
   """
   request_json = environment['json']
   try:
@@ -233,7 +241,7 @@ def delete_events(environment, start_response, headers):
       namespace,
       stream,
       long(request_json.get('start_time', 0)),
-      long(request_json['end_time']),
+      long(request_json.get('end_time', kronos_time_now())),
       request_json.get('start_id'),
       request_json.get('end_id'),
       conf)
