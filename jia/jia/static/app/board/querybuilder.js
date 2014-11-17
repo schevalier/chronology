@@ -378,6 +378,8 @@ function (findObjectInListBasedOnKey, makeComplaint, revokeComplaint,
    * See top of file for detailed information on the structure of the CPF
    * model.
    *
+   * :param optional: If specified, the CPF will not be validated by nonEmpty
+   *
    */
   var linker = function (scope, elem, attrs, ngModel) {
     // If no ng-model was supplied then nothing needs to be done.
@@ -443,54 +445,56 @@ function (findObjectInListBasedOnKey, makeComplaint, revokeComplaint,
       }
     }
     
-    ngModel.$parsers.unshift(function (viewValue) {
-      switch (viewValue.cpf_type) {
-        case 'property':
-          if (!viewValue.property_name) {
-            if (!ngModel.$error['complete']) {
-              makeComplaint(scope.panel.cache.query_builder.validation,
-                            EMPTY_COMPLAINT);
+    if (attrs['optional'] === undefined || attrs['optional'] == 'false') {
+      ngModel.$parsers.unshift(function (viewValue) {
+        switch (viewValue.cpf_type) {
+          case 'property':
+            if (!viewValue.property_name) {
+              if (!ngModel.$error['complete']) {
+                makeComplaint(scope.panel.cache.query_builder.validation,
+                              EMPTY_COMPLAINT);
+              }
+              ngModel.$setValidity('complete', false);
+              return undefined;
             }
-            ngModel.$setValidity('complete', false);
-            return undefined;
-          }
-          else {
+            else {
+              if (ngModel.$error['complete']) {
+                revokeComplaint(scope.panel.cache.query_builder.validation,
+                                EMPTY_COMPLAINT);
+              }
+              ngModel.$setValidity('complete', true);
+              return viewValue;
+            }
+            break;
+          case 'constant':
+            if (!viewValue.constant_value) {
+              if (!ngModel.$error['complete']) {
+                makeComplaint(scope.panel.cache.query_builder.validation,
+                              EMPTY_COMPLAINT);
+              }
+              ngModel.$setValidity('complete', false);
+              return undefined;
+            }
+            else {
+              if (ngModel.$error['complete']) {
+                revokeComplaint(scope.panel.cache.query_builder.validation,
+                                EMPTY_COMPLAINT);
+              }
+              ngModel.$setValidity('complete', true);
+              return viewValue;
+            }
+            break;
+          case 'function':
             if (ngModel.$error['complete']) {
               revokeComplaint(scope.panel.cache.query_builder.validation,
                               EMPTY_COMPLAINT);
             }
             ngModel.$setValidity('complete', true);
             return viewValue;
-          }
-          break;
-        case 'constant':
-          if (!viewValue.constant_value) {
-            if (!ngModel.$error['complete']) {
-              makeComplaint(scope.panel.cache.query_builder.validation,
-                            EMPTY_COMPLAINT);
-            }
-            ngModel.$setValidity('complete', false);
-            return undefined;
-          }
-          else {
-            if (ngModel.$error['complete']) {
-              revokeComplaint(scope.panel.cache.query_builder.validation,
-                              EMPTY_COMPLAINT);
-            }
-            ngModel.$setValidity('complete', true);
-            return viewValue;
-          }
-          break;
-        case 'function':
-          if (ngModel.$error['complete']) {
-            revokeComplaint(scope.panel.cache.query_builder.validation,
-                            EMPTY_COMPLAINT);
-          }
-          ngModel.$setValidity('complete', true);
-          return viewValue;
-          break;
-      }
-    });
+            break;
+        }
+      });
+    }
 
     scope.$on('$destroy', function () {
       if (!ngModel.$valid) {
@@ -725,9 +729,11 @@ function (posInt, nonEmpty, revokeComplaint,
    * validation 
    * :param altersSchema: (optional) Indicates that this value is creating a
    * new property on the schema
+   * :param optional: (optional) Indicates that this field is not required to
+   * be filled in
    *
    * Example:
-   * <value alters-schema placeholder="New field" type="text"></value>
+   * <value alters-schema placeholder="New field" type="text" optional></value>
    *
    */
 
@@ -768,10 +774,12 @@ function (posInt, nonEmpty, revokeComplaint,
         });
       }
       
-      ngModel.$parsers.unshift(function (viewValue) {
-        return nonEmpty(ngModel, scope.panel.cache.query_builder.validation,
-                        viewValue);
-      });
+      if (attrs['optional'] === undefined || attrs['optional'] == 'false') {
+        ngModel.$parsers.unshift(function (viewValue) {
+          return nonEmpty(ngModel, scope.panel.cache.query_builder.validation,
+                          viewValue);
+        });
+      }
 
       scope.vqbInvalid = function () {
         if (scope.panel.cache.hasBeenRun && !ngModel.$valid) {

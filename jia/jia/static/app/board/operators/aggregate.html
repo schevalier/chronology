@@ -11,8 +11,7 @@
     </div>
     <div class="col-xs-12 col-md-6">
       <span ng-if="aggregate.agg_type == 'Count'">
-        <cpf ng-model="aggregate.agg_on" type="property"
-             ng-class="{'vqb-invalid': vqbInvalid()}"></cpf>
+        <cpf ng-model="aggregate.agg_on" type="property" optional></cpf>
       </span>
       <span ng-if="aggregate.agg_type != 'Count'">
         <cpf ng-model="aggregate.agg_on"
