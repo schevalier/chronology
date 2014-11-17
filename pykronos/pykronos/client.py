@@ -250,6 +250,8 @@ class KronosClient(object):
             # number of events; ujson fares better. However ujson won't work
             # on PyPy since it's a C extension.
             event = ujson.loads(line, precise_float=True)
+            if event[ID_FIELD] == last_id:
+              continue
             last_id = event[ID_FIELD]
             yield event
         break

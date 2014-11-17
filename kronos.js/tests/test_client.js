@@ -120,21 +120,21 @@ describe("KronosClient", function() {
           })
         );
 
-        Q.all(promises).then(function() {
-          var events = [];
+        Q.allSettled(promises).then(function() {
+          var i = 0;
           promises.push(
             kc.get(stream, startTime, endTime, null, {"startId": startId}).each(
               function(event) {
-                events.push(event);
+                if (i == 0) {
+                  assert.equal(event[kronos.ID_FIELD], startId,
+                              "First event was not equal to start_id.");
+                }
+                i++;
               }
             ).then(function() {
-              events.forEach(function(event) {
-                assert.ok(event[kronos.ID_FIELD] !== startId,
-                          "Start ID failed.");
-              });
               assert.equal(
-                events.length,
-                numEvents - 1,
+                i,
+                numEvents,
                 "Call to get did not return all the objects that were put."
               );
               done();
