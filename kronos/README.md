@@ -71,6 +71,195 @@ Take a look at [settings.py.template](kronos/conf/default_settings.py).  We trie
 to document all of the settings pretty thoroughly.  If anything is
 unclear, [file an issue](../../../issues?state=open) and we'll clarify!
 
+## HTTP API
+
+### Kronos Time
+
+Kronos time is represented as
+[Coordinated Universal Time](https://en.wikipedia.org/wiki/Coordinated_Universal_Time)
+since the [epoch](https://en.wikipedia.org/wiki/Unix_time). It is measured in
+units of 100s of nanoseconds, or 1e-7 seconds.  We're not proud of our time
+representation, and in hindsight, we could have picked a more humane option.
+We'll get there. To make up for it, we've created a bunch of
+[helper functions](../common/src/time.py) for converting to other time
+representations.
+
+### Inserting Events
+
+Events can be sent to Kronos by sending a `POST` to `/1.0/events/put`.
+
+The body of the POST should be a JSON-encoded object with the following format:
+
+```
+{namespace: namespace_name (optional),
+ events: { stream_name1 : [event1, event2, ...],
+           stream_name2 : [event1, event2, ...],
+... }
+}
+```
+where `event1` and `event2` are dictionaries of the event data you want to log.
+`@id` is a reserved key used for uniquely identifying events in Kronos. If it
+is set in the event dictionary, it will be overwritten by the Kronos server.
+`@time` is also a reserved key used for specifying the time of an event. Times
+are specified in [Kronos time](#kronos-time). If `@time` is present in the
+dictionary, and not a valid Kronos time, an error will be raised. If it is
+ missing from the dictionary, it will be added with the current time.
+
+The response is in the following format:
+```
+{stream_name: {backend1: {'num_inserted': number of events inserted
+                          '@errors': optional, errors when inserting events}},
+ '@success': true or false, true if insertions succeeded
+ '@errors': optional, errors when validating streams or events
+}
+```
+where `backend1` is the name of the configured backend. `num_inserted` is -1
+if there was an error inserting events.
+
+### Retrieving Events
+
+Events can be retrieved from Kronos by sending a `POST` to `/1.0/events/get`.
+
+The body of the POST should be a JSON-encoded object with the following format:
+
+```
+{namespace: namespace_name (optional),
+ stream: stream name,
+ start_time: starting time,
+ end_time: ending time,
+ start_id : start id,
+ limit: optional maximum number of events,
+ order: 'ascending' or 'descending' (default 'ascending')
+}
+```
+
+If `start_id` is provided, Kronos only returns events from `start_id`
+(inclusive) to `end_time` (exclusive). Otherwise, Kronos returns
+events from `start_time` (inclusive) to `end_time` (exclusive). `start_time`
+and `end_time` must be given in [Kronos time](#kronos-time).
+
+If an error occurs, the response is a JSON-encoded dictionary with `@success`
+set to `False` and `@errors` is a list of error strings.
+
+Otherwise, the response is a newline-separated stream of JSON-encoded events
+that match the `POST` parameters.
+
+### Deleting data
+
+Events can be deleted from Kronos by sending a `POST` to `/1.0/events/delete`.
+
+The body of the POST should be a JSON-encoded object with the following format:
+
+```
+{ namespace: namespace_name (optional),
+  stream : stream_name,
+  start_time : starting time,
+  end_time : ending time,
+  start_id : start id,
+}
+```
+
+where either `start_time` or `start_id` must be specified. All other
+parameters are required. Kronos deletes all events from `start_id` (inclusive)
+or `start_time` (inclusive) to `end_time` (exclusive). `start_time` and
+`end_time` must be given in [Kronos time](#kronos-time).
+
+The response is in the following format:
+```
+{stream_name: {backend1: {'num_deleted': number of events deleted},
+                          '@errors': optional, list of error strings} }
+}
+```
+
+### Getting A List of Streams
+
+To see a list of valid stream names, send a `POST` to `/1.0/streams`.
+
+The body of the POST should be a JSON-encoded object with the following format:
+
+```
+{ namespace: namespace_name (optional),
+}
+```
+
+If successful, the response is a newline-separated stream of stream names.
+If there were errors, the response is a JSON-encoded dictionary with `@success`
+set to `false` and `@errors` set to a list of error strings.
+
+### Inferred Schema
+
+You can retrieve an inferred schema for a stream by sending a `POST`
+to `/1.0/streams/infer_schema`. Currently, the implementation looks at several
+events in the stream to infer the schema. If there are conflicts, the type will
+be the parent of all the conflicting types, up to Any, which encompasses all
+types. This implementation is subject to change.
+
+The body of the POST should be a JSON-encoded object with the following format:
+
+```
+{stream: stream_name,
+ namespace: namespace_name (optional)
+}
+```
+
+The response is a JSON-encoded object with the following format:
+```
+{"@success": true if schema successfully returned,
+ "@took": time in ms,
+ "namespace": namespace,
+ "stream": stream_name,
+ "schema": see schema format below
+}
+```
+
+The schema is represented using JSON Schema v4, where elements in the schema have the following types:
+* Null
+* String
+* Integer
+* Number
+* Boolean
+* Array
+* Object
+* Any
+
+The schema is represented as a nested dictionary.
+Null, String, Integer, Number, Boolean and Any are represented by
+```
+{"type": null|string|integer|number|boolean|any}
+```
+
+Array is represented by
+```
+{"type": "array",
+ "items": the type of the items of the array}
+```
+
+Object is represented by
+```
+{"type": "object",
+ "required": list of required properties,
+ "properties": dictionary of property names to types
+}
+```
+
+Example response for events with fields `categories`, which are a list of
+integers, `email`, and `username`:
+```json
+{"@success": true,
+ "@took": "1475.893974ms",
+ "namespace": "kronos",
+ "stream": "user.page.visit",
+ "schema": {
+   "$schema": "http://json-schema.org/draft-04/schema",
+   "required": ["@id", "@time", "username", "categories"],
+   "type": "object",
+   "properties": {"username": {"type": "string"},
+                  "categories": {"items": {"type": "integer"}, "type": "array"},
+                  "email": {"type": "string"}}
+ }
+}
+```
+
 ## Backends
 
 ### Memory
