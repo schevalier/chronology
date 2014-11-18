@@ -16,7 +16,9 @@ LOG_DIR = '/var/log/kronos'
 RUN_DIR = '/var/run/kronos'
 TMP_DIR = tempfile.gettempdir()
 UWSGI_VERSION = '2.0.5.1'
-
+SERVING_MODES = [('all', '8150'), # Kronos serving mode and uWSGI port.
+                 ('collector', '8151'),
+                 ('readonly', '8152')]
 
 def run_cmd(cmd):
   print '> %s' % cmd
@@ -56,17 +58,36 @@ def make_dirs():
 
 def copy_files():
   print 'Copying configuration and init.d script files...'
-  shutil.copy(os.path.join(BASE_DIR, 'scripts/uwsgi.ini'),
-              '/etc/kronos/uwsgi.ini')
-  shutil.copy(os.path.join(BASE_DIR, 'scripts/kronosd.init.d'),
-              '/etc/init.d/kronos')
-  with open(os.path.join(BASE_DIR, 'settings.py.template')) as f:
-    settings = f.read()
-  if not LOG_DIR_RE.search(settings):
-    raise Exception('Failed to find log directory in settings.py.template.')
-  settings = re.sub(LOG_DIR_RE, "'log_directory': '%s'" % LOG_DIR, settings)
-  with open('/etc/kronos/settings.py', 'w') as f:
-    f.write(settings)
+
+  uwsgi_file_path = os.path.join(BASE_DIR, 'scripts/uwsgi.ini')
+  uwsgi_tmp_file_path = os.path.join(BASE_DIR, 'scripts/uwsgi.ini.tmp')
+  kronosd_file_path = os.path.join(BASE_DIR, 'scripts/kronosd.init.d')
+
+  for serving_mode, port in SERVING_MODES:
+    uwsgi_new_file_path = os.path.join(
+      BASE_DIR, 'scripts/uwsgi-{}.ini'.format(serving_mode))
+    kronosd_new_file_path = os.path.join(
+      BASE_DIR, 'scripts/kronosd-{}.init.d'.format(serving_mode))
+    os.system('sed -e "s/__SERVINGMODE__/{serving_mode}/" {uwsgi} > {uwsgi_tmp}'
+              .format(serving_mode=serving_mode,
+                      uwsgi=uwsgi_file_path,
+                      uwsgi_tmp=uwsgi_tmp_file_path))
+    os.system('sed -e "s/__SOCKET__/{socket}/" {uwsgi_tmp} > {uwsgi_new}'
+              .format(socket=port,
+                      serving_mode=serving_mode,
+                      uwsgi_tmp=uwsgi_tmp_file_path,
+                      uwsgi_new=uwsgi_new_file_path))
+
+    os.system('sed -e "s/__SERVINGMODE__/{serving_mode}/" {kronosd} > '
+              '{kronosd_new}'.format(serving_mode=serving_mode,
+                                     kronosd=kronosd_file_path,
+                                     kronosd_new=kronosd_new_file_path))
+
+    shutil.copy(uwsgi_new_file_path, '/etc/kronos')
+    shutil.copymode(kronosd_file_path, kronosd_new_file_path)
+    shutil.copy(kronosd_new_file_path,
+                '/etc/init.d/kronos-{}'.format(serving_mode))
+  os.remove('scripts/uwsgi.ini.tmp')
   print 'done.'
 
 

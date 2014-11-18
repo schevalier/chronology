@@ -1,0 +1,14 @@
+FROM ubuntu:14.04
+
+RUN apt-get update
+RUN apt-get install -y git python2.7 build-essential wget supervisor
+RUN git clone https://github.com/Locu/chronology.git chronology
+WORKDIR chronology/kronos
+RUN git fetch
+RUN git checkout __TAG__
+RUN make installdeps
+RUN python setup.py install
+RUN mkdir -p /home/kronos
+RUN chown -R kronos:kronos /home/kronos
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+CMD ["/usr/bin/supervisord"]

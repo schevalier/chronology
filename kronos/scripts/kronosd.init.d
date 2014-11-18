@@ -1,15 +1,15 @@
 #! /bin/sh
 
 ### BEGIN INIT INFO
-# Provides:	kronosd
+# Provides: kronosd-__SERVINGMODE__
 # Description: Kronos time series storage engine
 ### END INIT INFO
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 LOGDIR=/var/log/kronos
-LOGFILE=$LOGDIR/uwsgi.log
+LOGFILE=$LOGDIR/uwsgi-__SERVINGMODE__.log
 RUNDIR=/var/run/kronos
-PIDFILE=$RUNDIR/kronosd.pid
+PIDFILE=$RUNDIR/kronosd-__SERVINGMODE__.pid
 LIBDIR=/usr/lib/kronos
 
 . /lib/lsb/init-functions
@@ -23,12 +23,12 @@ case "$1" in
 
   if [ -e $PIDFILE ]
   then
-    echo "kronosd is already running"
+    echo "kronosd-__SERVINGMODE__ is already running"
     exit 1
   fi
 
-	echo -n "Starting kronosd: "
-	if (cd $LIBDIR/uwsgi && ./uwsgi --ini /etc/kronos/uwsgi.ini --pidfile $PIDFILE --daemonize $LOGFILE)
+	echo -n "Starting kronosd-__SERVINGMODE__: "
+	if (cd $LIBDIR/uwsgi && ./uwsgi --ini /etc/kronos/uwsgi-__SERVINGMODE__.ini --pidfile $PIDFILE --daemonize $LOGFILE)
 	then
 		echo "ok"
 	else
@@ -39,10 +39,10 @@ case "$1" in
   stop)
   if ! [ -e $PIDFILE ]
   then
-    echo "kronosd is not running running"
+    echo "kronosd-__SERVINGMODE__ is not running running"
     exit 1
   fi
-	echo -n "Stopping kronosd: "
+	echo -n "Stopping kronosd-__SERVINGMODE__: "
 	if (cd $LIBDIR/uwsgi && ./uwsgi --stop $PIDFILE)
 	then
 		echo "ok"

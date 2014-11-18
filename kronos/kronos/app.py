@@ -303,6 +303,17 @@ def infer_schema(environment, start_response, headers):
 
 
 def application(environment, start_response):
+  use_uwsgi = False
+  try:
+    import uwsgi
+    use_uwsgi = True
+  except ImportError:
+    pass
+  if use_uwsgi:
+    serving_mode = uwsgi.opt.get('serving_mode')
+    if serving_mode:
+      log.info('Setting serving_mode to %s', serving_mode)
+      settings.serving_mode = serving_mode
   path = environment.get('PATH_INFO', '').rstrip('/')
   if path in ENDPOINTS:
     return ENDPOINTS[path](environment, start_response)

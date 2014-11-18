@@ -28,6 +28,7 @@ def configure():
 
   logging.root.addHandler(error_handler)
   logging.root.addHandler(app_handler)
+  logging.root.setLevel(logging.NOTSET)
 
   # XXX: elasticsearch-py is annoying. They turn propagate=False for the
   # following logger so we keep on seeing 'No handlers could be found for logger
