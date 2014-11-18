@@ -309,9 +309,6 @@ class ElasticSearchStorage(BaseStorage):
     if not indices:
       return
 
-    end_id.descending = start_id.descending = descending = (
-      order == ResultOrder.DESCENDING)
-
     start_time = uuid_to_kronos_time(start_id)
     end_time = uuid_to_kronos_time(end_id)
     body_query = {
@@ -324,14 +321,12 @@ class ElasticSearchStorage(BaseStorage):
         }
       }
     }
-    order = 'desc' if descending else 'asc'
+    order = 'desc' if ResultOrder.DESCENDING else 'asc'
     sort_query = [
       '%s:%s' % (TIMESTAMP_FIELD, order),
       '%s:%s' % (ID_FIELD, order)
     ]
 
-    if descending:
-      start_id, end_id = end_id, start_id
     scroll_id = None
     while True:
       size = max(min(limit, configuration['read_size']) / self.shards, 10)
@@ -356,11 +351,9 @@ class ElasticSearchStorage(BaseStorage):
         break
 
       for hit in hits:
-        _id = TimeUUID(hit['_id'], descending=descending)
-        if _id < start_id:
+        _id = TimeUUID(hit['_id'])
+        if _id < start_id or _id >= end_id:
           continue
-        elif _id >= end_id:
-          break
         event = hit['_source']
         del event[LOGSTASH_TIMESTAMP_FIELD]
         yield json.dumps(event)

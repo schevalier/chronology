@@ -373,8 +373,8 @@ class Namespace(object):
     """
   SELECT_DESC_STMT = """SELECT id, blob FROM stream WHERE
     key = ? AND
-    id > ? AND
-    id <= ?
+    id >= ? AND
+    id < ?
     ORDER BY id DESC
     LIMIT ?
     """

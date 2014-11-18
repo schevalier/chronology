@@ -48,18 +48,14 @@ class KronosServerTestCase(unittest.TestCase):
     self.assertTrue(response[SUCCESS_FIELD])
     return response
 
-  def get(self, stream, start_time, end_time, start_id=None, end_id=None,
+  def get(self, stream, start_time, end_time, start_id=None,
           limit=None, order=None, namespace=None):
-    data = {'stream': stream}
+    data = {'stream': stream, 'end_time': end_time}
 
     if start_id:
       data['start_id'] = start_id
     else:
       data['start_time'] = start_time
-    if end_id:
-      data['end_id'] = end_id
-    else:
-      data['end_time'] = end_time
     if limit is not None:
       data['limit'] = limit
     if order is not None:

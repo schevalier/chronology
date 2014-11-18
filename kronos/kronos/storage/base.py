@@ -6,9 +6,9 @@ from kronos.utils.uuid import uuid_from_kronos_time
 from kronos.utils.uuid import UUIDType
 
 
-def _get_timeuuid(ktime, _id, _type=UUIDType.LOWEST):
+def _get_timeuuid(ktime, _id):
   if not _id:
-    _id = uuid_from_kronos_time(ktime, _type=_type)
+    _id = uuid_from_kronos_time(ktime, _type=UUIDType.LOWEST)
   else:
     _id = TimeUUID(_id)
   return _id
@@ -46,9 +46,9 @@ class BaseStorage(object):
                               self.__class__.__name__)
 
   def delete(self, namespace, stream, start_time, end_time, start_id,
-             end_id, configuration):
+             configuration):
     start_id = _get_timeuuid(start_time, start_id)
-    end_id = _get_timeuuid(end_time, end_id)
+    end_id = _get_timeuuid(end_time, None)
     if start_id >= end_id:
       return 0, []
     return self._delete(namespace, stream, start_id, end_id, configuration)
@@ -58,8 +58,7 @@ class BaseStorage(object):
                               self.__class__.__name__)
 
   def retrieve(self, namespace, stream, start_time, end_time, start_id,
-               end_id, configuration, order=ResultOrder.ASCENDING,
-               limit=MAX_LIMIT):
+               configuration, order=ResultOrder.ASCENDING, limit=MAX_LIMIT):
     """
     Retrieves all the events for `stream` from `start_time` (inclusive) till
     `end_time` (inclusive). Alternatively to `start_time`, `start_id` can be
@@ -71,12 +70,8 @@ class BaseStorage(object):
 
     Returns an iterator over all JSON serialized (strings) events.
     """
-    if order == ResultOrder.DESCENDING:
-      _type = UUIDType.HIGHEST
-    else:
-      _type = UUIDType.LOWEST
-    start_id = _get_timeuuid(start_time , start_id, _type)
-    end_id = _get_timeuuid(end_time, end_id, _type)
+    start_id = _get_timeuuid(start_time , start_id)
+    end_id = _get_timeuuid(end_time, None)
     if start_id >= end_id:
       return []
     return self._retrieve(namespace, stream, start_id, end_id, order, limit,

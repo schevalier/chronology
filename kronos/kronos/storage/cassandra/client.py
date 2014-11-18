@@ -8,8 +8,6 @@ from kronos.conf.constants import ResultOrder
 from kronos.storage.base import BaseStorage
 from kronos.storage.cassandra.internal import Namespace
 from kronos.storage.cassandra.internal import Stream
-from kronos.utils.uuid import uuid_from_kronos_time
-from kronos.utils.uuid import UUIDType
 from kronos.utils.validate import is_list
 from kronos.utils.validate import is_non_empty_str
 from kronos.utils.validate import is_pos_int

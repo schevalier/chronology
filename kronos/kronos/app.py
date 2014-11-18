@@ -144,15 +144,13 @@ def get_events(environment, start_response, headers):
       start_time : starting time (optional, default 0),
       end_time : ending time (optional, default: now),
       start_id : starting id (optional),
-      end_id: ending id (optional)
       limit: max number of events to return (optional),
       order: ResultOrder.ASCENDING or ResultOrder.DESCENDING (optional, default:
              ResultOrder.ASCENDING)
     }
-  Boundary conditions are [start_time, end_time), [start_id, end_time),
-  [start_id, end_time), [start_id, end_id). Either the id or the corresponding
-  time should be specified; if both are specified then the id is picked over
-  the timestamp.
+  Boundary conditions are [start_time, end_time), [start_id, end_time). Either
+  start_id or start_time should be specified; if both are specified then the
+  id is picked over the timestamp.
 
   If a retrieval breaks while returning results, you can send another retrieval
   request and specify start_id as the last id that you saw. Kronos will only
@@ -182,7 +180,6 @@ def get_events(environment, start_response, headers):
       long(request_json.get('start_time', 0)),
       long(request_json.get('end_time', kronos_time_now())),
       request_json.get('start_id'),
-      request_json.get('end_id'),
       configuration,
       order=request_json.get('order', ResultOrder.ASCENDING),
       limit=limit)
@@ -216,8 +213,7 @@ def delete_events(environment, start_response, headers):
       stream : stream name,
       start_time : starting time (optional, default 0),
       end_time : ending time (optional, default: now),
-      start_id : starting id (optional),
-      end_id: ending id (optional)
+      start_id : starting id (optional)
     }
   The semantics of start_time, end_time, start_id and end_id are identical
   to get_events.
@@ -243,7 +239,6 @@ def delete_events(environment, start_response, headers):
       long(request_json.get('start_time', 0)),
       long(request_json.get('end_time', kronos_time_now())),
       request_json.get('start_id'),
-      request_json.get('end_id'),
       conf)
   wait(statuses.values())
 
