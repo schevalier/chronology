@@ -9,7 +9,7 @@ serving_mode = ServingMode.ALL
 
 storage = {
   'cassandra': {
-    'backend': 'cassandra.CassandraStorage',
+    'backend': 'kronos.storage.cassandra.CassandraStorage',
     'hosts': ['127.0.0.1'],
     'keyspace_prefix': 'kronos_benchmark',
     # Set to a value greater than 0 or you will get an UnavailableException

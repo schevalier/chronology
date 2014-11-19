@@ -10,11 +10,11 @@ serving_mode = ServingMode.ALL
 
 storage = {
   'memory': {
-    'backend': 'memory.InMemoryStorage',
+    'backend': 'kronos.storage.memory.InMemoryStorage',
     'max_items': 50000
   },
   'cassandra': {
-    'backend': 'cassandra.CassandraStorage',
+    'backend': 'kronos.storage.cassandra.CassandraStorage',
     'hosts': ['127.0.0.1'],
     'keyspace_prefix': 'kronos_test',
     # Set to a value greater than 0 or you will get an UnavailableException
@@ -24,7 +24,7 @@ storage = {
     'read_size': 10
   },
   'elasticsearch': {
-    'backend': 'elasticsearch.ElasticSearchStorage',
+    'backend': 'kronos.storage.elasticsearch.ElasticSearchStorage',
     'hosts': [{'host': 'localhost', 'port': 9200}],
     'index_template': 'kronos_test',
     'index_prefix': 'kronos_test',
