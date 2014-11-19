@@ -31,7 +31,7 @@ serving_mode = ServingMode.ALL
 # storage backends like cassandra (tests/conf/cassandra.py).
 storage = {
   'memory': {
-    'backend': 'memory.InMemoryStorage',
+    'backend': 'kronos.storage.memory.InMemoryStorage',
     'max_items': 100000,
   },
 }

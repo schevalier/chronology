@@ -270,7 +270,7 @@ sample `storage` configuration for it:
 ```python
 storage = {
   'memory': {
-    'backend': 'memory.InMemoryStorage',
+    'backend': 'kronos.storage.memory.InMemoryStorage',
     'max_items': 50000
   },
 }
@@ -288,7 +288,7 @@ streams.  Here's a sample `storage` configuration:
 ```python
 storage = {
   'cassandra': {
-    'backend': 'cassandra.CassandraStorage',
+    'backend': 'kronos.storage.cassandra.CassandraStorage',
     'hosts': ['127.0.0.1'],
     'keyspace_prefix': 'kronos_test',
     'replication_factor': 3,
@@ -357,7 +357,7 @@ controlling the number of indices being created over time. Here's a sample
 ```python
 storage = {
   'elasticsearch': {
-    'backend': 'elasticsearch.ElasticSearchStorage',
+    'backend': 'kronos.storage.elasticsearch.ElasticSearchStorage',
     'hosts': [{'host': 'localhost', 'port': 9200}],
     'index_template': 'kronos_test',
     'index_prefix': 'kronos_test',

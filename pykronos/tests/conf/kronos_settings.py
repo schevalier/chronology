@@ -22,7 +22,7 @@ stream = {
 
 storage = {
   'memory': {
-    'backend': 'memory.InMemoryStorage',
+    'backend': 'kronos.storage.memory.InMemoryStorage',
     'max_items': 50000
   },
 }

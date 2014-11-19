@@ -9,7 +9,7 @@ serving_mode = ServingMode.ALL
 
 storage = {
   'elasticsearch': {
-    'backend': 'elasticsearch.ElasticSearchStorage',
+    'backend': 'kronos.storage.elasticsearch.ElasticSearchStorage',
     'hosts': [{'host': 'localhost', 'port': 9200}],
     'index_template': 'kronos_bench',
     'index_prefix': 'kronos_bench',
