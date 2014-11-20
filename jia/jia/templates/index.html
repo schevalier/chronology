@@ -26,6 +26,13 @@
   </head>
 
   <body>
+    <!--[if lt IE 9]>
+      <div class="browser-not-supported">
+        <img src="/static/img/ie.png" width="150"/>
+        <h3>You must use at least IE 9.</h3>
+        <p>Even better: Chrome, Safari, Firefox, Opera.</p>
+      </div>
+    <![endif]-->
     <div ng-include="'/static/app/ui/toolbar.html'"></div>
     <div ng-include="'/static/app/ui/sidebar.html'"></div>
     <div ng-view class="stage"></div>

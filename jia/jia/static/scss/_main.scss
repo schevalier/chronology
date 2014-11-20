@@ -15,7 +15,22 @@ body {
   font-family: 'Open Sans', sans-serif;
   font-size: 13px;
   font-weight: 100;
-  background: #f1f4f9;
+  background: $blue-gray;
+}
+
+.browser-not-supported {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  padding-top: 20px;
+  background-color: $blue-gray;
+  text-align: center;
+  img {
+    margin: 20px;
+  }
 }
 
 .stage {
