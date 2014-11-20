@@ -9,6 +9,8 @@ import some
 [presidential campaign donation data](http://fec.gov/disclosurep/PDownload.do)
 from Oregon to play around with, so that is the dataset we will dig into.
 
+### Load up your data
+
 Start by getting [Kronos](https://github.com/Locu/chronology/tree/master/kronos)
 and [Metis](https://github.com/Locu/chronology/tree/master/metis) instances up
 and running. You can follow their respective getting started guides for further
@@ -21,6 +23,8 @@ Don't forget to import the campaign data into Kronos.
 cd chronology/kronos
 python scripts/load_test_elections_data.py
 ```
+
+### Configure and run Jia
 
 Once you have Kronos and Metis running, configure Jia.
 
@@ -60,42 +64,46 @@ to start the Jia server. Visit [http://localhost:8152](http://localhost:8152)
 (or whatever port you configured Jia to run on) in a browser and you should see
 this:
 
-![Step 1](docs/getting-started/img/step1.png)
+![Step 1](docs/getting-started/img/01.png)
 
-This is your first board. A board can have multiple panels. Each panel contains
-one query and displays one visualization. Call your board something like
-"Presidential Campaign Donations" and hit "Save".
+### Create a new board
+Welcome to Jia! Start by pressing the "New Board" button on the sidebar.
 
-![Step 2](docs/getting-started/img/step2.png)
+![Step 2](docs/getting-started/img/02.png)
 
-You will be able to get back to this board at any time via the "Saved Boards"
-dropdown on the toolbar.
+When you create a board, the first thing you see is an editor for your first panel.
+A board can have multiple panels. Each panel contains one query and displays one
+visualization.
+
+### Run your first query!
 
 The first query we will visualize is a breakdown of donations by candidate over
-time. Start by adding a panel to your board and giving it a name.
+time. Give your panel a name. Then select a data stream you want to work with.
+With the elections dataset, we only have one choice: donations. Change the timeframe
+to the most recent 6 years so that we retrieve all the data from the 2012 election.
 
-![Step 3](docs/getting-started/img/step3.png)
+We will start by taking a look at what the data looks like. Add a limit of 10 to avoid
+flooding your browser with data for 100,000 events.
 
-Hit the "Show Query" button to expand the query builder. Select a stream first.
-When working with the elections dataset, we only have one choice. Switch the
-timeframe from "Most recent" to "Date range" and specify a two year span from 
-January 1, 2011 to January 1, 2013.
+Your panel should now look like this:
 
-![Step 4](docs/getting-started/img/step4.png)
+![Step 3](docs/getting-started/img/03.png)
 
-This will return about 100,000 events, so let's spare our browsers and set a
-limit of 10. At this point we just want to see what format the data is in.
-Set the visualization mode to "Table" and press "Run".
+Go ahead and press "Run". A table should display 10 donation events.
 
-![Step 5](docs/getting-started/img/step5.png)
+![Step 4](docs/getting-started/img/04.png)
 
-Table view is useful for seeing what properties you have available on a given
+The table view is useful for seeing what properties you have available on a given
 stream. By reviewing these 10 sample events, we can see that
 `contb_receipt_amt`, `cand_nm`, and `@time` are of particular interest for the
 query we are building.
 
-We are aiming for a line graph, which expects fields named `@time` (x-axis),
-`@value` (y-axis), and, optionally, `@group` (to create separate lines).
+### Make a time series plot
+
+We are aiming to display a time series, which expects fields named `@time` (x-axis),
+`@value` (y-axis), and, optionally, `@series` (to create separate lines). These
+field names can be modified on the "Visualizations" tab, but let's stick with
+the defaults for now.
 
 Clear the limit of 10 you previously set and add an aggregate. We want to sum
 the property `contb_receipt_amt` and store the result in `@value` so it shows
@@ -106,21 +114,28 @@ seems to be an appropriate resolution, so make the first group a date truncate
 function on `@time` by `week`. Store the result back in `@time`.
 
 We also want to group by the candidate name (`cand_nm`). Otherwise we would just
-see total donations per week over time. Store this result in `@group` so the
+see total donations per week over time. Store this result in `@series` so the
 line graph knows how to draw the separate lines.
 
-Lastly, we need to add one additional query step. The line graph expects the
-result set to be ordered by `@time`. Let's do that.
+Switch the visualization type of this panel by selecting the "Time Series" option
+on the "Visualization" tab.
 
-Here is what our completed query looks like.
+![Step 5](docs/getting-started/img/05.png)
 
-![Step 6](docs/getting-started/img/step6.png)
+Here is our completed query and the resulting graph:
 
-Switch the visualization type of this panel from "Table" to "Timeseries" and
-hit run. It will take a moment to run the aggregation, but you should be
-rewarded for your patience with a nice timeseries plot.
+![Step 6](docs/getting-started/img/06.png)
 
-![Step 7](docs/getting-started/img/step7.png)
+Press the "Done" button to close the panel editor and return to the board view.
+Give the board a title like "Presidential Campaign Donations" and hit the "Save"
+icon in the toolbar.
+
+![Step 7](docs/getting-started/img/07.png)
+
+Now you'll be able to get back to this board at any time via the "All Boards"
+button on the sidebar.
+
+### Dig deeper with a bar chart
 
 Our 5 minutes are up, but if you're having as much fun as we are, we can do one
 more. This data set tells as much about the donors as it does about the
@@ -129,8 +144,7 @@ modest donations. We can plot this using a bar graph. Bar graphs expect a
 `@value` and a `@label`. They also accept an optional `@group` for stacked bars.
 
 Add another panel to your board. Set the stream name and timeframe like we did
-last time. If you are lazy, you can just choose the most recent five years to
-the same effect.
+last time.
 
 Again, we must start with an aggregation. We want to find the average 
 `contb_receipt_amt` and store that in `@value`. Group by `contbr_occupation`
@@ -149,7 +163,7 @@ Order by `@value` in descending order and limit the results to something in the
 
 Here is our completed query:
 
-![Step 8](docs/getting-started/img/step8.png)
+![Step 8](docs/getting-started/img/08.png)
 
 Switch the visualization type to "Bar Chart" and hit "Run." Depending on your
 screen width, the labels along the x-axis might be crunched. You can either
@@ -158,6 +172,13 @@ who to approach for donations if you ever decide to run for president!
 
 To see the most modest spenders, just flip the "Order by" from descending to
 ascending. Pretty cool!
+
+When you are finished editing the query, you can press "Done." What a neat board
+you've put together!
+
+![Step 9](docs/getting-started/img/09.png)
+
+### Complete some extra exercises
 
 For additional practice, try answering some of these questions using Jia:
  * Which candidate had the highest average donation amount?
