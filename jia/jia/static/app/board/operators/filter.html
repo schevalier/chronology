@@ -1,5 +1,11 @@
-<cpf ng-model="step.operation.operands.lhs"
-     ng-class="{'vqb-invalid': vqbInvalid()}"></cpf>
-<op ng-model="step.operation.operands.op"></op>
-<cpf ng-model="step.operation.operands.rhs"
-     ng-class="{'vqb-invalid': vqbInvalid()}"></cpf>
+<div class="col-xs-12 col-lg-4">
+  <cpf ng-model="step.operation.operands.lhs"
+       ng-class="{'vqb-invalid': vqbInvalid()}"></cpf>
+</div>
+<div class="col-xs-12 col-lg-4">
+  <op ng-model="step.operation.operands.op"></op>
+</div>
+<div class="col-xs-12 col-lg-4">
+  <cpf ng-model="step.operation.operands.rhs"
+       ng-class="{'vqb-invalid': vqbInvalid()}"></cpf>
+</div>

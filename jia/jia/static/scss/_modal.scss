@@ -1,3 +1,22 @@
+@media (min-width: $screen-lg-min) {
+  .modal-lg {
+    width: 90%;
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: $screen-md-min) {
+  .modal-dialog {
+    width: 90%;
+  }
+}
+
+@media (min-width: $screen-sm-min) {
+  .modal-dialog {
+    width: 90%;
+  }
+}
+
 .modal-header {
   &.contains-input {
     button.delete-panel {
