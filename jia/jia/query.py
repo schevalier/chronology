@@ -46,15 +46,26 @@ def filter(query_plan, operands):
 def agg_op(agg_type, agg_on, store_in):
   module = metis.core.query.aggregate
   op = agg_type
-  return getattr(module, op)([agg_on], alias=store_in)
+  agg_ons = []
+  if agg_on:
+    agg_ons.append(agg_on)
+  return getattr(module, op)(agg_ons, alias=store_in)
 
 
 def aggregate(query_plan, operands):
   aggregates = []
 
   for agg in operands['aggregates']:
-    aggregates.append(agg_op(agg['agg_type'], cpf(agg['agg_on']),
-                      agg['alias']))
+    cpf_type = agg['agg_on']['cpf_type']
+    property_name = agg['agg_on'].get('property_name')
+    constant_value = agg['agg_on'].get('constant_value')
+    empty = (cpf_type == 'property' and not property_name or
+             cpf_type == 'constant' and not constant_value)
+    if empty:
+      agg_on_cpf = None
+    else:
+      agg_on_cpf = cpf(agg['agg_on'])
+    aggregates.append(agg_op(agg['agg_type'], agg_on_cpf, agg['alias']))
 
   groups = []
   for group in operands['groups']:

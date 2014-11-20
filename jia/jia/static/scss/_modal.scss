@@ -19,8 +19,8 @@
 
 .modal-header {
   &.contains-input {
-    button.close {
-      margin-top: 3px;
+    button.delete-panel {
+      float: right;
     }
   }
   input {

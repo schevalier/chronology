@@ -359,7 +359,13 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       csvString += '\n';
     }
 
-    event.target.href = headerString + encodeURIComponent(csvString);
+    if (event.target.tagName == 'SPAN') {
+      rewrite = event.target.parentNode;
+    }
+    else {
+      rewrite = event.target;
+    }
+    rewrite.href = headerString + encodeURIComponent(csvString);
   };
 
   $scope.cleanBoard = function () {
@@ -399,9 +405,10 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
       });
   };
 
-  $scope.panelSettingsModal = function (panel) {
+  $scope.panelSettingsModal = function (panel, index) {
     var scope = $scope.$new();
     scope.panel = panel;
+    scope.$index = index;
     $scope.panelSettingsModalInstance = $modal.open({
       templateUrl: 'static/app/board/modals/panelsettings.html',
       scope: scope,
@@ -425,6 +432,15 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
     $location.path('/boards/new');
     $scope.duplicateBoardModalInstance.close();
   };
+
+  $scope.deletePanel = function (index) {
+    var title = $scope.boardData.panels[index].title || 'untitled';
+    var message = 'Are you sure you wish to delete the ' + title + ' panel?';
+    if (confirm(message)) {
+      $scope.boardData.panels.splice(index, 1);
+      $scope.panelSettingsModalInstance.close();
+    }
+  }
   
   $scope.deleteBoard = function () {
     var title = $scope.boardData.title || "this board";
@@ -596,7 +612,7 @@ function ($scope, $http, $location, $timeout, $injector, $routeParams,
   $scope.addPanel = function() {
     $scope.boardData.panels.unshift($scope.newPanelObj());
     $scope.initPanel($scope.boardData.panels[0]);
-    $scope.panelSettingsModal($scope.boardData.panels[0]);
+    $scope.panelSettingsModal($scope.boardData.panels[0], 0);
   };
   
   $scope.dateTimeFormat = 'MMM DD YYYY HH:mm:ss';

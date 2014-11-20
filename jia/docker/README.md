@@ -9,7 +9,7 @@ We've already pushed a working [Dockerfile to Docker Hub](https://registry.hub.d
 
 ## How to create new Dockerfiles for future versions of Jia
 
-  * Copy an existing directory like `0.6.0` to the desired version
-  * At a bare minimum, change the `RUN git checkout` in Dockerfile to the desired Chronology commit hash you wish to deploy.
-  * Check the `Makefile` in this directory for some convenience tools, like running your new container.  For example, to build `1.0`, type `JIA_VERSION=1.0 make build`.
-  * If you're bumping the version of Jia, update the default `JIA_VERSION` at the top of `Makefile`
+  * Create a tag (e.g., v0.7.0) of the repository pointing to the right git commit of chronology/jia.
+  * `JIA_VERSION=v0.7.0 make generate_dockerfiles`
+  * `JIA_VERSION=v0.7.0 make build`. Note: Docker aggressively caches commands for performance.  To avoid this, for example if you had to change which hash a tag points to, call `JIA_VERSION=v0.7.0 make build_nocache`.
+  * `JIA_VERSION=v0.7.0 make push`
