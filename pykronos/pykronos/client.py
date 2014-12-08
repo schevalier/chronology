@@ -38,11 +38,11 @@ class ResultOrder(object):
 
 def _get_errors(json_dict):
   errors = []
-  for key, value in json_dict.iteritems:
+  for key, value in json_dict.iteritems():
     if key == ERRORS_FIELD:
       errors.extend(value)
     if isinstance(value, dict):
-      errors.extend(_get_errors(json_dict, errors))
+      errors.extend(_get_errors(value))
   return errors
 
 
