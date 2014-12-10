@@ -4,7 +4,15 @@ DEBUG = True
 PORT = 8152
 
 # All enabled executors.
-EXECUTORS = ['python.PythonExecutor']
+EXECUTORS = ['metis.core.execute.python.PythonExecutor']
 
 # The default executor to use, if none is specified in the request.
-DEFAULT_EXECUTOR = 'python.PythonExecutor'
+DEFAULT_EXECUTOR = 'metis.core.execute.python.PythonExecutor'
+
+DATA_SOURCES = {
+  'kronos': {
+    'type': 'metis.core.data.kronos.KronosStream',
+    'pretty_name': 'Kronos',
+    'url': 'http://localhost:8150'
+  }
+}

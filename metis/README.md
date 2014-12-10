@@ -190,13 +190,15 @@ unclear, [file an issue](../../../issues?state=open) and we'll clarify!
 ### Python
 
 This is an in-memory executor implemented in vanilla Python. It can be enabled
-by adding `python.PythonExecutor` to the `EXECUTORS` list in `settings.py`.
+by adding `metis.core.execute.python.PythonExecutor` to the `EXECUTORS` list in
+`settings.py`.
 
 ### Spark
 
 This farms out the execution of the query to a Spark cluster. It can be enabled
-by adding `spark.SparkExecutor` to the `EXECUTORS` list. When enabling this
-executor, the following setting parameters must also be configured:
+by adding `metis.core.execute.spark.SparkExecutor` to the `EXECUTORS` list.
+When enabling this executor, the following setting parameters must also be
+configured:
 
   * `SPARK_HOME` is the location where Spark is installed. This is used to
     find PySpark which is currently not available on PyPI.

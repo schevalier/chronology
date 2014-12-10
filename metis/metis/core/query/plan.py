@@ -1,5 +1,5 @@
-from metis.core.query.transform import Transform
+from metis.core.query.operator import Operator
 
 
 def parse(plan):
-  return Transform.parse(plan)
+  return Operator.parse(plan)

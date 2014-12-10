@@ -12,12 +12,11 @@ class ExecutorService(object):
     self.executors = {}
     self.default_executor = app.config['DEFAULT_EXECUTOR']
 
-    for executor in app.config['EXECUTORS']:
-      executor_path = 'metis.core.execute.%s' % executor
+    for executor_path in app.config['EXECUTORS']:
       executor_module, executor_cls = executor_path.rsplit('.', 1)
       executor_module = import_module(executor_module)
       executor_cls = getattr(executor_module, executor_cls)
-      self.executors[executor] = executor_cls()
+      self.executors[executor_path] = executor_cls()
 
     assert self.default_executor in self.executors
 

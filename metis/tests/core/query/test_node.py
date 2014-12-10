@@ -6,7 +6,7 @@ from metis.core.query.aggregate import Aggregator
 from metis.core.query.aggregate import GroupBy
 from metis.core.query.condition import Condition
 from metis.core.query.stream import Stream
-from metis.core.query.transform import Transform
+from metis.core.query.operator import Operator
 from metis.core.query.value import Value
 
 
@@ -57,7 +57,7 @@ class NodeTestCase(unittest.TestCase):
                  'stream': deepcopy(_filter)}
     join = {'type': 'join', 'left': deepcopy(aggregate),
             'right': deepcopy(project), 'condition': deepcopy(condition_or)}
-    self.assertEqual(Transform.parse(deepcopy(project)).to_dict(), project)
-    self.assertEqual(Transform.parse(deepcopy(_filter)).to_dict(), _filter)
-    self.assertEqual(Transform.parse(deepcopy(aggregate)).to_dict(), aggregate)
-    self.assertEqual(Transform.parse(deepcopy(join)).to_dict(), join)
+    self.assertEqual(Operator.parse(deepcopy(project)).to_dict(), project)
+    self.assertEqual(Operator.parse(deepcopy(_filter)).to_dict(), _filter)
+    self.assertEqual(Operator.parse(deepcopy(aggregate)).to_dict(), aggregate)
+    self.assertEqual(Operator.parse(deepcopy(join)).to_dict(), join)

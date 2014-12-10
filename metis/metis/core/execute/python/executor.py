@@ -8,7 +8,7 @@ from metis.core.execute.utils import get_value
 
 
 class PythonExecutor(Executor):
-  def execute_kronos_stream(self, node):
+  def execute_data_access(self, node):
     from pykronos import KronosClient
 
     client = KronosClient(node.host, blocking=True)

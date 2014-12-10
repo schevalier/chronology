@@ -1,29 +1,11 @@
 import types
-
-from metis.core.query import ExecutableNode
-from metis.utils.enum import Enum
+from metis.core.query.operator import DataAccess
 
 
-class Stream(ExecutableNode):
-  class Type(Enum):
-    KRONOS = 'kronos'
-
-  def __init__(self, alias=None):
-    self.alias = alias
-
-  @classmethod
-  def parse(cls, _dict):
-    typ = _dict.pop('type')
-    assert typ in Stream.Type.values()
-
-    if typ == Stream.Type.KRONOS:
-      return KronosStream.parse(_dict)
-
-
-class KronosStream(Stream):
+class KronosStream(DataAccess):
   def __init__(self, host, stream, start_time, end_time, namespace=None,
                **kwargs):
-    self.type = Stream.Type.KRONOS
+    self.type = 'kronos'
     self.host = host
     self.stream = stream
     self.start_time = start_time
