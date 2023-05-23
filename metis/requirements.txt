@@ -4,4 +4,4 @@ flask==0.10.1
 py4j==0.8.1
 pykronos==0.6.0
 # pyspark --- not on PyPI yet; add SPARK_HOME/python to PATH.
-requests==2.3.0
+requests==2.31.0
